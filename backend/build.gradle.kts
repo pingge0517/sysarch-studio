@@ -7,6 +7,8 @@ dependencies {
     implementation(platform(libs.spring.boot.bom))
     // Sirius Web is consumed as a binary dependency only; its source is never modified (spec §2.3).
     implementation(libs.sirius.web.starter)
+    // The Sirius Web UI (projects, explorer, diagrams), so the VSM diagrams can be used in a browser on :8080.
+    runtimeOnly(libs.sirius.web.frontend)
     implementation(libs.spring.boot.starter.actuator)
     // Used directly by the generated sysarch model/edit code. Same versions Sirius Web brings.
     implementation(libs.bundles.emf.runtime)

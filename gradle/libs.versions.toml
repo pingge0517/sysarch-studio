@@ -29,6 +29,8 @@ spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-
 spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 sirius-web-starter = { module = "org.eclipse.sirius:sirius-web-starter", version.ref = "sirius-web" }
+# Sirius Web's own prebuilt React frontend (static/ resources), served by the backend on :8080.
+sirius-web-frontend = { module = "org.eclipse.sirius:sirius-web-frontend", version.ref = "sirius-web" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
 spring-context = { module = "org.springframework:spring-context" }
 

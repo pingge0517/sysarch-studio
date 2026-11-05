@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The spec, `p0-spec-sysarch-vsm.md` (Chinese), is the source of truth for everything below. Work proceeds by running tasks **T1–T9 (spec §8) in order**. Each task starts with a paste-ready instruction block and has hard dependencies (T3 needs T2, T4 needs T3, and so on).
 
-T1 scaffold is in place. The spec §2.2 monorepo lives at the **repository root**, not in a `sysarch-studio/` subfolder. Gradle modules are `metamodel` (EMF codegen tool), `backend` and `vsm-compiler`. T1–T3 are done. T4 and T5 are done on the backend: the projection layer plus the Sirius Web adapter (`view.sirius`) render BDD and IBD in Sirius Web, verified by `SiriusRenderingTest` and live over GraphQL. Still missing are a UI to look at them (see the adapter notes) and the manual UI checks. T6 is partly done too: `validation.ConstraintValidator` and `ValidationMatrixTest` exist. The IBD `connect` tool validates on drop (AC-5); the save-path veto is still open. The whole build now resolves and `./gradlew :backend:test` passes (44 tests). That does not include starting the application: no test boots the Spring context, because that needs PostgreSQL and this machine has no Docker. `frontend/` is a separate npm project (Vite + React 18, served by nginx on :3000, which proxies `/api`, `/graphql`, `/actuator` and `/subscriptions` to the backend). Package-level `TODO(Tn)` comments mark where each later task goes.
+T1 scaffold is in place. The spec §2.2 monorepo lives at the **repository root**, not in a `sysarch-studio/` subfolder. Gradle modules are `metamodel` (EMF codegen tool), `backend` and `vsm-compiler`. T1–T3 are done. T4 and T5 are done on the backend: the projection layer plus the Sirius Web adapter (`view.sirius`) render BDD and IBD in Sirius Web, verified by `SiriusRenderingTest` and live over GraphQL. The Sirius Web UI on :8080 shows them; the manual UI checks still have to be done in a browser. T6 is partly done too: `validation.ConstraintValidator` and `ValidationMatrixTest` exist. The IBD `connect` tool validates on drop (AC-5); the save-path veto is still open. The whole build now resolves and `./gradlew :backend:test` passes (44 tests). That does not include starting the application: no test boots the Spring context, because that needs PostgreSQL and this machine has no Docker. `frontend/` is a separate npm project (Vite + React 18, served by nginx on :3000, which proxies `/api`, `/graphql`, `/actuator` and `/subscriptions` to the backend). Package-level `TODO(Tn)` comments mark where each later task goes.
 
 Deviations from the spec that are already decided:
 - **Spring Boot is 3.5.5, not 3.3.x.** Sirius Web 2025.8.x (pinned at 2025.8.11) is built on Boot 3.5.5, and the spec's reason for its Boot version is alignment with Sirius Web.
@@ -45,7 +45,7 @@ Deviations from the spec that are already decided:
     - T6's save-path veto: Sirius has no hook to veto an edit; it would need an EMF `ChangeRecorder` and a revert;
     - the external-link tool (T7);
     - real list compartments (ports render as extra label lines);
-    - any UI. This backend serves only the API. `GET /` on :8080 is 404, because `sirius-web-frontend` isn't a dependency, and `frontend/` is still the T1 placeholder.
+    - our own UI. For now the backend serves **Sirius Web's prebuilt frontend** (`sirius-web-frontend`, runtimeOnly) at http://localhost:8080, with SPA deep links working. That is how the diagrams are used and checked by hand. `frontend/` (spec's React shell on :3000) is still the T1 placeholder; building it on Sirius' npm packages is a later step.
   - **Live-testing over GraphQL:** HTTP `/api/graphql`; WebSocket `/subscriptions` with subprotocol **`graphql-ws`** (start/data/stop; `graphql-transport-ws` is not supported). The CORS check rejects `Origin: null`, so send `Origin: http://localhost:3000`.
 - **Generated code is committed** and is not regenerated during the backend build. `VsmCompilerTest.committedGeneratedCodeIsUpToDate` fails if `view/generated` differs from a fresh generation.
 
@@ -151,7 +151,8 @@ This machine has no Docker. It runs a local PostgreSQL 16.13 instead: the zip bi
 # PostgreSQL starts with Windows (service postgresql-16); check it with: /c/PostgreSQL/16/bin/pg_isready.exe -h localhost
 ./gradlew :backend:bootJar
 set -a; . ./.env; set +a; POSTGRES_URL=jdbc:postgresql://localhost:5432/sysarch java -jar backend/build/libs/backend-0.1.0-SNAPSHOT.jar
-cd frontend && npm run build && npx vite preview --port 3000 --strictPort   # proxies /api, /graphql, /actuator, /subscriptions to :8080
+# UI: Sirius Web at http://localhost:8080 (served by the backend)
+cd frontend && npm run build && npx vite preview --port 3000 --strictPort   # T1 placeholder shell; proxies /api, /graphql, /actuator, /subscriptions to :8080
 ```
 
 ## Gradle troubleshooting
