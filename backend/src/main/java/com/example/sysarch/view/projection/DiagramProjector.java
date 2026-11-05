@@ -10,13 +10,16 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import org.eclipse.emf.common.util.Enumerator;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
@@ -42,7 +45,9 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
  * {@code isAbstract = true} gets the last one and every other element gets the first (BDD
  * {@code block}/{@code abstractBlock}).</li>
  * <li><b>Edges</b>: one per (source end value, target end value) of each element of the edge's type, drawn only
- * when both ends have nodes. Styles with the same type and the same ends are alternatives, and the first wins.
+ * when both ends have nodes. Styles with the same type and the same ends are alternatives: the element gets the
+ * one whose id matches its {@code kind} literal (IBD {@code assembly}/{@code delegation} by {@code Connection.kind}),
+ * otherwise the first. Switching style keeps the edge id.
  * An end element without a node of its own is drawn to the node of its {@code typedBy}, and the edge label is
  * then read from that end element. For example, a BDD composition runs from the owner block to the part's type
  * and is labelled with the part's name.</li>
@@ -55,6 +60,8 @@ public final class DiagramProjector {
     static final String ABSTRACT_FEATURE = "isAbstract";
 
     static final String TYPE_FEATURE = "typedBy";
+
+    static final String KIND_FEATURE = "kind";
 
     private DiagramProjector() {
     }
@@ -174,18 +181,18 @@ public final class DiagramProjector {
 
         private List<DiagramSnapshot.Edge> edges() {
             List<DiagramSnapshot.Edge> edges = new ArrayList<>();
-            Set<String> drawnEnds = new HashSet<>();
             Set<String> edgeIds = new HashSet<>();
-            for (EdgeStyle style : this.description.edges()) {
-                EClass type = this.eClass(style.domainType());
+            for (List<EdgeStyle> alternatives : alternativeGroups(this.description.edges())) {
+                EdgeStyle first = alternatives.get(0);
+                EClass type = this.eClass(first.domainType());
                 for (EObject element : this.scope) {
-                    if (!type.isInstance(element) || this.hidden(element)
-                            || !drawnEnds.add(elementId(element) + "|" + style.sourceEnd() + "|" + style.targetEnd())) {
+                    if (!type.isInstance(element) || this.hidden(element)) {
                         continue;
                     }
-                    for (EObject source : ends(element, style.sourceEnd())) {
-                        for (EObject target : ends(element, style.targetEnd())) {
-                            this.edge(style, element, source, target).filter(e -> edgeIds.add(e.id())).ifPresent(edges::add);
+                    EdgeStyle style = chooseByKind(alternatives, element);
+                    for (EObject source : ends(element, first.sourceEnd())) {
+                        for (EObject target : ends(element, first.targetEnd())) {
+                            this.edge(first.id(), style, element, source, target).filter(e -> edgeIds.add(e.id())).ifPresent(edges::add);
                         }
                     }
                 }
@@ -193,7 +200,11 @@ public final class DiagramProjector {
             return edges;
         }
 
-        private Optional<DiagramSnapshot.Edge> edge(EdgeStyle style, EObject element, EObject source, EObject target) {
+        /**
+         * @param idPrefix the first style of the alternative group, so an edge keeps its id (and its saved
+         *        waypoints) when a change of {@code kind} switches it to another style
+         */
+        private Optional<DiagramSnapshot.Edge> edge(String idPrefix, EdgeStyle style, EObject element, EObject source, EObject target) {
             DiagramSnapshot.Node sourceNode = this.nodes.get(source);
             DiagramSnapshot.Node targetNode = this.nodes.get(target);
             EObject labelElement = element;
@@ -208,7 +219,7 @@ public final class DiagramProjector {
             if (sourceNode == null || targetNode == null) {
                 return Optional.empty();
             }
-            String id = style.id() + ":" + elementId(source) + "->" + elementId(target);
+            String id = idPrefix + ":" + elementId(source) + "->" + elementId(target);
             return Optional.of(new DiagramSnapshot.Edge(id, elementId(labelElement), style.id(), sourceNode.id(), targetNode.id(),
                     nullToEmpty(LabelTemplates.render(style.labelTemplate(), labelElement))));
         }
@@ -266,6 +277,36 @@ public final class DiagramProjector {
         return scope;
     }
 
+    /** Edge styles with the same type, source end and target end, grouped in declaration order. */
+    private static List<List<EdgeStyle>> alternativeGroups(List<EdgeStyle> styles) {
+        Map<String, List<EdgeStyle>> groups = new LinkedHashMap<>();
+        for (EdgeStyle style : styles) {
+            groups.computeIfAbsent(style.domainType() + "|" + style.sourceEnd() + "|" + style.targetEnd(), k -> new ArrayList<>()).add(style);
+        }
+        return List.copyOf(groups.values());
+    }
+
+    /**
+     * Among alternative styles, the one whose id matches the element's {@code kind} literal, ignoring case and
+     * underscores ({@code DELEGATION} picks {@code delegation}); otherwise the first.
+     */
+    private static EdgeStyle chooseByKind(List<EdgeStyle> alternatives, EObject element) {
+        if (alternatives.size() > 1 && element.eClass().getEStructuralFeature(KIND_FEATURE) instanceof EStructuralFeature kind
+                && element.eGet(kind) instanceof Enumerator literal) {
+            String wanted = normalize(literal.getLiteral());
+            for (EdgeStyle style : alternatives) {
+                if (normalize(style.id()).equals(wanted)) {
+                    return style;
+                }
+            }
+        }
+        return alternatives.get(0);
+    }
+
+    private static String normalize(String name) {
+        return name.replace("_", "").toLowerCase(Locale.ROOT);
+    }
+
     private static List<EObject> ends(EObject element, String end) {
         return EdgeStyle.SELF.equals(end) ? List.of(element) : many(element, end);
     }
@@ -296,7 +337,7 @@ public final class DiagramProjector {
     }
 
     /** The element's ID attribute ({@code ArchElement.id}), or its URI fragment if the ID is not set. */
-    static String elementId(EObject element) {
+    public static String elementId(EObject element) {
         String id = EcoreUtil.getID(element);
         if (id != null) {
             return id;
