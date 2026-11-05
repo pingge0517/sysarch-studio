@@ -131,11 +131,10 @@ Parametric solving and simulation, real-time collaboration (use edit locks inste
 
 ## Running locally without Docker (this machine)
 
-This machine has no Docker. It runs a local PostgreSQL 16.13 instead: the zip binaries in `C:\PostgreSQL\16`, data in `C:\PostgreSQL\16\data`, listening on `127.0.0.1:5432` with scram-sha-256. It is not a Windows service, so start it after a reboot. The `postgres` superuser password is in `C:\PostgreSQL\superuser.pwd`. The app role and database are both `sysarch`, and the app password is in the git-ignored `.env`. The local AC-1 equivalent passed on 2026-11-05: health UP 21 s after start, home page 200, Sirius Web's Liquibase created 15 tables.
+This machine has no Docker. It runs a local PostgreSQL 16.13 instead: the zip binaries in `C:\PostgreSQL\16`, data in `C:\PostgreSQL\16\data`, listening on `127.0.0.1:5432` with scram-sha-256. It runs as the Windows service `postgresql-16` (automatic start, account `NT AUTHORITY\NetworkService`), with logs in `C:\PostgreSQL\16\data\log`. Manage it with `Start-Service`/`Stop-Service postgresql-16`; don't start it with `pg_ctl start` alongside the service. If files are ever moved into `C:\PostgreSQL\16`, reset their ACLs (`icacls <dir> /reset /T`): moved files keep their old ACL, and the service failed with "Access is denied" until `bin`, `lib` and `share` inherited `Users:RX`. Do not confuse it with **Polarion's own bundled PostgreSQL**: service `PostgreSQLPolarion`, port 5433, data in `C:\Polarion\data\postgres-data`. It belongs to the local Polarion install in `C:\Polarion`; leave it alone. The `postgres` superuser password is in `C:\PostgreSQL\superuser.pwd`. The app role and database are both `sysarch`, and the app password is in the git-ignored `.env`. The local AC-1 equivalent passed on 2026-11-05: health UP 21 s after start, home page 200, Sirius Web's Liquibase created 15 tables.
 
 ```bash
-# Start PostgreSQL. Redirect output: pg_ctl's child keeps inherited pipes open, so a piped command never returns
-/c/PostgreSQL/16/bin/pg_ctl.exe -D C:/PostgreSQL/16/data -l C:/PostgreSQL/16/postgres.log -w start > /dev/null 2>&1
+# PostgreSQL starts with Windows (service postgresql-16); check it with: /c/PostgreSQL/16/bin/pg_isready.exe -h localhost
 ./gradlew :backend:bootJar
 set -a; . ./.env; set +a; POSTGRES_URL=jdbc:postgresql://localhost:5432/sysarch java -jar backend/build/libs/backend-0.1.0-SNAPSHOT.jar
 cd frontend && npm run build && npx vite preview --port 3000 --strictPort   # proxies /api, /graphql, /actuator, /subscriptions to :8080
