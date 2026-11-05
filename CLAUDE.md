@@ -12,6 +12,10 @@ Deviations from the spec that are already decided:
 - **Spring Boot is 3.5.5, not 3.3.x.** Sirius Web 2025.8.x (pinned at 2025.8.11) is built on Boot 3.5.5, and the spec's reason for its Boot version is alignment with Sirius Web.
 - **Sirius Web artifacts come from GitHub Packages and need a token.** They are published to the `eclipse-sirius/sirius-web` and `eclipse-sirius/sirius-emf-json` repos. Set `GITHUB_TOKEN` (any PAT with `read:packages`) or `gpr.key`. Docker receives it as a BuildKit secret.
 - The backend Docker build context is the repo root (`backend/Dockerfile`), because it needs the root Gradle files.
+- **EMF code generation is headless** (T2). The `metamodel` Gradle module's `EmfCodeGenerator` replaces the spec's `java -jar org.eclipse.emf.codegen.ecore.jar`. It rebuilds `metamodel/sysarch.genmodel` from the Ecore, deletes the old output, and generates the model and edit layers into `backend/src/main/java/com/example/sysarch/model/{,impl,util,provider}`. It also writes `plugin.properties` and `icons/` to `backend/src/main/resources`. There is no `metamodel/src-gen`. The spec's package `com.example.sysarch.model` comes from base package `com.example` plus a `model` suffix, because EMF always inserts the EPackage name (`sysarch`). **Never hand-edit generated code.** Regenerate it instead; output is deterministic (LF, no timestamps). Hand-written code goes in other packages, e.g. `com.example.sysarch.config.SysarchEMFConfiguration`.
+- **No Ecore-to-JSON converter.** Sirius Web takes Java EPackages directly: `@Bean EPackage` feeds its `EPackage.Registry`, and `@Bean AdapterFactory` feeds its `ComposedAdapterFactory`. So T2 step 4 / `runEcoreConverter` is not needed.
+- **EMF runtime matches Sirius Web** (ecore 2.37, xmi 2.38, edit 2.22, common 2.31), not the spec's 2.35. The generated code targets the 2.35 API level instead (`runtimeVersion=2.35`).
+- `backend` puts processed resources into the classes directory (`sourceSets.main.output.resourcesDir`), because `EMFPlugin` finds `plugin.properties` relative to the classes. Without it, every edit-layer label throws `MissingResourceException` in tests and `bootRun`.
 
 In the spec, code blocks marked `[COPY]` must be written to disk **verbatim**, with no edits: `metamodel/sysarch.ecore` (§3.1), `views/sysarch-core.vsm.yaml` (§4.3), `views/sysarch-ibd.vsm.yaml` (§4.4) and `backend/src/main/resources/api/polarion-proxy.openapi.yaml` (§6.1). Items marked `[GENERATE]` are produced by Claude Code or by the generators.
 
@@ -22,7 +26,7 @@ This is a web-native system-architecture modeling tool built on **Sirius Web 202
 - Diagrams generated from a declarative YAML DSL ("VSM", following Papyrus `.odesign` semantics). They are not hand-written canvas code.
 - Two-way binding to Polarion Work Items, plus a consistency report.
 
-Stack (versions locked): JDK 21, Spring Boot 3.5.5 (see above), Gradle 8.14.3 Kotlin DSL (versions in `gradle/libs.versions.toml`), PostgreSQL 16, React 18 + TS 5, Spring GraphQL, EMF 2.35, Eclipse OCL 6.x (Pivot), Polarion REST v2.
+Stack (versions locked): JDK 21, Spring Boot 3.5.5 (see above), Gradle 8.14.3 Kotlin DSL (versions in `gradle/libs.versions.toml`), PostgreSQL 16, React 18 + TS 5, Spring GraphQL, EMF (see above), Eclipse OCL 6.x (Pivot), Polarion REST v2.
 
 ## Commands
 
@@ -33,9 +37,9 @@ cp .env.example .env                                               # then fill P
 sh tests/acceptance/ac1-health.sh                                  # AC-1, must be UP within 60s
 cd frontend && npm ci && npm run build                             # frontend type-check + build (npm run dev for :3000)
 ./gradlew build                                                    # full build + CI gates
-./gradlew :vsm-compiler:test
-./gradlew :vsm-compiler:runEcoreConverter --args="metamodel/sysarch.ecore build/sysarch.metamodel.json"
+./gradlew :metamodel:generateModel                       # T2: regenerate genmodel + EMF model/edit code after changing sysarch.ecore
 ./gradlew :backend:test --tests "*ModelSmokeTest*"       # T2
+./gradlew :vsm-compiler:test
 ./gradlew :backend:test --tests "*BddSnapshotTest*"      # T4
 ./gradlew :backend:test --tests "*IbdSyncTest*"          # T5 (also writes build/perf-refresh.json)
 ./gradlew :backend:test --tests "*ValidationMatrixTest*" # T6
@@ -94,6 +98,12 @@ backend → polarion proxy → Polarion REST v2   (browser never calls Polarion 
 - Escape `<>` in Ecore OCL as `&lt;&gt;`, or the OCL silently stops working.
 - A border node (`isBorderNode`) needs the correct `affiliationFeature` (`partOwner` / `owner`), or ports float in the middle of the canvas.
 - `eOpposite` must be paired. If it isn't, the EMF notification chain breaks and auto-sync gets no events.
+- Ecore quirks found in T2. Keep the Ecore verbatim and handle these in the task that needs them:
+  - The OCL `.../OCL/Pivot` annotations aren't declared through EMF's `constraints` annotation or a `validationDelegates` setting. EMF therefore generates no `SysarchValidator`, and T6 must load the invariants through OCL explicitly.
+  - There are 7 invariants (`NoSelfAllocate` is extra), although the spec says six.
+  - Nothing contains Connection, ItemFlow, Requirement, Allocate or DiagramLayout. They can only be resource roots.
+  - `DiagramLayout` extends `ArchElement`, so it inherits `NameNotEmpty` and lives in the model. Keep this in mind for spec §5.1 invariant 2 (T5/T6).
+  - EMF naming gives `isIsAbstract()` and `isIsConjugated()`.
 
 ## Out of scope for P0 (spec §1.3)
 

@@ -23,4 +23,4 @@ dependencyResolutionManagement {
     }
 }
 
-include("backend", "vsm-compiler")
+include("metamodel", "backend", "vsm-compiler")

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<genmodel:GenModel xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore"
+    xmlns:genmodel="http://www.eclipse.org/emf/2002/GenModel" modelDirectory="/backend/src/main/java" creationIcons="false" editDirectory="/backend/src/main/java"
+    modelPluginID="com.example.sysarch" modelName="Sysarch" editPluginClass="com.example.sysarch.model.provider.SysarchEditPlugin"
+    updateClasspath="false" importerID="org.eclipse.emf.importer.ecore" bundleManifest="false"
+    complianceLevel="17.0" copyrightFields="false" editPluginID="com.example.sysarch"
+    runtimeVersion="2.35" operationReflection="true">
+  <foreignModel>sysarch.ecore</foreignModel>
+  <genPackages prefix="Sysarch" basePackage="com.example" disposableProviderFactory="true"
+      interfacePackageSuffix="model" metaDataPackageSuffix="model" classPackageSuffix="model.impl"
+      utilityPackageSuffix="model.util" providerPackageSuffix="model.provider" presentationPackageSuffix="model.presentation"
+      testsPackageSuffix="model.tests" ecorePackage="sysarch.ecore#/">
+    <genEnums typeSafeEnumCompatible="false" ecoreEnum="sysarch.ecore#//Layer">
+      <genEnumLiterals ecoreEnumLiteral="sysarch.ecore#//Layer/OPERATIONAL"/>
+      <genEnumLiterals ecoreEnumLiteral="sysarch.ecore#//Layer/SYSTEM"/>
+      <genEnumLiterals ecoreEnumLiteral="sysarch.ecore#//Layer/LOGICAL"/>
+      <genEnumLiterals ecoreEnumLiteral="sysarch.ecore#//Layer/PHYSICAL"/>
+      <genEnumLiterals ecoreEnumLiteral="sysarch.ecore#//Layer/EPBS"/>
+    </genEnums>
+    <genEnums typeSafeEnumCompatible="false" ecoreEnum="sysarch.ecore#//PortDirection">
+      <genEnumLiterals ecoreEnumLiteral="sysarch.ecore#//PortDirection/IN"/>
+      <genEnumLiterals ecoreEnumLiteral="sysarch.ecore#//PortDirection/OUT"/>
+      <genEnumLiterals ecoreEnumLiteral="sysarch.ecore#//PortDirection/INOUT"/>
+    </genEnums>
+    <genEnums typeSafeEnumCompatible="false" ecoreEnum="sysarch.ecore#//ConnectionKind">
+      <genEnumLiterals ecoreEnumLiteral="sysarch.ecore#//ConnectionKind/ASSEMBLY"/>
+      <genEnumLiterals ecoreEnumLiteral="sysarch.ecore#//ConnectionKind/DELEGATION"/>
+      <genEnumLiterals ecoreEnumLiteral="sysarch.ecore#//ConnectionKind/ITEM_FLOW"/>
+    </genEnums>
+    <genEnums typeSafeEnumCompatible="false" ecoreEnum="sysarch.ecore#//VerifyMethod">
+      <genEnumLiterals ecoreEnumLiteral="sysarch.ecore#//VerifyMethod/ANALYSIS"/>
+      <genEnumLiterals ecoreEnumLiteral="sysarch.ecore#//VerifyMethod/INSPECTION"/>
+      <genEnumLiterals ecoreEnumLiteral="sysarch.ecore#//VerifyMethod/TEST"/>
+      <genEnumLiterals ecoreEnumLiteral="sysarch.ecore#//VerifyMethod/DEMONSTRATION"/>
+    </genEnums>
+    <genClasses image="false" ecoreClass="sysarch.ecore#//ArchElement">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//ArchElement/id"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//ArchElement/name"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//ArchElement/description"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//ArchElement/layer"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//ArchElement/stereotypes"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//ArchElement/workItemId"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//ArchElement/rev"/>
+    </genClasses>
+    <genClasses ecoreClass="sysarch.ecore#//PartDefinition">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference sysarch.ecore#//PartDefinition/ownedParts"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference sysarch.ecore#//PartDefinition/ownedPorts"/>
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sysarch.ecore#//PartDefinition/superTypes"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//PartDefinition/isAbstract"/>
+    </genClasses>
+    <genClasses ecoreClass="sysarch.ecore#//Part">
+      <genFeatures property="None" notify="false" createChild="false" ecoreFeature="ecore:EReference sysarch.ecore#//Part/owner"/>
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sysarch.ecore#//Part/typedBy"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference sysarch.ecore#//Part/ports"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//Part/multiplicity"/>
+    </genClasses>
+    <genClasses ecoreClass="sysarch.ecore#//Port">
+      <genFeatures property="None" notify="false" createChild="false" ecoreFeature="ecore:EReference sysarch.ecore#//Port/owner"/>
+      <genFeatures property="None" notify="false" createChild="false" ecoreFeature="ecore:EReference sysarch.ecore#//Port/partOwner"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//Port/direction"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//Port/interfaceType"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//Port/isConjugated"/>
+    </genClasses>
+    <genClasses ecoreClass="sysarch.ecore#//Connection">
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sysarch.ecore#//Connection/source"/>
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sysarch.ecore#//Connection/target"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//Connection/kind"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//Connection/interfaceType"/>
+    </genClasses>
+    <genClasses ecoreClass="sysarch.ecore#//ItemFlow">
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sysarch.ecore#//ItemFlow/connection"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//ItemFlow/itemName"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//ItemFlow/itemType"/>
+    </genClasses>
+    <genClasses ecoreClass="sysarch.ecore#//Requirement">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//Requirement/reqId"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//Requirement/text"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//Requirement/verifyMethod"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//Requirement/priority"/>
+    </genClasses>
+    <genClasses ecoreClass="sysarch.ecore#//Allocate">
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sysarch.ecore#//Allocate/from"/>
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sysarch.ecore#//Allocate/to"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//Allocate/rationale"/>
+    </genClasses>
+    <genClasses ecoreClass="sysarch.ecore#//DiagramLayout">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//DiagramLayout/diagramKey"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//DiagramLayout/elementRef"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//DiagramLayout/x"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//DiagramLayout/y"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//DiagramLayout/width"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//DiagramLayout/height"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//DiagramLayout/waypoints"/>
+    </genClasses>
+  </genPackages>
+</genmodel:GenModel>

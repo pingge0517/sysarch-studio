@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ecore:EPackage xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore"
+    name="sysarch" nsURI="http://example.com/sysarch/1.0" nsPrefix="sysarch">
+
+  <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+    <details key="documentation" value="系统架构建模领域元模型：SysML v2 结构子集 + Arcadia 分层标记"/>
+  </eAnnotations>
+
+  <eClassifiers xsi:type="ecore:EEnum" name="Layer">
+    <eLiterals name="OPERATIONAL" value="0" literal="OPERATIONAL"/>
+    <eLiterals name="SYSTEM" value="1" literal="SYSTEM"/>
+    <eLiterals name="LOGICAL" value="2" literal="LOGICAL"/>
+    <eLiterals name="PHYSICAL" value="3" literal="PHYSICAL"/>
+    <eLiterals name="EPBS" value="4" literal="EPBS"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EEnum" name="PortDirection">
+    <eLiterals name="IN" value="0" literal="IN"/>
+    <eLiterals name="OUT" value="1" literal="OUT"/>
+    <eLiterals name="INOUT" value="2" literal="INOUT"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EEnum" name="ConnectionKind">
+    <eLiterals name="ASSEMBLY" value="0" literal="ASSEMBLY"/>
+    <eLiterals name="DELEGATION" value="1" literal="DELEGATION"/>
+    <eLiterals name="ITEM_FLOW" value="2" literal="ITEM_FLOW"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EEnum" name="VerifyMethod">
+    <eLiterals name="ANALYSIS" value="0" literal="ANALYSIS"/>
+    <eLiterals name="INSPECTION" value="1" literal="INSPECTION"/>
+    <eLiterals name="TEST" value="2" literal="TEST"/>
+    <eLiterals name="DEMONSTRATION" value="3" literal="DEMONSTRATION"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="ArchElement" abstract="true">
+    <eAnnotations source="http://www.eclipse.org/emf/2002/Ecore/OCL/Pivot">
+      <details key="NameNotEmpty" value="not name.oclIsUndefined() and name.size() &gt; 0"/>
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="id" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString" iD="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="description" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="layer" eType="#//Layer" defaultValueLiteral="LOGICAL"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="stereotypes" upperBound="-1" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="workItemId" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="rev" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="PartDefinition" eSuperTypes="#//ArchElement">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="ownedParts" upperBound="-1"
+        eType="#//Part" containment="true" eOpposite="#//Part/owner"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="ownedPorts" upperBound="-1"
+        eType="#//Port" containment="true" eOpposite="#//Port/owner"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="superTypes" upperBound="-1" eType="#//PartDefinition"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="isAbstract" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean" defaultValueLiteral="false"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="Part" eSuperTypes="#//ArchElement">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="owner" eType="#//PartDefinition" eOpposite="#//PartDefinition/ownedParts"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="typedBy" lowerBound="1" eType="#//PartDefinition"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="ports" upperBound="-1" eType="#//Port" containment="true" eOpposite="#//Port/partOwner"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="multiplicity" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString" defaultValueLiteral="1"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="Port" eSuperTypes="#//ArchElement">
+    <eAnnotations source="http://www.eclipse.org/emf/2002/Ecore/OCL/Pivot">
+      <details key="InterfaceTypeRequired" value="direction = PortDirection::INOUT or (not interfaceType.oclIsUndefined() and interfaceType.size() &gt; 0)"/>
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="owner" eType="#//PartDefinition" eOpposite="#//PartDefinition/ownedPorts"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="partOwner" eType="#//Part" eOpposite="#//Part/ports"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="direction" eType="#//PortDirection" defaultValueLiteral="INOUT"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="interfaceType" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="isConjugated" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean" defaultValueLiteral="false"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="Connection" eSuperTypes="#//ArchElement">
+    <eAnnotations source="http://www.eclipse.org/emf/2002/Ecore/OCL/Pivot">
+      <details key="PortTypeCompatible" value="kind = ConnectionKind::ASSEMBLY implies source.interfaceType = target.interfaceType"/>
+      <details key="NoSelfLoop" value="source &lt;&gt; target"/>
+      <details key="DirectionCompatible" value="kind = ConnectionKind::ASSEMBLY implies (source.direction &lt;&gt; target.direction or source.direction = PortDirection::INOUT or target.direction = PortDirection::INOUT)"/>
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="source" lowerBound="1" eType="#//Port"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="target" lowerBound="1" eType="#//Port"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="kind" eType="#//ConnectionKind" defaultValueLiteral="ASSEMBLY"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="interfaceType" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="ItemFlow" eSuperTypes="#//ArchElement">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="connection" eType="#//Connection"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="itemName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="itemType" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="Requirement" eSuperTypes="#//ArchElement">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="reqId" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="text" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="verifyMethod" eType="#//VerifyMethod" defaultValueLiteral="TEST"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="priority" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt" defaultValueLiteral="3"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="Allocate" eSuperTypes="#//ArchElement">
+    <eAnnotations source="http://www.eclipse.org/emf/2002/Ecore/OCL/Pivot">
+      <details key="LayerAdjacentOnly" value="(from.layer = Layer::OPERATIONAL and to.layer = Layer::SYSTEM) or (from.layer = Layer::SYSTEM and to.layer = Layer::LOGICAL) or (from.layer = Layer::LOGICAL and to.layer = Layer::PHYSICAL) or (from.layer = Layer::PHYSICAL and to.layer = Layer::EPBS)"/>
+      <details key="NoSelfAllocate" value="from &lt;&gt; to"/>
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="from" lowerBound="1" eType="#//ArchElement"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="to" lowerBound="1" eType="#//ArchElement"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="rationale" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="DiagramLayout" eSuperTypes="#//ArchElement">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="diagramKey" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="elementRef" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="x" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt" defaultValueLiteral="0"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="y" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt" defaultValueLiteral="0"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="width" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt" defaultValueLiteral="180"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="height" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt" defaultValueLiteral="90"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="waypoints" upperBound="-1" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+
+</ecore:EPackage>

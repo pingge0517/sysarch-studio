@@ -6,6 +6,7 @@ WORKDIR /workspace
 COPY gradlew settings.gradle.kts build.gradle.kts gradle.properties ./
 COPY gradle ./gradle
 COPY backend ./backend
+COPY metamodel ./metamodel
 COPY vsm-compiler ./vsm-compiler
 ARG GITHUB_ACTOR=token
 # The GitHub Packages token is mounted as a build secret, so it never lands in an image layer.

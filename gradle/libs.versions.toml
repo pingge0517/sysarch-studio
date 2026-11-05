@@ -5,6 +5,18 @@ java = "21"
 # built on Spring Boot 3.5.5 (sirius-web-parent), so 3.5.5 is the aligned version.
 spring-boot = "3.5.5"
 sirius-web = "2025.8.11"
+# EMF runtime = the versions Sirius Web 2025.8.11 ships (sirius-components-emf). Spec §2.1 says
+# EMF 2.35; Gradle would upgrade a 2.35 pin to Sirius Web's versions anyway, so the generated
+# code targets the 2.35 API level instead (GenModel runtimeVersion=2.35).
+emf-common = "2.31.0"
+emf-ecore = "2.37.0"
+emf-ecore-xmi = "2.38.0"
+emf-edit = "2.22.0"
+# Headless code generation only (metamodel module). codegen 2.24.0 is the newest that runs
+# on emf-common 2.31.
+emf-codegen = "2.24.0"
+emf-codegen-ecore = "2.38.0"
+jdt-core = "3.38.0"
 
 [libraries]
 spring-boot-bom = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "spring-boot" }
@@ -12,6 +24,39 @@ spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-
 spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 sirius-web-starter = { module = "org.eclipse.sirius:sirius-web-starter", version.ref = "sirius-web" }
+
+emf-common = { module = "org.eclipse.emf:org.eclipse.emf.common", version.ref = "emf-common" }
+emf-ecore = { module = "org.eclipse.emf:org.eclipse.emf.ecore", version.ref = "emf-ecore" }
+emf-ecore-xmi = { module = "org.eclipse.emf:org.eclipse.emf.ecore.xmi", version.ref = "emf-ecore-xmi" }
+emf-edit = { module = "org.eclipse.emf:org.eclipse.emf.edit", version.ref = "emf-edit" }
+emf-codegen = { module = "org.eclipse.emf:org.eclipse.emf.codegen", version.ref = "emf-codegen" }
+emf-codegen-ecore = { module = "org.eclipse.emf:org.eclipse.emf.codegen.ecore", version.ref = "emf-codegen-ecore" }
+# EMF's Java merger (JControlModel) loads the JDT AST even on a fresh generation.
+jdt-core = { module = "org.eclipse.jdt:org.eclipse.jdt.core", version.ref = "jdt-core" }
+jdt-ecj = { module = "org.eclipse.jdt:ecj", version.ref = "jdt-core" }
+eclipse-core-resources = { module = "org.eclipse.platform:org.eclipse.core.resources", version = "3.20.200" }
+eclipse-core-runtime = { module = "org.eclipse.platform:org.eclipse.core.runtime", version = "3.31.100" }
+eclipse-core-jobs = { module = "org.eclipse.platform:org.eclipse.core.jobs", version = "3.15.300" }
+eclipse-core-contenttype = { module = "org.eclipse.platform:org.eclipse.core.contenttype", version = "3.9.400" }
+eclipse-core-commands = { module = "org.eclipse.platform:org.eclipse.core.commands", version = "3.12.100" }
+eclipse-core-filesystem = { module = "org.eclipse.platform:org.eclipse.core.filesystem", version = "1.10.400" }
+eclipse-text = { module = "org.eclipse.platform:org.eclipse.text", version = "3.14.100" }
+eclipse-osgi = { module = "org.eclipse.platform:org.eclipse.osgi", version = "3.20.0" }
+eclipse-equinox-common = { module = "org.eclipse.platform:org.eclipse.equinox.common", version = "3.19.100" }
+eclipse-equinox-preferences = { module = "org.eclipse.platform:org.eclipse.equinox.preferences", version = "3.11.100" }
+eclipse-equinox-registry = { module = "org.eclipse.platform:org.eclipse.equinox.registry", version = "3.12.100" }
+eclipse-equinox-app = { module = "org.eclipse.platform:org.eclipse.equinox.app", version = "1.7.100" }
+osgi-service-prefs = { module = "org.osgi:org.osgi.service.prefs", version = "1.1.2" }
+
+[bundles]
+emf-runtime = ["emf-common", "emf-ecore", "emf-ecore-xmi", "emf-edit"]
+emf-codegen = [
+    "emf-common", "emf-ecore", "emf-ecore-xmi", "emf-edit", "emf-codegen", "emf-codegen-ecore",
+    "jdt-core", "jdt-ecj", "eclipse-core-resources", "eclipse-core-runtime", "eclipse-core-jobs",
+    "eclipse-core-contenttype", "eclipse-core-commands", "eclipse-core-filesystem", "eclipse-text",
+    "eclipse-osgi", "eclipse-equinox-common", "eclipse-equinox-preferences", "eclipse-equinox-registry",
+    "eclipse-equinox-app", "osgi-service-prefs",
+]
 
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
