@@ -10,10 +10,12 @@ dependencies {
     implementation(libs.spring.boot.starter.actuator)
     // Used directly by the generated sysarch model/edit code. Same versions Sirius Web brings.
     implementation(libs.bundles.emf.runtime)
-    // The generated SysarchEditPlugin.Implementation extends EMFPlugin.EclipsePlugin, which is only loaded
-    // inside OSGi. Its supertypes are needed to compile, never at runtime (same approach as Sirius' papaya-edit).
-    compileOnly(libs.eclipse.core.runtime) { isTransitive = false }
-    compileOnly(libs.eclipse.osgi) { isTransitive = false }
+    // Eclipse OCL Pivot for constraint checks (T6): the exact verified jar set, without transitive resolution.
+    // It includes org.eclipse.core.runtime and org.eclipse.osgi, which the generated
+    // SysarchEditPlugin.Implementation (extends EMFPlugin.EclipsePlugin, OSGi only) also needs to compile.
+    for (dependency in libs.bundles.ocl.runtime.get()) {
+        implementation("${dependency.module}:${dependency.versionConstraint.requiredVersion}") { isTransitive = false }
+    }
 
     testImplementation(platform(libs.spring.boot.bom))
     testImplementation(libs.spring.boot.starter.test)

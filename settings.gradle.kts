@@ -20,6 +20,16 @@ dependencyResolutionManagement {
                 content { includeGroupByRegex("""org\.eclipse\.sirius(\..*)?""") }
             }
         }
+        // Eclipse OCL (Pivot) is published only as a p2 update site, not to any Maven repository. Its plugin jars
+        // are plain jars, so an artifact-only ivy layout fetches them directly. The pseudo-group keeps every other
+        // dependency away from this repository.
+        ivy {
+            name = "eclipse-ocl-p2"
+            url = uri("https://download.eclipse.org/modeling/mdt/ocl/updates/releases/6.19.0/plugins")
+            patternLayout { artifact("[artifact]_[revision].[ext]") }
+            metadataSources { artifact() }
+            content { includeGroup("eclipse.ocl.p2") }
+        }
     }
 }
 

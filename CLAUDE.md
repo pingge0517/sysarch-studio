@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The spec, `p0-spec-sysarch-vsm.md` (Chinese), is the source of truth for everything below. Work proceeds by running tasks **T1–T9 (spec §8) in order**. Each task starts with a paste-ready instruction block and has hard dependencies (T3 needs T2, T4 needs T3, and so on).
 
-T1 scaffold is in place. The spec §2.2 monorepo lives at the **repository root**, not in a `sysarch-studio/` subfolder. Gradle modules are `metamodel` (EMF codegen tool), `backend` and `vsm-compiler`. T1–T3 are done. T4 and T5 are partly done. The Sirius-independent layers exist: projection, snapshot diffing and auto-sync (`view.refresh`), and the layout store with delete cascade (`view.layout`), tested by `BddSnapshotTest` and `IbdSyncTest`. All of it is blocked on the Sirius Web adapter, which can't be built until the Sirius Web jars resolve. The adapter must render snapshots, apply diffs to open canvases, write layout on drag end, fall back to auto-layout, register the views in the model tree, and pass the manual UI checks. `frontend/` is a separate npm project (Vite + React 18, served by nginx on :3000, which proxies `/api`, `/graphql`, `/actuator` and `/subscriptions` to the backend). Package-level `TODO(Tn)` comments mark where each later task goes.
+T1 scaffold is in place. The spec §2.2 monorepo lives at the **repository root**, not in a `sysarch-studio/` subfolder. Gradle modules are `metamodel` (EMF codegen tool), `backend` and `vsm-compiler`. T1–T3 are done. T4 and T5 are partly done. The Sirius-independent layers exist: projection, snapshot diffing and auto-sync (`view.refresh`), and the layout store with delete cascade (`view.layout`), tested by `BddSnapshotTest` and `IbdSyncTest`. All of it is blocked on the Sirius Web adapter, which can't be built until the Sirius Web jars resolve. The adapter must render snapshots, apply diffs to open canvases, write layout on drag end, fall back to auto-layout, register the views in the model tree, and pass the manual UI checks. T6 is partly done too: `validation.ConstraintValidator` and `ValidationMatrixTest` exist. Hooking validation into save and the IBD create-edge tool needs the same adapter. Without a GitHub token, Gradle can build and test `vsm-compiler` and `metamodel` but not `backend`, because its compile classpath needs Sirius Web. `frontend/` is a separate npm project (Vite + React 18, served by nginx on :3000, which proxies `/api`, `/graphql`, `/actuator` and `/subscriptions` to the backend). Package-level `TODO(Tn)` comments mark where each later task goes.
 
 Deviations from the spec that are already decided:
 - **Spring Boot is 3.5.5, not 3.3.x.** Sirius Web 2025.8.x (pinned at 2025.8.11) is built on Boot 3.5.5, and the spec's reason for its Boot version is alignment with Sirius Web.
@@ -28,6 +28,10 @@ Deviations from the spec that are already decided:
   Also: a node style of the root's type shows every such element in the document (a BDD shows all blocks), while other styles show only what `autoExpand` reaches.
 - **Auto-sync = re-project and diff** (T5). `DiagramSynchronizer` listens to EMF notifications on the model resource and coalesces them into one refresh on the editing context's executor. It re-projects and publishes only the `SnapshotDiff` (insert, delete and update of nodes and edges). It doesn't derive the affected set from `autoExpand` depth as spec T5 step 3 words it: the diff yields exactly the affected set, and also catches cross-reference effects like a renamed type changing every part's sub-label. At 500 elements the median is about 3 ms server side (`build/perf-refresh.json`).
 - **Layout lives in its own resource** (`DiagramLayoutStore`, records are `DiagramLayout` objects). It must never be the model resource, and `LayoutCascade.attach` rejects that. As a result, moving a node raises no model event, and deleting layout can't touch the model. `LayoutCascade` deletes the layout of deleted elements (node records, plus edge records whose ends were deleted) in every diagram. A move to another container is not a deletion. Edge layout refs are edge ids (`style:sourceId->targetId`). Known gap: undoing a delete does not restore its layout.
+- **Constraints are evaluated by Eclipse OCL Pivot, read from the Ecore** (T6). `ConstraintValidator` compiles every `.../OCL/Pivot` annotation of `sysarch.ecore` once and evaluates the invariants on the element's class and superclasses. All 7 are loaded, including `NoSelfAllocate`, which the spec doesn't count. Do not re-implement them in Java. Java only adds the message (Chinese, e.g. `跨层跳过：LA → EPBS`) and the `anchors`, the elements to highlight. There are two entry points:
+  - `validate`/`validateAll`, which runs everything before an edit is committed;
+  - `validateEdgeDrop`, which runs only §3.2's on-drop constraints on a transient Connection that never enters the model.
+- **Eclipse OCL is not on any Maven repository.** It comes from the 6.19.0 p2 update site through the artifact-only ivy repository in `settings.gradle.kts` (pseudo-group `eclipse.ocl.p2`), together with the Xtext 2.33 release it was built with. `libs.bundles.ocl.runtime` is the exact jar set verified standalone and is added non-transitively. The 5 Eclipse platform jars in it are only there so classes load. **Risk:** Guava, Guice and ANTLR 3 may clash with Sirius Web's versions; check once the backend resolves.
 - **Risk for the Sirius adapter, not yet verified against its source:** as far as I know, Sirius Web's diagram event processor re-renders the whole diagram on each change and sends it in full. Meeting "no full redraw" (§5.2, AC-4) may therefore mean pushing `SnapshotDiff`s through our own subscription rather than relying on Sirius' refresh. Check this first when the jars are available.
 - **Generated code is committed** and is not regenerated during the backend build. `VsmCompilerTest.committedGeneratedCodeIsUpToDate` fails if `view/generated` differs from a fresh generation.
 
@@ -58,7 +62,7 @@ cd frontend && npm ci && npm run build                             # frontend ty
 ./gradlew :vsm-compiler:test --tests "*misspelledAppliesTo*"   # single test
 ./gradlew :backend:test --tests "*BddSnapshotTest*"      # T4 (projection of the generated BDD; IbdProjectionTest covers border nodes)
 ./gradlew :backend:test --tests "*IbdSyncTest*"          # T5 (also writes backend/build/perf-refresh.json)
-./gradlew :backend:test --tests "*ValidationMatrixTest*" # T6
+./gradlew :backend:test --tests "*ValidationMatrixTest*" # T6 (6 spec cases + edge-drop/save paths, via Eclipse OCL)
 ./gradlew :backend:test --tests "*PolarionSyncIT*"       # T7 (WireMock)
 ```
 
@@ -124,3 +128,8 @@ backend → polarion proxy → Polarion REST v2   (browser never calls Polarion 
 ## Out of scope for P0 (spec §1.3)
 
 Parametric solving and simulation, real-time collaboration (use edit locks instead), a custom metamodel engine or renderer, diagrams beyond BDD, IBD and one allocation table, XMI import/export, report templates and SysML v2 text export.
+
+## Gradle troubleshooting
+
+- `Classpath entry points to a non-existent location ... gradle-dist ...` or `Could not read workspace metadata ... kotlin-dsl`: a stale Kotlin DSL cache. Run `./gradlew --stop`, then delete `.gradle/` and `~/.gradle/caches/8.14.3/kotlin-dsl`.
+- `Remote host terminated the handshake` while downloading: a transient network error on this machine; rerun.
