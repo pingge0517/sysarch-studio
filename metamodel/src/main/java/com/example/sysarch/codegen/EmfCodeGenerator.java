@@ -2,6 +2,7 @@ package com.example.sysarch.codegen;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -112,6 +113,8 @@ public final class EmfCodeGenerator {
         }
 
         relocateNonJavaOutput(backend);
+        normalizeLineEndings(backend.resolve(JAVA_DIR).resolve(MODEL_PACKAGE_PATH));
+        normalizeLineEndings(backend.resolve(RESOURCES_DIR).resolve("plugin.properties"));
         System.out.println("Generated EMF model + edit code into " + backend.resolve(JAVA_DIR).resolve(MODEL_PACKAGE_PATH));
     }
 
@@ -191,6 +194,27 @@ public final class EmfCodeGenerator {
             Files.deleteIfExists(backend.resolve(eclipseOnly));
         }
         deleteRecursively(backend.resolve("META-INF"));
+    }
+
+    /**
+     * EMF's template output ignores {@code GenModel.setLineDelimiter} and uses the platform separator
+     * (CRLF on Windows, plus lone CRs for blank lines in plugin.properties). Rewrite every generated
+     * text file to LF so the output is byte-identical on every OS (spec §11.2 #4).
+     */
+    private static void normalizeLineEndings(Path path) throws IOException {
+        if (!Files.exists(path)) {
+            return;
+        }
+        try (Stream<Path> walk = Files.walk(path)) {
+            for (Path file : walk.filter(Files::isRegularFile)
+                    .filter(f -> f.toString().endsWith(".java") || f.toString().endsWith(".properties")).toList()) {
+                String content = Files.readString(file, StandardCharsets.ISO_8859_1);
+                String normalized = content.replace("\r\n", "\n").replace('\r', '\n');
+                if (!normalized.equals(content)) {
+                    Files.writeString(file, normalized, StandardCharsets.ISO_8859_1);
+                }
+            }
+        }
     }
 
     private static void deleteRecursively(Path path) {
