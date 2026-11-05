@@ -20,6 +20,13 @@ dependencyResolutionManagement {
                 content { includeGroupByRegex("""org\.eclipse\.sirius(\..*)?""") }
             }
         }
+        // Acceleo Query Language (AQL), Sirius Web's expression interpreter. Sirius declares this repository in
+        // its own poms (sirius-components-interpreter), but Gradle ignores repositories declared in poms.
+        maven {
+            name = "eclipse-acceleo"
+            url = uri("https://download.eclipse.org/acceleo/updates/releases/4.0/R202407021157")
+            content { includeGroup("org.eclipse.acceleo") }
+        }
         // Eclipse OCL (Pivot) is published only as a p2 update site, not to any Maven repository. Its plugin jars
         // are plain jars, so an artifact-only ivy layout fetches them directly. The pseudo-group keeps every other
         // dependency away from this repository.
