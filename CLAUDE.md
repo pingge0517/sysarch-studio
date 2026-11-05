@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The spec, `p0-spec-sysarch-vsm.md` (Chinese), is the source of truth for everything below. Work proceeds by running tasks **T1–T9 (spec §8) in order**. Each task starts with a paste-ready instruction block and has hard dependencies (T3 needs T2, T4 needs T3, and so on).
 
-T1 scaffold is in place. The spec §2.2 monorepo lives at the **repository root**, not in a `sysarch-studio/` subfolder. Gradle modules are `metamodel` (EMF codegen tool), `backend` and `vsm-compiler`. T1–T3 are done. `frontend/` is a separate npm project (Vite + React 18, served by nginx on :3000, which proxies `/api`, `/graphql`, `/actuator` and `/subscriptions` to the backend). Package-level `TODO(Tn)` comments mark where each later task goes.
+T1 scaffold is in place. The spec §2.2 monorepo lives at the **repository root**, not in a `sysarch-studio/` subfolder. Gradle modules are `metamodel` (EMF codegen tool), `backend` and `vsm-compiler`. T1–T3 are done. T4 is partly done: the Sirius-independent projection layer and `BddSnapshotTest` exist. Still missing are the Sirius Web adapter, registering the views in the model tree (T4 steps 2–3 in the UI), and the manual UI check, all blocked until the Sirius Web jars can be resolved. `frontend/` is a separate npm project (Vite + React 18, served by nginx on :3000, which proxies `/api`, `/graphql`, `/actuator` and `/subscriptions` to the backend). Package-level `TODO(Tn)` comments mark where each later task goes.
 
 Deviations from the spec that are already decided:
 - **Spring Boot is 3.5.5, not 3.3.x.** Sirius Web 2025.8.x (pinned at 2025.8.11) is built on Boot 3.5.5, and the spec's reason for its Boot version is alignment with Sirius Web.
@@ -20,6 +20,11 @@ Deviations from the spec that are already decided:
 - **Several YAML files may share a viewpoint id** if they declare it identically. Both spec files declare `sysarch.core`, so a literal reading of §4.2's "conflict fails the build" would reject the spec's own files. A conflict is the same id with a different label, metamodelUri or priority. Representation ids are global and must be unique.
 - **The VSM schema's field set is exactly what spec §4.2–§4.4 use**, which is more than §4.2's table lists. Adding a field means changing `views/schema/vsm.schema.json`, `ViewModel`, the templates and the descriptor API, and it needs review (spec §10.1).
 - Beyond §4.2's three fatal checks (unknown class, unknown feature, unknown reference endpoint), vsm-compiler also rejects the two §4.4 pitfalls: a border node whose `affiliationFeature` is not a container reference, and a `create-edge` tool without `validateOnDrop: true`. It also rejects a `create-child` target type that the containment feature can't hold.
+- **Diagram content comes from our projection layer** (T4), `view.projection.DiagramProjector`. It turns (description, root, active filters) into a value-typed `DiagramSnapshot`, and the Sirius adapter only renders that. This keeps the model the single source of truth (§5.1), makes snapshot tests meaningful, and gives T5 something to diff. The P0 projection rules are documented on `DiagramProjector`. Two of them were product decisions made with the user, because the verbatim BDD YAML can't express them:
+  - an edge end with no node of its own is drawn to the node of its `typedBy`, with the label read from that end. So a BDD composition goes owner block → part's type, labelled with the part name;
+  - when several node styles apply to one class, `isAbstract = true` elements get the last style and the rest get the first (`block`/`abstractBlock`).
+
+  Also: a node style of the root's type shows every such element in the document (a BDD shows all blocks), while other styles show only what `autoExpand` reaches. Edge styles with the same type and ends are alternatives, and the first wins; IBD `assembly` vs `delegation` therefore still needs a rule in T5, e.g. by `Connection.kind`.
 - **Generated code is committed** and is not regenerated during the backend build. `VsmCompilerTest.committedGeneratedCodeIsUpToDate` fails if `view/generated` differs from a fresh generation.
 
 In the spec, code blocks marked `[COPY]` must be written to disk **verbatim**, with no edits: `metamodel/sysarch.ecore` (§3.1), `views/sysarch-core.vsm.yaml` (§4.3), `views/sysarch-ibd.vsm.yaml` (§4.4) and `backend/src/main/resources/api/polarion-proxy.openapi.yaml` (§6.1). Items marked `[GENERATE]` are produced by Claude Code or by the generators.
@@ -47,7 +52,7 @@ cd frontend && npm ci && npm run build                             # frontend ty
 ./gradlew :vsm-compiler:generateViews                    # T3: regenerate backend view/generated from views/*.vsm.yaml (exit 1 + file:line on any error)
 ./gradlew :vsm-compiler:test                             # T3 (also checks committed generated code is fresh and compiles)
 ./gradlew :vsm-compiler:test --tests "*misspelledAppliesTo*"   # single test
-./gradlew :backend:test --tests "*BddSnapshotTest*"      # T4
+./gradlew :backend:test --tests "*BddSnapshotTest*"      # T4 (projection of the generated BDD; IbdProjectionTest covers border nodes)
 ./gradlew :backend:test --tests "*IbdSyncTest*"          # T5 (also writes build/perf-refresh.json)
 ./gradlew :backend:test --tests "*ValidationMatrixTest*" # T6
 ./gradlew :backend:test --tests "*PolarionSyncIT*"       # T7 (WireMock)
