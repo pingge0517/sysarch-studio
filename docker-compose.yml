@@ -1,0 +1,51 @@
+# AC-1: `docker compose up -d`, then http://localhost:8080/actuator/health must report UP within 60s.
+# Values come from .env (copy .env.example). Nothing secret is hardcoded here.
+name: sysarch-studio
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: sysarch
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d sysarch"]
+      interval: 5s
+      retries: 10
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      args:
+        GITHUB_ACTOR: ${GITHUB_ACTOR:-token}
+      secrets:
+        - github_token
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      POSTGRES_URL: jdbc:postgresql://postgres:5432/sysarch
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POLARION_BASE_URL: ${POLARION_BASE_URL:-}
+      POLARION_TOKEN: ${POLARION_TOKEN:-}
+      SYNC_RATE_LIMIT_RPS: ${SYNC_RATE_LIMIT_RPS:-10}
+      VIEW_REFRESH_BUDGET_MS: ${VIEW_REFRESH_BUDGET_MS:-2000}
+      CONSISTENCY_STRATEGY: ${CONSISTENCY_STRATEGY:-MODEL_WINS}
+    ports: ["8080:8080"]
+
+  frontend:
+    build: ./frontend
+    depends_on: [backend]
+    ports: ["3000:3000"]
+
+secrets:
+  github_token:
+    environment: GITHUB_TOKEN
+
+volumes:
+  pgdata:

@@ -1,0 +1,17 @@
+# Versions are locked for the whole of P0 (spec §2.1). Do not bump without review.
+[versions]
+java = "21"
+# Spec §2.1 says 3.3.x "aligned with the Sirius Web starter"; Sirius Web 2025.8.x is
+# built on Spring Boot 3.5.5 (sirius-web-parent), so 3.5.5 is the aligned version.
+spring-boot = "3.5.5"
+sirius-web = "2025.8.11"
+
+[libraries]
+spring-boot-bom = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "spring-boot" }
+spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+sirius-web-starter = { module = "org.eclipse.sirius:sirius-web-starter", version.ref = "sirius-web" }
+
+[plugins]
+spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }

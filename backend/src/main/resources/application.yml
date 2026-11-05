@@ -1,0 +1,54 @@
+# All connection settings and secrets come from environment variables (spec §9.3).
+# Never put credentials in this file.
+server:
+  port: 8080
+
+spring:
+  application:
+    name: sysarch-studio
+  datasource:
+    url: ${POSTGRES_URL}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: none
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  liquibase:
+    # Sirius Web's own schema (shipped in sirius-web-infrastructure).
+    change-log: classpath:db/db.changelog-master.xml
+  mvc:
+    pathmatch:
+      matching-strategy: ANT_PATH_MATCHER
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+sirius:
+  web:
+    enabled: "*"
+  components:
+    cors:
+      allowedOriginPatterns: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
+      allowedCredentials: true
+
+# Our own settings. Not read by any code yet (TODO T5/T7/T8).
+sysarch:
+  polarion:
+    base-url: ${POLARION_BASE_URL:}
+    rate-limit-rps: ${SYNC_RATE_LIMIT_RPS:10}
+  view:
+    refresh-budget-ms: ${VIEW_REFRESH_BUDGET_MS:2000}
+  consistency:
+    strategy: ${CONSISTENCY_STRATEGY:}
