@@ -75,7 +75,36 @@ public final class DiagramProjector {
      * @throws IllegalArgumentException if the root has the wrong type or a filter id is unknown
      */
     public static DiagramSnapshot project(DiagramDescription description, EObject root, Set<String> activeFilterIds) {
-        return new Projection(description, root, activeFilterIds).run();
+        return projectWithElements(description, root, activeFilterIds).snapshot();
+    }
+
+    /**
+     * Like {@link #project(DiagramDescription, EObject, Set)}, but also returns the model element behind every id in
+     * the snapshot (node elements, edge label elements and edge ends). Renderers that need the EMF objects themselves,
+     * such as the Sirius Web adapter, use this.
+     */
+    public static ProjectionResult projectWithElements(DiagramDescription description, EObject root, Set<String> activeFilterIds) {
+        Projection projection = new Projection(description, root, activeFilterIds);
+        DiagramSnapshot snapshot = projection.run();
+        return new ProjectionResult(snapshot, Map.copyOf(projection.elementsById), Map.copyOf(projection.edgeEnds));
+    }
+
+    /**
+     * @param elements element id to model element, for every id that appears in the snapshot
+     * @param edgeEnds edge id to the element the edge belongs to and its unresolved end elements
+     */
+    public record ProjectionResult(DiagramSnapshot snapshot, Map<String, EObject> elements, Map<String, EdgeEnds> edgeEnds) {
+
+        public EObject element(String id) {
+            return this.elements.get(id);
+        }
+    }
+
+    /**
+     * The model behind one edge, before {@code typedBy} resolution: for a BDD composition the owner block, the owner
+     * block and the Part; for a connection the Connection and its two ports.
+     */
+    public record EdgeEnds(EObject domainElement, EObject source, EObject target) {
     }
 
     private static final class Projection {
@@ -99,6 +128,10 @@ public final class DiagramProjector {
         private final List<DiagramSnapshot.Node> orderedNodes = new ArrayList<>();
 
         private final Set<String> nodeIds = new HashSet<>();
+
+        private final Map<String, EObject> elementsById = new HashMap<>();
+
+        private final Map<String, EdgeEnds> edgeEnds = new HashMap<>();
 
         Projection(DiagramDescription description, EObject root, Set<String> activeFilterIds) {
             this.description = description;
@@ -133,6 +166,7 @@ public final class DiagramProjector {
             for (EObject element : this.scope) {
                 this.projectNode(element, border, true);
             }
+            this.elementsById.put(elementId(this.root), this.root);
             return new DiagramSnapshot(this.description.id(), elementId(this.root), this.orderedNodes, this.edges());
         }
 
@@ -176,6 +210,7 @@ public final class DiagramProjector {
                     nullToEmpty(LabelTemplates.render(style.labelTemplate(), element)), LabelTemplates.render(style.subLabelTemplate(), element),
                     compartments);
             this.nodes.put(element, node);
+            this.elementsById.put(id, element);
             this.orderedNodes.add(node);
         }
 
@@ -220,6 +255,8 @@ public final class DiagramProjector {
                 return Optional.empty();
             }
             String id = idPrefix + ":" + elementId(source) + "->" + elementId(target);
+            this.elementsById.put(elementId(labelElement), labelElement);
+            this.edgeEnds.putIfAbsent(id, new EdgeEnds(element, source, target));
             return Optional.of(new DiagramSnapshot.Edge(id, elementId(labelElement), style.id(), sourceNode.id(), targetNode.id(),
                     nullToEmpty(LabelTemplates.render(style.labelTemplate(), labelElement))));
         }
