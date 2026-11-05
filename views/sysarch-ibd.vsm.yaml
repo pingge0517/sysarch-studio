@@ -1,0 +1,85 @@
+vsm: "1.0"
+viewpoint:
+  id: "sysarch.core"
+  label: "系统架构建模"
+  metamodelUri: "http://example.com/sysarch/1.0"
+  priority: 10
+
+representations:
+  - id: "ibd"
+    label: "内部块图（IBD）"
+    kind: "diagram"
+    domainClass: "sysarch:PartDefinition"
+    synchronization: "auto"
+    refresh:
+      mode: "incremental"
+      budgetMs: 2000
+    autoExpand:
+      - feature: "ownedParts"
+        maxDepth: 1
+      - feature: "ownedPorts"
+        maxDepth: 1
+    nodeStyles:
+      - id: "part"
+        appliesTo: "sysarch:Part"
+        shape: "rectangle"
+        color: "#FFFFFF"
+        borderColor: "#1A2B4A"
+        labelExpression: "{name}"
+        subLabelExpression: "{typedBy.name} [{multiplicity}]"
+      - id: "portOnPart"
+        appliesTo: "sysarch:Port"
+        shape: "square"
+        width: 10
+        height: 10
+        color: "#FFFFFF"
+        borderColor: "#1A2B4A"
+        isBorderNode: true
+        affiliationFeature: "partOwner"
+        labelPosition: "outside"
+        labelExpression: "{name}"
+      - id: "portOnDefinition"
+        appliesTo: "sysarch:Port"
+        shape: "square"
+        width: 12
+        height: 12
+        color: "#FFFFFF"
+        borderColor: "#1A2B4A"
+        isBorderNode: true
+        affiliationFeature: "owner"
+        labelPosition: "outside"
+        labelExpression: "{name}"
+    edgeStyles:
+      - id: "assembly"
+        domainClass: "sysarch:Connection"
+        sourceEnd: "source"
+        targetEnd: "target"
+        routing: "manhattan"
+        color: "#1A2B4A"
+        labelExpression: "{interfaceType}"
+      - id: "delegation"
+        domainClass: "sysarch:Connection"
+        sourceEnd: "source"
+        targetEnd: "target"
+        routing: "straight"
+        lineStyle: "dashed"
+        color: "#758092"
+        labelExpression: ""
+      - id: "itemFlow"
+        domainClass: "sysarch:ItemFlow"
+        sourceEnd: "connection"
+        targetEnd: "connection"
+        routing: "straight"
+        color: "#BABFC9"
+        labelExpression: "{itemName} : {itemType}"
+    tools:
+      - id: "createPart"
+        label: "新建部件"
+        action: "create-child"
+        targetClass: "sysarch:Part"
+        containmentFeature: "ownedParts"
+      - id: "connect"
+        label: "建立连接"
+        action: "create-edge"
+        targetClass: "sysarch:Connection"
+        validateOnDrop: true

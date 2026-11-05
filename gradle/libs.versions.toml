@@ -17,6 +17,8 @@ emf-edit = "2.22.0"
 emf-codegen = "2.24.0"
 emf-codegen-ecore = "2.38.0"
 jdt-core = "3.38.0"
+# vsm-compiler. snakeyaml, freemarker, jackson and slf4j versions come from the Spring Boot BOM.
+json-schema-validator = "1.5.9"
 
 [libraries]
 spring-boot-bom = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "spring-boot" }
@@ -24,6 +26,14 @@ spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-
 spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 sirius-web-starter = { module = "org.eclipse.sirius:sirius-web-starter", version.ref = "sirius-web" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+spring-context = { module = "org.springframework:spring-context" }
+
+snakeyaml = { module = "org.yaml:snakeyaml" }
+freemarker = { module = "org.freemarker:freemarker" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind" }
+json-schema-validator = { module = "com.networknt:json-schema-validator", version.ref = "json-schema-validator" }
+slf4j-nop = { module = "org.slf4j:slf4j-nop" }
 
 emf-common = { module = "org.eclipse.emf:org.eclipse.emf.common", version.ref = "emf-common" }
 emf-ecore = { module = "org.eclipse.emf:org.eclipse.emf.ecore", version.ref = "emf-ecore" }

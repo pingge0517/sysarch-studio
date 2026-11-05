@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/sysarch/vsm/1.0/vsm.schema.json",
+  "title": "VSM DSL 1.0",
+  "description": "Declarative view definitions (spec §4.2). The field set is closed: it is exactly what §4.2-§4.4 use. New fields need review (spec §10.1).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["vsm", "viewpoint", "representations"],
+  "properties": {
+    "vsm": { "const": "1.0" },
+    "viewpoint": { "$ref": "#/$defs/viewpoint" },
+    "representations": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/representation" }
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z][A-Za-z0-9]*$" },
+    "classRef": {
+      "description": "<nsPrefix>:<EClass>, e.g. sysarch:PartDefinition",
+      "type": "string",
+      "pattern": "^[a-z][A-Za-z0-9_]*:[A-Z][A-Za-z0-9_]*$"
+    },
+    "featureName": { "type": "string", "pattern": "^[a-z][A-Za-z0-9_]*$" },
+    "template": {
+      "description": "Label template; {feature} or {ref.feature} is interpolated, everything else is literal",
+      "type": "string"
+    },
+    "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+    "positiveInt": { "type": "integer", "minimum": 1 },
+    "viewpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "metamodelUri"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][A-Za-z0-9]*(\\.[a-z][A-Za-z0-9]*)*$" },
+        "label": { "type": "string" },
+        "metamodelUri": { "type": "string" },
+        "priority": { "type": "integer" }
+      }
+    },
+    "representation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "kind", "synchronization"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "label": { "type": "string" },
+        "kind": { "enum": ["diagram", "table"] },
+        "domainClass": { "$ref": "#/$defs/classRef" },
+        "synchronization": { "enum": ["auto", "manual"] },
+        "refresh": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "budgetMs"],
+          "properties": {
+            "mode": { "const": "incremental" },
+            "budgetMs": { "$ref": "#/$defs/positiveInt" }
+          }
+        },
+        "autoExpand": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["feature", "maxDepth"],
+            "properties": {
+              "feature": { "$ref": "#/$defs/featureName" },
+              "maxDepth": { "$ref": "#/$defs/positiveInt" }
+            }
+          }
+        },
+        "filters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "label", "expression"],
+            "properties": {
+              "id": { "$ref": "#/$defs/id" },
+              "label": { "type": "string" },
+              "expression": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "nodeStyles": { "type": "array", "items": { "$ref": "#/$defs/nodeStyle" } },
+        "edgeStyles": { "type": "array", "items": { "$ref": "#/$defs/edgeStyle" } },
+        "tools": { "type": "array", "items": { "$ref": "#/$defs/tool" } }
+      },
+      "if": { "properties": { "kind": { "const": "diagram" } } },
+      "then": { "required": ["domainClass", "nodeStyles"] }
+    },
+    "nodeStyle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "appliesTo"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "appliesTo": { "$ref": "#/$defs/classRef" },
+        "shape": { "enum": ["rectangle", "square"] },
+        "color": { "$ref": "#/$defs/color" },
+        "borderColor": { "$ref": "#/$defs/color" },
+        "borderWidth": { "$ref": "#/$defs/positiveInt" },
+        "headerBold": { "type": "boolean" },
+        "italic": { "type": "boolean" },
+        "width": { "$ref": "#/$defs/positiveInt" },
+        "height": { "$ref": "#/$defs/positiveInt" },
+        "isBorderNode": { "type": "boolean" },
+        "affiliationFeature": { "$ref": "#/$defs/featureName" },
+        "labelPosition": { "enum": ["inside", "outside"] },
+        "labelExpression": { "$ref": "#/$defs/template" },
+        "subLabelExpression": { "$ref": "#/$defs/template" },
+        "compartments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["feature", "label", "itemExpression"],
+            "properties": {
+              "feature": { "$ref": "#/$defs/featureName" },
+              "label": { "type": "string" },
+              "itemExpression": { "$ref": "#/$defs/template" }
+            }
+          }
+        }
+      }
+    },
+    "edgeStyle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "domainClass", "sourceEnd", "targetEnd"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "label": { "$ref": "#/$defs/template" },
+        "labelExpression": { "$ref": "#/$defs/template" },
+        "domainClass": { "$ref": "#/$defs/classRef" },
+        "sourceEnd": { "type": "string", "pattern": "^(self|[a-z][A-Za-z0-9_]*)$" },
+        "targetEnd": { "type": "string", "pattern": "^(self|[a-z][A-Za-z0-9_]*)$" },
+        "routing": { "enum": ["straight", "manhattan"] },
+        "arrow": { "enum": ["hollow-triangle", "filled-diamond"] },
+        "lineStyle": { "enum": ["solid", "dashed"] },
+        "color": { "$ref": "#/$defs/color" }
+      }
+    },
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "action"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "label": { "type": "string" },
+        "action": { "enum": ["create-child", "create-edge", "external-link"] },
+        "targetClass": { "$ref": "#/$defs/classRef" },
+        "containmentFeature": { "$ref": "#/$defs/featureName" },
+        "linkType": { "enum": ["POLARION_WORKITEM"] },
+        "validateOnDrop": { "type": "boolean" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "action": { "const": "create-child" } } },
+          "then": { "required": ["targetClass", "containmentFeature"] }
+        },
+        {
+          "if": { "properties": { "action": { "const": "create-edge" } } },
+          "then": { "required": ["targetClass", "validateOnDrop"] }
+        },
+        {
+          "if": { "properties": { "action": { "const": "external-link" } } },
+          "then": { "required": ["linkType"] }
+        }
+      ]
+    }
+  }
+}

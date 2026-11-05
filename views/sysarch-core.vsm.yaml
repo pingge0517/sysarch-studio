@@ -1,0 +1,78 @@
+vsm: "1.0"
+viewpoint:
+  id: "sysarch.core"
+  label: "系统架构建模"
+  metamodelUri: "http://example.com/sysarch/1.0"
+  priority: 10
+
+representations:
+  - id: "bdd"
+    label: "块定义图（BDD）"
+    kind: "diagram"
+    domainClass: "sysarch:PartDefinition"
+    synchronization: "auto"
+    refresh:
+      mode: "incremental"
+      budgetMs: 2000
+    autoExpand:
+      - feature: "ownedParts"
+        maxDepth: 3
+      - feature: "ownedPorts"
+        maxDepth: 1
+    filters:
+      - id: "hideAbstract"
+        label: "隐藏抽象块"
+        expression: "not isAbstract"
+    nodeStyles:
+      - id: "block"
+        appliesTo: "sysarch:PartDefinition"
+        shape: "rectangle"
+        color: "#FFFFFF"
+        borderColor: "#1A2B4A"
+        borderWidth: 1
+        headerBold: true
+        labelExpression: "{name}"
+        subLabelExpression: "{layer}"
+        compartments:
+          - feature: "ownedPorts"
+            label: "ports"
+            itemExpression: "{name} : {interfaceType}"
+      - id: "abstractBlock"
+        appliesTo: "sysarch:PartDefinition"
+        shape: "rectangle"
+        color: "#F2F3F5"
+        borderColor: "#758092"
+        italic: true
+        labelExpression: "{name}"
+    edgeStyles:
+      - id: "generalization"
+        label: ""
+        domainClass: "sysarch:PartDefinition"
+        sourceEnd: "self"
+        targetEnd: "superTypes"
+        routing: "straight"
+        arrow: "hollow-triangle"
+        color: "#758092"
+      - id: "composition"
+        label: "{name}"
+        domainClass: "sysarch:PartDefinition"
+        sourceEnd: "self"
+        targetEnd: "ownedParts"
+        routing: "manhattan"
+        arrow: "filled-diamond"
+        color: "#1A2B4A"
+    tools:
+      - id: "createPart"
+        label: "新建部件"
+        action: "create-child"
+        targetClass: "sysarch:Part"
+        containmentFeature: "ownedParts"
+      - id: "createPort"
+        label: "新建端口"
+        action: "create-child"
+        targetClass: "sysarch:Port"
+        containmentFeature: "ownedPorts"
+      - id: "bindWorkItem"
+        label: "绑定 Polarion 工作项"
+        action: "external-link"
+        linkType: "POLARION_WORKITEM"

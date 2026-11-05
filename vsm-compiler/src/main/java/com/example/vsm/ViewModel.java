@@ -1,0 +1,118 @@
+package com.example.vsm;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+/**
+ * Template data, built from schema- and metamodel-valid YAML. Enum-valued YAML strings are already mapped to
+ * the Java constant names of the descriptor API ({@code hollow-triangle} becomes {@code HOLLOW_TRIANGLE}).
+ * Absent optional values stay null, so the templates emit only what the YAML says.
+ */
+public final class ViewModel {
+
+    public record Viewpoint(String id, String label, String metamodelUri, int priority, List<RepresentationRef> representations) {
+    }
+
+    /** @param className generated provider class; null for a table placeholder */
+    public record RepresentationRef(String id, String label, String kind, String className) {
+    }
+
+    public record Diagram(String sourceFile, String className, String id, String label, String domainType, String synchronization,
+            Integer refreshBudgetMs, List<AutoExpand> autoExpands, List<Filter> filters, List<Node> nodes, List<Edge> edges,
+            List<Tool> tools) {
+    }
+
+    public record AutoExpand(String feature, int maxDepth) {
+    }
+
+    public record Filter(String id, String label, String expression) {
+    }
+
+    /** @param affiliationFeature non-null exactly for border nodes */
+    public record Node(String id, String appliesTo, String shape, String color, String borderColor, Integer borderWidth, boolean headerBold,
+            boolean italic, Integer width, Integer height, String affiliationFeature, String labelPosition, String labelTemplate,
+            String subLabelTemplate, List<Compartment> compartments) {
+    }
+
+    public record Compartment(String feature, String label, String itemTemplate) {
+    }
+
+    public record Edge(String id, String domainType, String sourceEnd, String targetEnd, String routing, String arrow, String lineStyle,
+            String color, String labelTemplate) {
+    }
+
+    public record Tool(String id, String label, String action, String targetClass, String containmentFeature, String linkType,
+            boolean validateOnDrop) {
+    }
+
+    private final Map<String, Viewpoint> viewpoints = new LinkedHashMap<>();
+
+    private final List<Diagram> diagrams = new ArrayList<>();
+
+    List<Viewpoint> viewpoints() {
+        return List.copyOf(this.viewpoints.values());
+    }
+
+    List<Diagram> diagrams() {
+        return List.copyOf(this.diagrams);
+    }
+
+    /** Adds one validated file. Files and representations keep their order, so output is deterministic. */
+    void add(String sourceFile, YamlNode document) {
+        YamlNode vp = document.get("viewpoint");
+        Viewpoint viewpoint = this.viewpoints.computeIfAbsent(vp.text("id"), id -> new Viewpoint(id, vp.text("label"),
+                vp.text("metamodelUri"), vp.has("priority") ? vp.integer("priority") : 0, new ArrayList<>()));
+        for (YamlNode representation : document.items("representations")) {
+            String id = representation.text("id");
+            boolean diagram = "diagram".equals(representation.text("kind"));
+            String className = diagram ? className(id) : null;
+            viewpoint.representations().add(new RepresentationRef(id, representation.text("label"), diagram ? "DIAGRAM" : "TABLE", className));
+            if (diagram) {
+                this.diagrams.add(diagram(sourceFile, className, representation));
+            }
+        }
+    }
+
+    /** {@code bdd} becomes {@code BddDiagramDescriptionProvider} (spec §4.5). */
+    static String className(String representationId) {
+        return Character.toUpperCase(representationId.charAt(0)) + representationId.substring(1) + "DiagramDescriptionProvider";
+    }
+
+    private static Diagram diagram(String sourceFile, String className, YamlNode r) {
+        YamlNode refresh = r.get("refresh");
+        return new Diagram(sourceFile, className, r.text("id"), r.text("label"), Metamodel.domainType(r.text("domainClass")),
+                constant(r.text("synchronization")), refresh == null ? null : refresh.integer("budgetMs"),
+                r.items("autoExpand").stream().map(a -> new AutoExpand(a.text("feature"), a.integer("maxDepth"))).toList(),
+                r.items("filters").stream().map(f -> new Filter(f.text("id"), f.text("label"), f.text("expression"))).toList(),
+                r.items("nodeStyles").stream().map(ViewModel::node).toList(),
+                r.items("edgeStyles").stream().map(ViewModel::edge).toList(),
+                r.items("tools").stream().map(ViewModel::tool).toList());
+    }
+
+    private static Node node(YamlNode n) {
+        return new Node(n.text("id"), Metamodel.domainType(n.text("appliesTo")), constant(n.text("shape")), n.text("color"),
+                n.text("borderColor"), n.integer("borderWidth"), n.bool("headerBold"), n.bool("italic"), n.integer("width"),
+                n.integer("height"), n.bool("isBorderNode") ? n.text("affiliationFeature") : null, constant(n.text("labelPosition")),
+                n.text("labelExpression"), n.text("subLabelExpression"),
+                n.items("compartments").stream().map(c -> new Compartment(c.text("feature"), c.text("label"), c.text("itemExpression"))).toList());
+    }
+
+    private static Edge edge(YamlNode e) {
+        String label = e.has("labelExpression") ? e.text("labelExpression") : e.text("label");
+        return new Edge(e.text("id"), Metamodel.domainType(e.text("domainClass")), e.text("sourceEnd"), e.text("targetEnd"),
+                constant(e.text("routing")), constant(e.text("arrow")), constant(e.text("lineStyle")), e.text("color"), label);
+    }
+
+    private static Tool tool(YamlNode t) {
+        String targetClass = t.text("targetClass");
+        return new Tool(t.text("id"), t.text("label"), constant(t.text("action")), targetClass == null ? null : Metamodel.domainType(targetClass),
+                t.text("containmentFeature"), t.text("linkType"), t.bool("validateOnDrop"));
+    }
+
+    private static String constant(String yamlValue) {
+        return yamlValue == null ? null : yamlValue.toUpperCase(Locale.ROOT).replace('-', '_');
+    }
+}

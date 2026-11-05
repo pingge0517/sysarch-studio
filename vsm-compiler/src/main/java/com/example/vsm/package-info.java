@@ -1,8 +1,9 @@
 /**
- * VSM compiler: views/*.vsm.yaml to Sirius Web DiagramDescription Java sources.
+ * VSM compiler: {@code views/*.vsm.yaml} to the backend's generated {@code DiagramDescription} providers.
  *
- * <p>TODO(T3): parse YAML, cross-check against the metamodel, generate from FreeMarker templates,
- * write the registry. Output must be byte-for-byte deterministic; any validation error prints
+ * <p>Pipeline ({@link com.example.vsm.VsmCompiler}): parse YAML with line numbers, check it against
+ * {@code views/schema/vsm.schema.json}, cross-check it against {@code metamodel/sysarch.ecore}, render the
+ * FreeMarker templates, write the registry. Output is byte-for-byte deterministic. Any error prints
  * {@code views/<file>:<line> <message>} and exits with code 1.
  */
 package com.example.vsm;

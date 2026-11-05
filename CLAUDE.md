@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The spec, `p0-spec-sysarch-vsm.md` (Chinese), is the source of truth for everything below. Work proceeds by running tasks **T1–T9 (spec §8) in order**. Each task starts with a paste-ready instruction block and has hard dependencies (T3 needs T2, T4 needs T3, and so on).
 
-T1 scaffold is in place. The spec §2.2 monorepo lives at the **repository root**, not in a `sysarch-studio/` subfolder. Gradle modules are `backend` and `vsm-compiler`. `frontend/` is a separate npm project (Vite + React 18, served by nginx on :3000, which proxies `/api`, `/graphql`, `/actuator` and `/subscriptions` to the backend). Package-level `TODO(Tn)` comments mark where each later task goes.
+T1 scaffold is in place. The spec §2.2 monorepo lives at the **repository root**, not in a `sysarch-studio/` subfolder. Gradle modules are `metamodel` (EMF codegen tool), `backend` and `vsm-compiler`. T1–T3 are done. `frontend/` is a separate npm project (Vite + React 18, served by nginx on :3000, which proxies `/api`, `/graphql`, `/actuator` and `/subscriptions` to the backend). Package-level `TODO(Tn)` comments mark where each later task goes.
 
 Deviations from the spec that are already decided:
 - **Spring Boot is 3.5.5, not 3.3.x.** Sirius Web 2025.8.x (pinned at 2025.8.11) is built on Boot 3.5.5, and the spec's reason for its Boot version is alignment with Sirius Web.
@@ -16,6 +16,11 @@ Deviations from the spec that are already decided:
 - **No Ecore-to-JSON converter.** Sirius Web takes Java EPackages directly: `@Bean EPackage` feeds its `EPackage.Registry`, and `@Bean AdapterFactory` feeds its `ComposedAdapterFactory`. So T2 step 4 / `runEcoreConverter` is not needed.
 - **EMF runtime matches Sirius Web** (ecore 2.37, xmi 2.38, edit 2.22, common 2.31), not the spec's 2.35. The generated code targets the 2.35 API level instead (`runtimeVersion=2.35`).
 - `backend` puts processed resources into the classes directory (`sourceSets.main.output.resourcesDir`), because `EMFPlugin` finds `plugin.properties` relative to the classes. Without it, every edit-layer label throws `MissingResourceException` in tests and `bootRun`.
+- **Generated view code targets our own descriptor API, not Sirius Web's** (T3). The §4.5 sample's types (`IDiagramDescriptionProvider`, `DiagramDescription.newDiagramDescription`, `NodeStyle.builder`, `RefreshPolicy.incremental`…) don't exist in Sirius Web. They are implemented as plain Java in `com.example.sysarch.view.api`, with no Sirius dependency. Generated providers in `view.generated` use only that API and `@Component`. A hand-written adapter (T4) maps the descriptors onto Sirius Web, so a Sirius upgrade never touches generated code.
+- **Several YAML files may share a viewpoint id** if they declare it identically. Both spec files declare `sysarch.core`, so a literal reading of §4.2's "conflict fails the build" would reject the spec's own files. A conflict is the same id with a different label, metamodelUri or priority. Representation ids are global and must be unique.
+- **The VSM schema's field set is exactly what spec §4.2–§4.4 use**, which is more than §4.2's table lists. Adding a field means changing `views/schema/vsm.schema.json`, `ViewModel`, the templates and the descriptor API, and it needs review (spec §10.1).
+- Beyond §4.2's three fatal checks (unknown class, unknown feature, unknown reference endpoint), vsm-compiler also rejects the two §4.4 pitfalls: a border node whose `affiliationFeature` is not a container reference, and a `create-edge` tool without `validateOnDrop: true`. It also rejects a `create-child` target type that the containment feature can't hold.
+- **Generated code is committed** and is not regenerated during the backend build. `VsmCompilerTest.committedGeneratedCodeIsUpToDate` fails if `view/generated` differs from a fresh generation.
 
 In the spec, code blocks marked `[COPY]` must be written to disk **verbatim**, with no edits: `metamodel/sysarch.ecore` (§3.1), `views/sysarch-core.vsm.yaml` (§4.3), `views/sysarch-ibd.vsm.yaml` (§4.4) and `backend/src/main/resources/api/polarion-proxy.openapi.yaml` (§6.1). Items marked `[GENERATE]` are produced by Claude Code or by the generators.
 
@@ -39,7 +44,9 @@ cd frontend && npm ci && npm run build                             # frontend ty
 ./gradlew build                                                    # full build + CI gates
 ./gradlew :metamodel:generateModel                       # T2: regenerate genmodel + EMF model/edit code after changing sysarch.ecore
 ./gradlew :backend:test --tests "*ModelSmokeTest*"       # T2
-./gradlew :vsm-compiler:test
+./gradlew :vsm-compiler:generateViews                    # T3: regenerate backend view/generated from views/*.vsm.yaml (exit 1 + file:line on any error)
+./gradlew :vsm-compiler:test                             # T3 (also checks committed generated code is fresh and compiles)
+./gradlew :vsm-compiler:test --tests "*misspelledAppliesTo*"   # single test
 ./gradlew :backend:test --tests "*BddSnapshotTest*"      # T4
 ./gradlew :backend:test --tests "*IbdSyncTest*"          # T5 (also writes build/perf-refresh.json)
 ./gradlew :backend:test --tests "*ValidationMatrixTest*" # T6
