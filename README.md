@@ -8,7 +8,7 @@ binding to Polarion. The spec is in `p0-spec-sysarch-vsm.md`. P0 runs as tasks T
 ```bash
 cp .env.example .env    # set POSTGRES_PASSWORD and GITHUB_TOKEN (PAT with read:packages)
 docker compose up -d
-curl -fsS localhost:8080/actuator/health    # expect "UP"; UI at http://localhost:3000
+curl -fsS localhost:8080/actuator/health    # expect "UP"; modeling UI (Sirius Web) at http://localhost:8080
 ```
 
 `GITHUB_TOKEN` is needed because Sirius Web artifacts are only published to GitHub Packages.
@@ -34,6 +34,21 @@ Running the backend locally needs `POSTGRES_URL`, `POSTGRES_USER` and `POSTGRES_
 | `backend/` | Spring Boot + Sirius Web app, Polarion proxy (`model`, `view`, `validation`, `link`, `sync`) |
 | `frontend/` | React shell, served by nginx on :3000 |
 | `tests/acceptance/` | Acceptance scripts (spec §9), e.g. `ac1-health.sh` |
+| `docs/` | `metamodel-and-views.md`: metamodel, field tables, view mapping, adding a view (T9) |
+| `.github/workflows/ci.yml` | CI: tests, VSM determinism (sha256), refresh perf threshold (T9) |
+
+## Demo data
+
+In the Sirius Web UI, create a project, then a model from the template **系统架构模型（域控制器演示）**:
+a domain controller with 3 logical parts, 6 ports, 4 connections and 5 requirements across LA/PA
+(`backend/.../demo/DomainControllerDemo.java`). Open a BDD or IBD on `PD-001 域控制器`.
+
+## CI
+
+`./gradlew build` runs the three CI gates: all tests, `:vsm-compiler:verifyDeterministicGeneration`
+(two generations and the committed code have the same sha256) and `:backend:checkPerfThreshold`
+(median < 800 ms, P95 < 2000 ms). GitHub Actions needs the secrets `GPR_TOKEN` (classic PAT, `read:packages`)
+and `GPR_USER`.
 
 ## Versions
 

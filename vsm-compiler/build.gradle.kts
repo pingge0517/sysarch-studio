@@ -38,3 +38,22 @@ tasks.test {
     inputs.file(rootDir.resolve("metamodel/sysarch.ecore"))
     inputs.dir(rootDir.resolve("backend/src/main/java/com/example/sysarch/view"))
 }
+
+// CI gate 2 (spec T9 step 3): two generations and the committed code must have the same sha256.
+val verifyDeterministicGeneration = tasks.register<JavaExec>("verifyDeterministicGeneration") {
+    group = "verification"
+    description = "Generates the views twice and compares sha256 with each other and with the committed view/generated."
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("com.example.vsm.DeterminismCheck")
+    val workDir = layout.buildDirectory.dir("vsm-determinism")
+    val report = layout.buildDirectory.file("vsm-generation.sha256")
+    args(repoRoot, workDir.get().asFile.absolutePath, report.get().asFile.absolutePath)
+    inputs.dir(rootDir.resolve("views"))
+    inputs.file(rootDir.resolve("metamodel/sysarch.ecore"))
+    inputs.dir(rootDir.resolve("backend/src/main/java/com/example/sysarch/view/generated"))
+    outputs.file(report)
+}
+
+tasks.named("check") {
+    dependsOn(verifyDeterministicGeneration)
+}

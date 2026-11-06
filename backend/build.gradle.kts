@@ -75,3 +75,37 @@ sourceSets.main {
 tasks.named<Jar>("jar") {
     enabled = false // only the executable bootJar is shipped
 }
+
+// CI gate 3 (spec §5.2, T5 step 5, T9 step 3): the refresh perf report written by IbdSyncTest must exist and meet
+// the spec's thresholds (500 elements, 20 inserts: median < 800 ms, P95 < 2000 ms). The thresholds are fixed here, not
+// read from the report, so a test cannot loosen its own gate.
+val checkPerfThreshold = tasks.register("checkPerfThreshold") {
+    group = "verification"
+    description = "Fails unless build/perf-refresh.json reports median < 800 ms and P95 < 2000 ms."
+    val report = layout.buildDirectory.file("perf-refresh.json")
+    dependsOn(tasks.named("test"))
+    inputs.file(report)
+    doLast {
+        val file = report.get().asFile
+        if (!file.isFile) {
+            throw GradleException("perf gate: ${file} is missing; IbdSyncTest did not run")
+        }
+        @Suppress("UNCHECKED_CAST")
+        val json = groovy.json.JsonSlurper().parse(file) as Map<String, Any?>
+        val median = (json["medianMs"] as Number).toDouble()
+        val p95 = (json["p95Ms"] as Number).toDouble()
+        val elements = (json["elements"] as Number).toInt()
+        val additions = (json["additions"] as Number).toInt()
+        if (elements < 500 || additions < 20) {
+            throw GradleException("perf gate: the scenario must be 500 elements and 20 inserts, was $elements and $additions")
+        }
+        if (median >= 800.0 || p95 >= 2000.0) {
+            throw GradleException("perf gate failed: median $median ms (limit 800), P95 $p95 ms (limit 2000)")
+        }
+        logger.lifecycle("perf gate passed: median $median ms, P95 $p95 ms ($elements elements, $additions inserts)")
+    }
+}
+
+tasks.named("check") {
+    dependsOn(checkPerfThreshold)
+}
