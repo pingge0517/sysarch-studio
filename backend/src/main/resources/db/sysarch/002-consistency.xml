@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- T8: Polarion webhook queue, pending checks and elements waiting to be claimed (spec §6.3, §7). -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <changeSet id="sysarch-002-polarion-event" author="sysarch">
+        <comment>Webhook events whose signature was verified. Only queued; the consumer marks checks, never changes data.</comment>
+        <createTable tableName="polarion_event">
+            <column name="id" type="BIGINT" autoIncrement="true"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="project_id" type="VARCHAR(255)"><constraints nullable="false"/></column>
+            <column name="event" type="VARCHAR(32)"><constraints nullable="false"/></column>
+            <column name="work_item_id" type="VARCHAR(255)"><constraints nullable="false"/></column>
+            <column name="revision" type="VARCHAR(255)"/>
+            <column name="received_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+            <column name="processed_at" type="TIMESTAMP WITH TIME ZONE"/>
+        </createTable>
+        <createIndex tableName="polarion_event" indexName="idx_polarion_event_unprocessed">
+            <column name="processed_at"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="sysarch-002-pending-check" author="sysarch">
+        <comment>Work Items Polarion reported as changed, to be judged by the next consistency report (latest event wins).</comment>
+        <createTable tableName="polarion_pending_check">
+            <column name="project_id" type="VARCHAR(255)"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="work_item_id" type="VARCHAR(255)"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="event" type="VARCHAR(32)"><constraints nullable="false"/></column>
+            <column name="revision" type="VARCHAR(255)"/>
+            <column name="marked_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="sysarch-002-pending-claim" author="sysarch">
+        <comment>Elements whose binding was removed by an R1 repair ("待认领"), until they are bound again.</comment>
+        <createTable tableName="element_pending_claim">
+            <column name="element_id" type="VARCHAR(255)"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="project_id" type="VARCHAR(255)"><constraints nullable="false"/></column>
+            <column name="former_work_item_id" type="VARCHAR(255)"/>
+            <column name="reason" type="VARCHAR(255)"/>
+            <column name="since" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+        </createTable>
+    </changeSet>
+</databaseChangeLog>

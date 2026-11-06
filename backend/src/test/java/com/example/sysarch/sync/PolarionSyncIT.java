@@ -23,18 +23,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.example.sysarch.ElementIds;
 import com.example.sysarch.link.LinkRepository;
 import com.example.sysarch.link.LinkRepository.StoredLink;
-import com.example.sysarch.model.ArchElement;
 import com.example.sysarch.model.Connection;
-import com.example.sysarch.model.Layer;
 import com.example.sysarch.model.PartDefinition;
-import com.example.sysarch.model.Port;
-import com.example.sysarch.model.PortDirection;
 import com.example.sysarch.model.Requirement;
-import com.example.sysarch.model.SysarchFactory;
 import com.example.sysarch.sync.api.model.SyncPullPostRequest;
 import com.example.sysarch.sync.api.model.SyncPushPostRequest;
 import com.example.sysarch.sync.api.model.SyncResult;
-import com.example.sysarch.sync.model.ElementSnapshots;
 import com.example.sysarch.sync.model.ModelGateway;
 import com.example.sysarch.sync.polarion.PolarionClient;
 import com.example.sysarch.sync.polarion.TokenBucket;
@@ -46,15 +40,11 @@ import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.eclipse.emf.common.util.URI;
-import org.eclipse.emf.ecore.resource.Resource;
-import org.eclipse.emf.ecore.resource.impl.ResourceImpl;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -86,8 +76,6 @@ class PolarionSyncIT {
     private static final String TOKEN = "Bearer user-pat-123";
 
     private static final String WI = "/polarion/rest/v1/projects/sysarch/workitems";
-
-    private static final SysarchFactory FACTORY = SysarchFactory.eINSTANCE;
 
     private static ConstraintValidator constraints;
 
@@ -123,7 +111,7 @@ class PolarionSyncIT {
         dataSource.setURL("jdbc:h2:mem:" + UUID.randomUUID() + ";MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1");
         SpringLiquibase liquibase = new SpringLiquibase();
         liquibase.setDataSource(dataSource);
-        liquibase.setChangeLog("classpath:db/sysarch/001-polarion-sync.xml");
+        liquibase.setChangeLog("classpath:db/sysarch/changelog.xml");
         liquibase.setResourceLoader(new DefaultResourceLoader());
         liquibase.afterPropertiesSet();
 
@@ -133,7 +121,7 @@ class PolarionSyncIT {
         this.polarion = new WireMockServer(wireMockConfig().dynamicPort());
         this.polarion.start();
         var client = new PolarionClient(this.polarion.baseUrl() + "/polarion", new TokenBucket(1000), 3, this.json, this.sleeps::add);
-        this.model = new InMemoryModel();
+        this.model = new InMemoryModel(PROJECT, constraints);
         var service = new SyncService(this.model, this.links, store, client, new SyncProperties(), this.json,
                 new TransactionTemplate(new DataSourceTransactionManager(dataSource)));
         this.request = new MockHttpServletRequest();
@@ -438,79 +426,4 @@ class PolarionSyncIT {
                 + "FROM sync_audit WHERE element_id = :id ORDER BY id").param("id", elementId).query(String.class).list();
     }
 
-    /** The model of project {@value #PROJECT}, as a plain EMF resource. */
-    private static final class InMemoryModel implements ModelGateway {
-
-        final Resource resource = new ResourceImpl(URI.createURI("memory:/model.xmi"));
-
-        final List<Map<String, Map<String, String>>> applied = new ArrayList<>();
-
-        @Override
-        public Map<String, ElementSnapshot> read(String polarionProjectId, Collection<String> elementIds) {
-            if (!PROJECT.equals(polarionProjectId)) {
-                throw new UnmappedProjectException(polarionProjectId);
-            }
-            Map<String, ElementSnapshot> result = new LinkedHashMap<>();
-            this.resource.getAllContents().forEachRemaining(object -> {
-                if (object instanceof ArchElement element && elementIds.contains(ElementIds.of(element))) {
-                    result.put(ElementIds.of(element), ElementSnapshots.of(element, constraints));
-                }
-            });
-            return result;
-        }
-
-        @Override
-        public void applyPolarionOwned(String polarionProjectId, Map<String, Map<String, String>> changes) {
-            if (changes.isEmpty()) {
-                return;
-            }
-            this.applied.add(changes);
-            this.resource.getAllContents().forEachRemaining(object -> {
-                if (object instanceof Requirement requirement && changes.containsKey(ElementIds.of(requirement))) {
-                    requirement.setText(changes.get(ElementIds.of(requirement)).get(ElementSnapshot.TEXT));
-                }
-            });
-        }
-
-        PartDefinition block(String id, String name) {
-            PartDefinition block = FACTORY.createPartDefinition();
-            block.setId(id);
-            block.setName(name);
-            this.resource.getContents().add(block);
-            return block;
-        }
-
-        Requirement requirement(String id, String name, String text) {
-            Requirement requirement = FACTORY.createRequirement();
-            requirement.setId(id);
-            requirement.setName(name);
-            requirement.setText(text);
-            requirement.setLayer(Layer.LOGICAL);
-            this.resource.getContents().add(requirement);
-            return requirement;
-        }
-
-        Connection connection(String id, String sourceId, String targetId) {
-            PartDefinition owner = this.block("PD-" + id, "owner of " + id);
-            Port source = port(sourceId, PortDirection.OUT);
-            Port target = port(targetId, PortDirection.IN);
-            owner.getOwnedPorts().addAll(List.of(source, target));
-            Connection connection = FACTORY.createConnection();
-            connection.setId(id);
-            connection.setName("bus");
-            connection.setSource(source);
-            connection.setTarget(target);
-            this.resource.getContents().add(connection);
-            return connection;
-        }
-
-        private static Port port(String id, PortDirection direction) {
-            Port port = FACTORY.createPort();
-            port.setId(id);
-            port.setName(id);
-            port.setInterfaceType("CAN");
-            port.setDirection(direction);
-            return port;
-        }
-    }
 }

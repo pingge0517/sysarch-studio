@@ -28,6 +28,24 @@ public interface ModelGateway {
      */
     void applyPolarionOwned(String polarionProjectId, Map<String, Map<String, String>> changes);
 
+    /** Every element of the model of a Polarion project (diagram layouts excluded), for the consistency report. */
+    Map<String, ElementSnapshot> readAll(String polarionProjectId);
+
+    /**
+     * Applies an R2 repair to the model, as one edit through the editing context.
+     *
+     * @return null when applied, else why not (the model is unchanged)
+     */
+    String repairConnection(String polarionProjectId, ConnectionRepair repair);
+
+    /**
+     * Make the model match Polarion for one Connection: delete it, or set (creating it if needed) its endpoints.
+     *
+     * @param name used only when the connection has to be created
+     */
+    record ConnectionRepair(String connectionId, String sourceId, String targetId, String name, boolean delete) {
+    }
+
     /**
      * What sync needs of one element, read inside the editing context.
      *

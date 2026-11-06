@@ -1,22 +1,18 @@
 package com.example.sysarch.sync.model;
 
-import com.example.sysarch.ElementIds;
 import com.example.sysarch.model.ArchElement;
-import com.example.sysarch.model.Requirement;
 import com.example.sysarch.sync.SyncProperties;
 import com.example.sysarch.validation.ConstraintValidator;
 
 import java.time.Duration;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-import org.eclipse.emf.ecore.EObject;
 import org.eclipse.sirius.components.collaborative.api.ChangeDescription;
 import org.eclipse.sirius.components.collaborative.api.ChangeKind;
 import org.eclipse.sirius.components.collaborative.api.IEditingContextEventHandler;
@@ -36,7 +32,8 @@ import reactor.core.publisher.Sinks;
 /**
  * {@link ModelGateway} on Sirius Web: every read and write is an input dispatched to the project's editing context,
  * so it runs on that context's own thread (EMF models are not thread-safe) and writes are saved, refreshed and
- * checked like any user edit (spec §2.3: never write around the EditingContext).
+ * checked like any user edit (spec §2.3: never write around the EditingContext). The operations themselves are
+ * {@link ModelOperations}.
  *
  * <p>{@code sysarch.polarion.projects.<polarion project>} names the Sirius project: a Sirius project id, or else a
  * project name, looked up read-only in Sirius' {@code project} table.
@@ -72,15 +69,44 @@ public class SiriusModelGateway implements ModelGateway {
     }
 
     @Override
+    public Map<String, ElementSnapshot> readAll(String polarionProjectId) {
+        IPayload payload = this.dispatch(polarionProjectId, new ReadElementsInput(UUID.randomUUID(), null));
+        return ((ElementsPayload) payload).elements();
+    }
+
+    @Override
     public void applyPolarionOwned(String polarionProjectId, Map<String, Map<String, String>> changes) {
         if (!changes.isEmpty()) {
             this.dispatch(polarionProjectId, new ApplyPolarionValuesInput(UUID.randomUUID(), Map.copyOf(changes)));
         }
     }
 
+    @Override
+    public String repairConnection(String polarionProjectId, ConnectionRepair repair) {
+        IPayload payload = this.dispatch(polarionProjectId, new RepairConnectionInput(UUID.randomUUID(), repair));
+        return ((RepairedPayload) payload).failure();
+    }
+
+    /** The Polarion project an editing context belongs to, if one is mapped to it. */
+    public Optional<String> polarionProjectOf(String editingContextId) {
+        for (String polarionProjectId : this.properties.getProjects().keySet()) {
+            try {
+                if (this.editingContextId(polarionProjectId).filter(editingContextId::equals).isPresent()) {
+                    return Optional.of(polarionProjectId);
+                }
+            } catch (UnmappedProjectException e) {
+                // a misconfigured entry maps to nothing
+            }
+        }
+        return Optional.empty();
+    }
+
+    private Optional<String> editingContextId(String polarionProjectId) {
+        return this.projectEditingContexts.getEditingContextId(this.siriusProjectId(polarionProjectId));
+    }
+
     private IPayload dispatch(String polarionProjectId, IInput input) {
-        String editingContextId = this.projectEditingContexts.getEditingContextId(this.siriusProjectId(polarionProjectId))
-                .orElseThrow(() -> new UnmappedProjectException(polarionProjectId));
+        String editingContextId = this.editingContextId(polarionProjectId).orElseThrow(() -> new UnmappedProjectException(polarionProjectId));
         IPayload payload = this.editingContexts.dispatchEvent(editingContextId, input).block(TIMEOUT);
         if (payload instanceof ErrorPayload error) {
             throw new IllegalStateException("model access failed: " + error.messages());
@@ -109,6 +135,7 @@ public class SiriusModelGateway implements ModelGateway {
 
     // ---- inputs, payloads and their handler (run inside the editing context) ----
 
+    /** {@code elementIds} null means every element. */
     record ReadElementsInput(UUID id, Set<String> elementIds) implements IInput {
     }
 
@@ -119,6 +146,13 @@ public class SiriusModelGateway implements ModelGateway {
     }
 
     record AppliedPayload(UUID id, int applied) implements IPayload {
+    }
+
+    record RepairConnectionInput(UUID id, ConnectionRepair repair) implements IInput {
+    }
+
+    /** {@code failure} is null when the repair was applied. */
+    record RepairedPayload(UUID id, String failure) implements IPayload {
     }
 
     /** Executes the gateway's inputs on the editing context thread. */
@@ -133,44 +167,27 @@ public class SiriusModelGateway implements ModelGateway {
 
         @Override
         public boolean canHandle(IEditingContext editingContext, IInput input) {
-            return editingContext instanceof IEMFEditingContext && (input instanceof ReadElementsInput || input instanceof ApplyPolarionValuesInput);
+            return editingContext instanceof IEMFEditingContext
+                    && (input instanceof ReadElementsInput || input instanceof ApplyPolarionValuesInput || input instanceof RepairConnectionInput);
         }
 
         @Override
         public void handle(Sinks.One<IPayload> payloadSink, Sinks.Many<ChangeDescription> changeDescriptionSink, IEditingContext editingContext,
                 IInput input) {
-            Map<String, ArchElement> index = index((IEMFEditingContext) editingContext);
+            Map<String, ArchElement> index = ModelOperations.index(((IEMFEditingContext) editingContext).getDomain().getResourceSet().getAllContents());
+            boolean changed = false;
             if (input instanceof ReadElementsInput read) {
-                Map<String, ElementSnapshot> elements = new LinkedHashMap<>();
-                read.elementIds().stream().sorted().forEach(id -> {
-                    ArchElement element = index.get(id);
-                    if (element != null) {
-                        elements.put(id, ElementSnapshots.of(element, this.constraints));
-                    }
-                });
-                payloadSink.tryEmitValue(new ElementsPayload(input.id(), elements));
-                changeDescriptionSink.tryEmitNext(new ChangeDescription(ChangeKind.NOTHING, editingContext.getId(), input));
+                payloadSink.tryEmitValue(new ElementsPayload(input.id(), ModelOperations.snapshots(index, read.elementIds(), this.constraints)));
             } else if (input instanceof ApplyPolarionValuesInput apply) {
-                int applied = 0;
-                for (var change : apply.changes().entrySet()) {
-                    if (index.get(change.getKey()) instanceof Requirement requirement && change.getValue().containsKey(ElementSnapshot.TEXT)) {
-                        requirement.setText(change.getValue().get(ElementSnapshot.TEXT));
-                        applied++;
-                    }
-                }
+                int applied = ModelOperations.applyPolarionOwned(index, apply.changes());
+                changed = applied > 0;
                 payloadSink.tryEmitValue(new AppliedPayload(input.id(), applied));
-                changeDescriptionSink.tryEmitNext(new ChangeDescription(applied > 0 ? ChangeKind.SEMANTIC_CHANGE : ChangeKind.NOTHING, editingContext.getId(), input));
+            } else if (input instanceof RepairConnectionInput repair) {
+                String failure = ModelOperations.repairConnection(index, repair.repair(), this.constraints);
+                changed = failure == null;
+                payloadSink.tryEmitValue(new RepairedPayload(input.id(), failure));
             }
-        }
-
-        private static Map<String, ArchElement> index(IEMFEditingContext editingContext) {
-            Map<String, ArchElement> index = new HashMap<>();
-            editingContext.getDomain().getResourceSet().getAllContents().forEachRemaining(notifier -> {
-                if (notifier instanceof ArchElement element) {
-                    index.put(ElementIds.of((EObject) element), element);
-                }
-            });
-            return index;
+            changeDescriptionSink.tryEmitNext(new ChangeDescription(changed ? ChangeKind.SEMANTIC_CHANGE : ChangeKind.NOTHING, editingContext.getId(), input));
         }
     }
 }

@@ -43,7 +43,7 @@ sirius:
       allowedOriginPatterns: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
       allowedCredentials: true
 
-# Our own settings. view and consistency are not read by any code yet (TODO T8).
+# Our own settings. sysarch.view is not read by any code yet.
 sysarch:
   polarion:
     # e.g. http://localhost/polarion; the REST API is <base-url>/rest/v1. No token here: each caller's
@@ -62,7 +62,12 @@ sysarch:
       stereotypes: sysarchStereotypes
       source: sysarchSource
       target: sysarchTarget
+    # HMAC-SHA256 secret of Polarion webhooks (X-Polarion-Signature); unset = webhooks are refused (503).
+    webhook-secret: ${POLARION_WEBHOOK_SECRET:}
+    event-poll-ms: 2000
   view:
     refresh-budget-ms: ${VIEW_REFRESH_BUDGET_MS:2000}
   consistency:
+    # R2 repair strategy, MODEL_WINS or POLARION_WINS, fixed per project (spec §7). One project can override it
+    # with sysarch.consistency.strategies.<polarion project>.
     strategy: ${CONSISTENCY_STRATEGY:}

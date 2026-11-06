@@ -32,7 +32,7 @@ class LinksControllerTest {
         dataSource.setURL("jdbc:h2:mem:" + UUID.randomUUID() + ";MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1");
         SpringLiquibase liquibase = new SpringLiquibase();
         liquibase.setDataSource(dataSource);
-        liquibase.setChangeLog("classpath:db/sysarch/001-polarion-sync.xml");
+        liquibase.setChangeLog("classpath:db/sysarch/changelog.xml");
         liquibase.setResourceLoader(new DefaultResourceLoader());
         liquibase.afterPropertiesSet();
         this.links = new LinkRepository(JdbcClient.create(dataSource));

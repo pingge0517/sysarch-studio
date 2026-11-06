@@ -1,6 +1,7 @@
 package com.example.sysarch.sync;
 
 import com.example.sysarch.link.LinksController;
+import com.example.sysarch.sync.polarion.PolarionException;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -15,6 +16,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Error responses of the {@code /api/v1} REST API, as JSON problem details with the right status.
+ *
+ * <p>Covers the controllers of this package and its subpackages (consistency, webhooks) and the links controller.
  *
  * <p>Needed because of the Sirius Web frontend: without this, Spring forwards errors to {@code /error}, where the
  * frontend's single-page-app route (GET only) answers instead. A POST error then became a 405 and a GET error a 200
@@ -42,6 +45,16 @@ public class ApiErrorHandler {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ProblemDetail> typeMismatch(MethodArgumentTypeMismatchException e) {
         return problem(HttpStatus.BAD_REQUEST, "invalid value for " + e.getName());
+    }
+
+    /** Polarion failed while a request needed it (e.g. a live consistency report): 429 passed on, else 502. */
+    @ExceptionHandler(PolarionException.class)
+    public ResponseEntity<ProblemDetail> polarion(PolarionException e) {
+        if (e instanceof PolarionException.RateLimited limited) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).header(org.springframework.http.HttpHeaders.RETRY_AFTER,
+                    Long.toString(Math.max(1, limited.retryAfterSeconds()))).body(ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, e.getMessage()));
+        }
+        return problem(HttpStatus.BAD_GATEWAY, "Polarion: " + e.getMessage());
     }
 
     private static ResponseEntity<ProblemDetail> problem(HttpStatusCode status, String detail) {

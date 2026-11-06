@@ -48,6 +48,8 @@ public class LinkRepository {
                 + ":state, :modelRev, :wiRev, :etag, :lastPushAt, :lastPullAt, :pushedFields, :workItemTitle)")
                 .paramSource(link)
                 .update();
+        // A bound element is no longer waiting to be claimed (R1 repair, spec §7).
+        this.jdbc.sql("DELETE FROM element_pending_claim WHERE element_id = :id").param("id", link.elementId()).update();
     }
 
     /** Writes every mutable column of an existing link. */

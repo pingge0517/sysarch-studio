@@ -28,6 +28,9 @@ public class SyncProperties {
     /** Retries after a 429 (spec §6.3). */
     private int maxRetries = 3;
 
+    /** Shared secret for the HMAC-SHA256 signature of Polarion webhooks (X-Polarion-Signature); empty rejects every webhook. */
+    private String webhookSecret = "";
+
     private Map<String, String> projects = new LinkedHashMap<>();
 
     private Fields fields = new Fields();
@@ -107,6 +110,14 @@ public class SyncProperties {
         types.put("Connection", "architecture_connection");
         types.put("Requirement", "requirement");
         return types;
+    }
+
+    public String getWebhookSecret() {
+        return this.webhookSecret;
+    }
+
+    public void setWebhookSecret(String webhookSecret) {
+        this.webhookSecret = webhookSecret;
     }
 
     public String getBaseUrl() {

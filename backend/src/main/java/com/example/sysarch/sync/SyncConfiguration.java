@@ -1,5 +1,6 @@
 package com.example.sysarch.sync;
 
+import com.example.sysarch.sync.consistency.ConsistencyProperties;
 import com.example.sysarch.sync.polarion.PolarionClient;
 import com.example.sysarch.sync.polarion.TokenBucket;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,7 +12,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 /** Polarion sync beans (T7). Scheduling runs the audit and idempotency retention in {@link SyncStore}. */
 @Configuration
-@EnableConfigurationProperties(SyncProperties.class)
+@EnableConfigurationProperties({ SyncProperties.class, ConsistencyProperties.class })
 @EnableScheduling
 public class SyncConfiguration {
 
