@@ -1,0 +1,228 @@
+openapi: 3.0.3
+info:
+  title: SysArch ↔ Polarion 同步代理
+  version: "1.0.0"
+  description: 模型元素与 Polarion Work Item 的绑定、单向推送、增量拉取与一致性校验
+servers:
+  - url: http://localhost:8080/api/v1
+
+paths:
+  /links:
+    get:
+      summary: 查询绑定关系
+      parameters:
+        - name: projectId
+          in: query
+          required: true
+          schema: { type: string }
+        - name: state
+          in: query
+          schema: { type: string, enum: [ACTIVE, ORPHAN, DANGLING, CONFLICT] }
+      responses:
+        "200":
+          description: 绑定列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Link" }
+    post:
+      summary: 建立或更新绑定（幂等）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LinkRequest" }
+      responses:
+        "201": { description: 已建立 }
+        "409": { description: 该元素已绑定其他工作项 }
+
+  /links/{elementId}:
+    delete:
+      summary: 解除绑定（不删除工作项）
+      parameters:
+        - name: elementId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "204": { description: 已解除 }
+
+  /sync/push:
+    post:
+      summary: 模型到 Polarion 的增量推送
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                projectId: { type: string }
+                elementIds:
+                  type: array
+                  items: { type: string }
+                dryRun: { type: boolean, default: false }
+      responses:
+        "200":
+          description: 推送结果
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SyncResult" }
+        "409":
+          description: 版本冲突，响应体含冲突字段清单
+        "429":
+          description: 触发 Polarion 限流，响应头带 Retry-After
+
+  /sync/pull:
+    post:
+      summary: 从 Polarion 拉取变更（按 workItemId 增量）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                projectId: { type: string }
+                since: { type: string, format: date-time }
+      responses:
+        "200":
+          description: 拉取结果
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SyncResult" }
+
+  /consistency/report:
+    get:
+      summary: 生成一致性报告
+      parameters:
+        - name: projectId
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: 报告
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ConsistencyReport" }
+
+  /consistency/repair:
+    post:
+      summary: 按策略修复
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                projectId: { type: string }
+                issueIds:
+                  type: array
+                  items: { type: string }
+                strategy:
+                  type: string
+                  enum: [MODEL_WINS, POLARION_WINS]
+      responses:
+        "200":
+          description: 修复结果，含逐条处理动作
+
+  /webhooks/polarion:
+    post:
+      summary: 接收 Polarion 变更事件
+      parameters:
+        - name: X-Polarion-Signature
+          in: header
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                event: { type: string, enum: [workitem.created, workitem.updated, workitem.deleted] }
+                projectId: { type: string }
+                workItemId: { type: string }
+                revision: { type: string }
+      responses:
+        "202": { description: 已入队 }
+
+components:
+  schemas:
+    Link:
+      type: object
+      required: [elementId, elementType, workItemId, projectId, state]
+      properties:
+        elementId: { type: string }
+        elementType:
+          type: string
+          enum: [PartDefinition, Part, Port, Connection, Requirement]
+        workItemId: { type: string }
+        workItemType:
+          type: string
+          enum: [architecture_element, architecture_connection, requirement]
+        projectId: { type: string }
+        state:
+          type: string
+          enum: [ACTIVE, ORPHAN, DANGLING, CONFLICT]
+        modelRev: { type: integer }
+        wiRev: { type: string }
+        etag: { type: string }
+        lastPushAt: { type: string, format: date-time }
+        lastPullAt: { type: string, format: date-time }
+    LinkRequest:
+      type: object
+      required: [elementId, elementType, workItemId, workItemType, projectId]
+      properties:
+        elementId: { type: string }
+        elementType: { type: string }
+        workItemId: { type: string }
+        workItemType: { type: string }
+        projectId: { type: string }
+    SyncResult:
+      type: object
+      properties:
+        pushed: { type: integer }
+        pulled: { type: integer }
+        skipped: { type: integer }
+        conflicts:
+          type: array
+          items:
+            type: object
+            properties:
+              elementId: { type: string }
+              fields: { type: array, items: { type: string } }
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              elementId: { type: string }
+              code: { type: string }
+              message: { type: string }
+    ConsistencyReport:
+      type: object
+      properties:
+        projectId: { type: string }
+        generatedAt: { type: string, format: date-time }
+        issues:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              rule: { type: string, enum: [R1, R2, R3, R4, R5] }
+              severity: { type: string, enum: [BLOCKER, MAJOR, MINOR] }
+              elementId: { type: string }
+              workItemId: { type: string }
+              message: { type: string }
+              repairable: { type: boolean }

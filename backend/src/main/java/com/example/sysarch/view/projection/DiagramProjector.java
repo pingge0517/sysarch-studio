@@ -1,5 +1,6 @@
 package com.example.sysarch.view.projection;
 
+import com.example.sysarch.ElementIds;
 import com.example.sysarch.view.api.AutoExpand;
 import com.example.sysarch.view.api.DiagramDescription;
 import com.example.sysarch.view.api.EdgeStyle;
@@ -375,11 +376,7 @@ public final class DiagramProjector {
 
     /** The element's ID attribute ({@code ArchElement.id}), or its URI fragment if the ID is not set. */
     public static String elementId(EObject element) {
-        String id = EcoreUtil.getID(element);
-        if (id != null) {
-            return id;
-        }
-        return element.eResource() != null ? element.eResource().getURIFragment(element) : EcoreUtil.getURI(element).fragment();
+        return ElementIds.of(element);
     }
 
     private static String nullToEmpty(String value) {

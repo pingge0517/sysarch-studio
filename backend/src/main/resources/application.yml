@@ -19,8 +19,8 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   liquibase:
-    # Sirius Web's own schema (shipped in sirius-web-infrastructure).
-    change-log: classpath:db/db.changelog-master.xml
+    # Sirius Web's own schema (sirius-web-infrastructure) plus the sysarch tables (T7).
+    change-log: classpath:db/sysarch.changelog-master.xml
   mvc:
     pathmatch:
       matching-strategy: ANT_PATH_MATCHER
@@ -43,11 +43,25 @@ sirius:
       allowedOriginPatterns: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
       allowedCredentials: true
 
-# Our own settings. Not read by any code yet (TODO T5/T7/T8).
+# Our own settings. view and consistency are not read by any code yet (TODO T8).
 sysarch:
   polarion:
+    # e.g. http://localhost/polarion; the REST API is <base-url>/rest/v1. No token here: each caller's
+    # Polarion token is passed through per request (Authorization: Bearer ...) and never stored.
     base-url: ${POLARION_BASE_URL:}
     rate-limit-rps: ${SYNC_RATE_LIMIT_RPS:10}
+    max-retries: 3
+    # Polarion project id (the API's projectId) -> Sirius project id or name. Set per deployment, e.g.
+    # env SYSARCH_POLARION_PROJECTS_SYSARCH=project001 maps Polarion project "sysarch" to Sirius "project001".
+    projects: {}
+    # Polarion custom fields that hold the model-owned values (spec §6.2); must exist on the Work Item types.
+    fields:
+      element-id: sysarchElementId
+      name: sysarchName
+      layer: sysarchLayer
+      stereotypes: sysarchStereotypes
+      source: sysarchSource
+      target: sysarchTarget
   view:
     refresh-budget-ms: ${VIEW_REFRESH_BUDGET_MS:2000}
   consistency:

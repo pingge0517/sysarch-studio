@@ -39,6 +39,9 @@ freemarker = { module = "org.freemarker:freemarker" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind" }
 json-schema-validator = { module = "com.networknt:json-schema-validator", version.ref = "json-schema-validator" }
 slf4j-nop = { module = "org.slf4j:slf4j-nop" }
+# T7 tests: a mock Polarion server, and an in-memory database for PolarionSyncIT (version from the Spring Boot BOM).
+wiremock = { module = "org.wiremock:wiremock-standalone", version = "3.13.2" }
+h2 = { module = "com.h2database:h2" }
 
 emf-common = { module = "org.eclipse.emf:org.eclipse.emf.common", version.ref = "emf-common" }
 emf-ecore = { module = "org.eclipse.emf:org.eclipse.emf.ecore", version.ref = "emf-ecore" }
@@ -101,3 +104,5 @@ ocl-runtime = [
 
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
+# T7: generates the Polarion proxy API interfaces and DTOs from backend/src/main/resources/api/polarion-proxy.openapi.yaml
+openapi-generator = { id = "org.openapi.generator", version = "7.27.0" }

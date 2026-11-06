@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Liquibase entry point (spring.liquibase.change-log). Sirius Web's own schema first, unchanged (its change sets
+  keep their recorded file paths, so existing databases are not migrated twice), then the sysarch tables.
+  A second SpringLiquibase bean would disable Spring Boot's auto-configured one, so everything goes through here.
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+    <include file="db/db.changelog-master.xml"/>
+    <include file="db/sysarch/001-polarion-sync.xml"/>
+</databaseChangeLog>

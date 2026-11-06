@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.spring.boot) apply false
+    alias(libs.plugins.openapi.generator) apply false
 }
 
 val javaVersion = libs.versions.java.get().toInt()

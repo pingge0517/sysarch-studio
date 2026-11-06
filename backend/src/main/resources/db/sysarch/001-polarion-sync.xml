@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- T7: Polarion bindings, sync audit, idempotency and the unbound pool (spec §6.2, §6.3). Portable SQL types only:
+     the same change sets run on PostgreSQL in the application and on H2 (PostgreSQL mode) in PolarionSyncIT. -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <changeSet id="sysarch-001-polarion-link" author="sysarch">
+        <comment>Element to Work Item binding. element_id is the key: binding an already bound element is a 409.</comment>
+        <createTable tableName="polarion_link">
+            <column name="element_id" type="VARCHAR(255)"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="element_type" type="VARCHAR(64)"><constraints nullable="false"/></column>
+            <column name="work_item_id" type="VARCHAR(255)"><constraints nullable="false"/></column>
+            <column name="work_item_type" type="VARCHAR(64)"/>
+            <column name="project_id" type="VARCHAR(255)"><constraints nullable="false"/></column>
+            <column name="state" type="VARCHAR(16)" defaultValue="ACTIVE"><constraints nullable="false"/></column>
+            <column name="model_rev" type="INTEGER"/>
+            <column name="wi_rev" type="VARCHAR(64)"/>
+            <column name="etag" type="VARCHAR(255)"/>
+            <column name="last_push_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="last_pull_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="pushed_fields" type="TEXT" remarks="JSON: model-owned field values as last written to Polarion (conflict detection)"/>
+            <column name="work_item_title" type="TEXT" remarks="Polarion-owned title, read-only in the model"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+        </createTable>
+        <createIndex tableName="polarion_link" indexName="idx_polarion_link_project">
+            <column name="project_id"/>
+        </createIndex>
+        <createIndex tableName="polarion_link" indexName="idx_polarion_link_work_item">
+            <column name="project_id"/>
+            <column name="work_item_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="sysarch-001-sync-audit" author="sysarch">
+        <comment>One row per field written by push or pull; kept 180 days.</comment>
+        <createTable tableName="sync_audit">
+            <column name="id" type="BIGINT" autoIncrement="true"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="project_id" type="VARCHAR(255)"><constraints nullable="false"/></column>
+            <column name="element_id" type="VARCHAR(255)"><constraints nullable="false"/></column>
+            <column name="work_item_id" type="VARCHAR(255)"/>
+            <column name="direction" type="VARCHAR(8)"><constraints nullable="false"/></column>
+            <column name="field" type="VARCHAR(128)"><constraints nullable="false"/></column>
+            <column name="old_value" type="TEXT"/>
+            <column name="new_value" type="TEXT"/>
+            <column name="actor" type="VARCHAR(255)"><constraints nullable="false"/></column>
+            <column name="at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+        </createTable>
+        <createIndex tableName="sync_audit" indexName="idx_sync_audit_at">
+            <column name="at"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="sysarch-001-sync-idempotency" author="sysarch">
+        <comment>First response per Idempotency-Key; replays within 24 hours return it.</comment>
+        <createTable tableName="sync_idempotency">
+            <column name="idempotency_key" type="VARCHAR(255)"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="endpoint" type="VARCHAR(32)"><constraints nullable="false"/></column>
+            <column name="response_status" type="INTEGER"><constraints nullable="false"/></column>
+            <column name="response_body" type="TEXT"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="sysarch-001-unbound-pool" author="sysarch">
+        <comment>Work Items created in Polarion and not bound to any element yet, waiting to be claimed (spec §6.2).</comment>
+        <createTable tableName="polarion_unbound_pool">
+            <column name="project_id" type="VARCHAR(255)"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="work_item_id" type="VARCHAR(255)"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="work_item_type" type="VARCHAR(64)"/>
+            <column name="title" type="TEXT"/>
+            <column name="discovered_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+        </createTable>
+    </changeSet>
+</databaseChangeLog>

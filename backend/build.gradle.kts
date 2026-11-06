@@ -1,6 +1,45 @@
 plugins {
     java
     alias(libs.plugins.spring.boot)
+    alias(libs.plugins.openapi.generator)
+}
+
+// T7: the Polarion proxy API (spec §6.1, copied verbatim) is the contract. openapi-generator produces only the Spring
+// interfaces and DTOs (no controllers); our controllers implement them. Generated into build/, never committed.
+val openApiSpec = layout.projectDirectory.file("src/main/resources/api/polarion-proxy.openapi.yaml")
+val openApiOutput = layout.buildDirectory.dir("generated/openapi")
+
+openApiGenerate {
+    generatorName.set("spring")
+    inputSpec.set(openApiSpec.asFile.path)
+    outputDir.set(openApiOutput.get().asFile.path)
+    apiPackage.set("com.example.sysarch.sync.api")
+    modelPackage.set("com.example.sysarch.sync.api.model")
+    generateApiTests.set(false)
+    generateModelTests.set(false)
+    generateApiDocumentation.set(false)
+    generateModelDocumentation.set(false)
+    configOptions.set(mapOf(
+        "interfaceOnly" to "true",
+        "skipDefaultInterface" to "true",
+        "useSpringBoot3" to "true",
+        "useJakartaEe" to "true",
+        "useTags" to "false",
+        "openApiNullable" to "false",
+        "useBeanValidation" to "false",
+        "documentationProvider" to "none",
+        "annotationLibrary" to "none",
+        "dateLibrary" to "java8",
+        "hideGenerationTimestamp" to "true",
+    ))
+}
+
+sourceSets.main {
+    java.srcDir(openApiOutput.map { it.dir("src/main/java") })
+}
+
+tasks.named("compileJava") {
+    dependsOn(tasks.named("openApiGenerate"))
 }
 
 dependencies {
@@ -21,6 +60,8 @@ dependencies {
 
     testImplementation(platform(libs.spring.boot.bom))
     testImplementation(libs.spring.boot.starter.test)
+    testImplementation(libs.wiremock)
+    testImplementation(libs.h2)
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 
