@@ -386,6 +386,45 @@ class PolarionSyncIT {
         assertNull(result.getErrors().get(0).getElementId());
     }
 
+    // =========================================================== real Polarion behaviour (found against Polarion 2512)
+
+    /**
+     * Polarion drops a custom field set to "" (it reads back as absent), so an element without stereotypes must not
+     * look "edited in Polarion" on the next push or pull.
+     */
+    @Test
+    void anEmptyFieldPolarionDroppedIsNoConflict() {
+        this.model.block("PD-1", "DomainController");
+        this.stubCreate("SYS-1");
+        this.push("key-1", "PD-1");
+        this.stubWorkItem("SYS-1", "DomainController", Map.of("sysarchElementId", "PD-1", "sysarchName", "DomainController", "sysarchLayer", "LOGICAL"));
+
+        SyncResult pushed = this.push("key-2", "PD-1").getBody();
+        SyncResult pulled = this.pull(null).getBody();
+
+        assertEquals(List.of(), pushed.getConflicts());
+        assertEquals(1, pushed.getSkipped(), "nothing to write: absent and empty are the same value");
+        assertEquals(List.of(), pulled.getConflicts());
+        assertEquals("ACTIVE", this.links.find("PD-1").orElseThrow().state());
+        this.polarion.verify(0, patchRequestedFor(anyUrl()));
+    }
+
+    /** Polarion stores a plain-text description as HTML; pull turns it back into the plain text it was. */
+    @Test
+    void pullReadsAnHtmlDescriptionAsPlainText() {
+        Requirement requirement = this.model.requirement("RQ-1", "Speed broadcast", "old text");
+        this.stubCreate("REQ-1");
+        this.push("key-1", "RQ-1");
+        Map<String, Object> attributes = new LinkedHashMap<>(Map.of("sysarchElementId", "RQ-1", "sysarchName", "Speed broadcast", "sysarchLayer", "LOGICAL"));
+        // exactly what Polarion 2512 returned for the plain text "a < b & c\nline 2  \"q\" 's'"
+        attributes.put("description", Map.of("type", "text/html", "value", "a &lt; b &amp; c<br/>line 2 &nbsp;\"q\" 's'"));
+        this.stubWorkItem("REQ-1", "Speed broadcast", attributes);
+
+        this.pull(null);
+
+        assertEquals("a < b & c\nline 2  \"q\" 's'", requirement.getText());
+    }
+
     // =========================================================== helpers
 
     private ResponseEntity<SyncResult> push(String key, String... elementIds) {

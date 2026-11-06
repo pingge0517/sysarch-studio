@@ -11,6 +11,7 @@ import com.example.sysarch.sync.model.ModelGateway.ElementSnapshot;
 import com.example.sysarch.sync.polarion.PolarionClient;
 import com.example.sysarch.sync.polarion.PolarionClient.WorkItem;
 import com.example.sysarch.sync.polarion.PolarionException;
+import com.example.sysarch.sync.polarion.PolarionText;
 import com.example.sysarch.sync.polarion.PolarionToken;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -175,7 +176,7 @@ public class SyncService {
         }
         Map<String, String> changes = new LinkedHashMap<>();
         desired.forEach((field, value) -> {
-            if (!Objects.equals(value, current.get(field))) {
+            if (!Objects.equals(blankAsNull(value), blankAsNull(current.get(field)))) {
                 changes.put(field, value);
             }
         });
@@ -389,17 +390,28 @@ public class SyncService {
         Map<String, String> pushed = this.fromJson(link.pushedFields());
         List<String> edited = new ArrayList<>();
         pushed.forEach((field, value) -> {
-            if (!Objects.equals(value, current.get(field))) {
+            if (!Objects.equals(blankAsNull(value), blankAsNull(current.get(field)))) {
                 edited.add(field);
             }
         });
         return edited;
     }
 
-    /** A Work Item description is {"type": "text/plain" | "text/html", "value": "..."}. */
+    /** A Work Item description is {"type": "text/plain" | "text/html", "value": "..."}; HTML is read as its plain text. */
     private static String description(WorkItem workItem) {
-        return workItem.attribute(DESCRIPTION) instanceof Map<?, ?> description && description.get("value") != null ? description.get("value").toString()
-                : null;
+        if (workItem.attribute(DESCRIPTION) instanceof Map<?, ?> description && description.get("value") != null) {
+            Object type = description.get("type");
+            return PolarionText.toPlain(type == null ? null : type.toString(), description.get("value").toString());
+        }
+        return null;
+    }
+
+    /**
+     * Polarion drops a custom field set to "" (it reads back as absent; verified against Polarion 2512), so empty
+     * and absent are the same value when comparing what we pushed with what is there.
+     */
+    private static String blankAsNull(String value) {
+        return value == null || value.isBlank() ? null : value;
     }
 
     private String toJson(Map<String, String> values) {
