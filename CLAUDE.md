@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The spec, `p0-spec-sysarch-vsm.md` (Chinese), is the source of truth for everything below. Work proceeds by running tasks **T1–T9 (spec §8) in order**. Each task starts with a paste-ready instruction block and has hard dependencies (T3 needs T2, T4 needs T3, and so on).
 
-T1 scaffold is in place. The spec §2.2 monorepo lives at the **repository root**, not in a `sysarch-studio/` subfolder. Gradle modules are `metamodel` (EMF codegen tool), `backend` and `vsm-compiler`. T1–T3 are done. T4 and T5 are done on the backend: the projection layer plus the Sirius Web adapter (`view.sirius`) render BDD and IBD in Sirius Web, verified by `SiriusRenderingTest` and live over GraphQL. The Sirius Web UI on :8080 shows them; the manual UI checks still have to be done in a browser. T6 is partly done too: `validation.ConstraintValidator` and `ValidationMatrixTest` exist. The IBD `connect` tool validates on drop (AC-5), and save-path checks mark or veto depending on the constraint. T7 and T8 are done against WireMock (`PolarionSyncIT`, `ConsistencyIT`) and verified end to end against the local Polarion 2512 (2026-11-06: push, skip, replay, pull of title and text, CONFLICT, live R2, AC-6 R1 → repair → 待认领). T9 is done: `docs/metamodel-and-views.md`, the domain-controller demo (model template "系统架构模型（域控制器演示）", `demo.DomainControllerDemo`), and the CI gates (`.github/workflows/ci.yml`; `./gradlew build` runs all three). `./gradlew build` passes (131 backend tests; 143 with vsm-compiler). No test boots the Spring context, because that needs PostgreSQL; the app is checked live instead (see "Running locally"). `frontend/` is a separate npm project (Vite + React 18, served by nginx on :3000, which proxies `/api`, `/graphql`, `/actuator` and `/subscriptions` to the backend). Package-level `TODO(Tn)` comments mark where each later task goes.
+T1 scaffold is in place. The spec §2.2 monorepo lives at the **repository root**, not in a `sysarch-studio/` subfolder. Gradle modules are `metamodel` (EMF codegen tool), `backend` and `vsm-compiler`. T1–T3 are done. T4 and T5 are done on the backend: the projection layer plus the Sirius Web adapter (`view.sirius`) render BDD and IBD in Sirius Web, verified by `SiriusRenderingTest` and live over GraphQL. The Sirius Web UI on :8080 shows them; the manual UI checks still have to be done in a browser. T6 is done: `validation.ConstraintValidator` evaluates the OCL, the IBD `connect` tool validates on drop (AC-5), and save-path checks mark or veto depending on the constraint (see below). T7 and T8 are done against WireMock (`PolarionSyncIT`, `ConsistencyIT`) and verified end to end against the local Polarion 2512 (2026-11-06: push, skip, replay, pull of title and text, CONFLICT, live R2, AC-6 R1 → repair → 待认领). T9 is done: `docs/metamodel-and-views.md`, the domain-controller demo (model template "系统架构模型（域控制器演示）", `demo.DomainControllerDemo`), and the CI gates (`.github/workflows/ci.yml`; `./gradlew build` runs all three). `./gradlew build` passes (131 backend tests; 143 with vsm-compiler). No test boots the Spring context, because that needs PostgreSQL; the app is checked live instead (see "Running locally"). `frontend/` is a separate npm project (Vite + React 18, served by nginx on :3000, which proxies `/api`, `/graphql`, `/actuator` and `/subscriptions` to the backend). The only `TODO(Tn)` left is in `frontend/src/App.tsx` (the shell still has to mount Sirius Web components).
 
 Deviations from the spec that are already decided:
 - **Spring Boot is 3.5.5, not 3.3.x.** Sirius Web 2025.8.x (pinned at 2025.8.11) is built on Boot 3.5.5, and the spec's reason for its Boot version is alignment with Sirius Web.
@@ -91,7 +91,7 @@ This is a web-native system-architecture modeling tool built on **Sirius Web 202
 - Diagrams generated from a declarative YAML DSL ("VSM", following Papyrus `.odesign` semantics). They are not hand-written canvas code.
 - Two-way binding to Polarion Work Items, plus a consistency report.
 
-Stack (versions locked): JDK 21, Spring Boot 3.5.5 (see above), Gradle 8.14.3 Kotlin DSL (versions in `gradle/libs.versions.toml`), PostgreSQL 16, React 18 + TS 5, Spring GraphQL, EMF (see above), Eclipse OCL 6.x (Pivot), Polarion REST v2.
+Stack (versions locked): JDK 21, Spring Boot 3.5.5 (see above), Gradle 8.14.3 Kotlin DSL (versions in `gradle/libs.versions.toml`), PostgreSQL 16, React 18 + TS 5, Spring GraphQL, EMF (see above), Eclipse OCL 6.x (Pivot), Polarion REST v1 (the spec says v2; Polarion 2512 serves v1).
 
 ## Commands
 
@@ -117,7 +117,7 @@ cd frontend && npm ci && npm run build                             # frontend ty
 ./gradlew :backend:checkPerfThreshold                    # CI gate 3: backend/build/perf-refresh.json median < 800 ms, P95 < 2000 ms (thresholds fixed in build.gradle.kts)
 ```
 
-CI has three gates, and all must pass: gradle tests, a sha256 check that VSM generation is deterministic, and the perf threshold check. Both checks hang off `check`, so `./gradlew build` is the CI build. The workflow needs repository secrets `GPR_TOKEN` (classic PAT, read:packages) and `GPR_USER`; it is untested on GitHub (the repo has no remote yet).
+CI has three gates, and all must pass: gradle tests, a sha256 check that VSM generation is deterministic, and the perf threshold check. Both checks hang off `check`, so `./gradlew build` is the CI build. The workflow needs repository secrets `GPR_TOKEN` (classic PAT, read:packages) and `GPR_USER`. Remote `origin` is the private repo https://github.com/pingge0517/sysarch-studio; until `main` is pushed (the user pushes, since Git Credential Manager needs an interactive login) the workflow has not run on GitHub.
 
 Env vars: `POSTGRES_URL/USER/PASSWORD`, `POLARION_BASE_URL`, `CONSISTENCY_STRATEGY` (`MODEL_WINS`|`POLARION_WINS`) are required. `POLARION_TOKEN` (demo only), `SYNC_RATE_LIMIT_RPS` (default 10) and `VIEW_REFRESH_BUDGET_MS` (default 2000) are optional. `SYSARCH_POLARION_PROJECTS_<POLARIONID>` maps a Polarion project to a Sirius project. `POLARION_WEBHOOK_SECRET` enables webhooks. Never hardcode credentials in `application.yml`.
 
@@ -128,7 +128,7 @@ frontend → backend (GraphQL) → Sirius Web core (read-only dependency)
                                ├─ sysarch metamodel (EMF code, package com.example.sysarch.model)
                                ├─ VSM-generated views (backend/.../view/generated/)
                                └─ link/ + sync/ (Polarion binding)
-backend → polarion proxy → Polarion REST v2   (browser never calls Polarion directly)
+backend → polarion proxy → Polarion REST v1   (spec says v2; browser never calls Polarion directly)
 ```
 
 **Hard boundaries.** Breaking any of these fails review.
@@ -147,7 +147,7 @@ backend → polarion proxy → Polarion REST v2   (browser never calls Polarion 
 - The model is the single source of truth. Every diagram node must map back to an `elementRef`.
 - `DiagramLayout` (x/y/size/waypoints) is stored separately from the model. Deleting a model element cascades to its layout and edges. Layout changes must not emit model events.
 - `synchronization: auto` views cannot "remove from diagram but keep in model". Hiding is only possible through filters such as `hideAbstract`.
-- Refresh must be **incremental**, computed as a diff from `autoExpand` depth and pushed over a throttled GraphQL subscription. Redrawing the whole diagram is forbidden. Perf gate: with 500 elements and 20 inserts, median < 800ms and P95 < 2000ms.
+- Refresh must be **incremental**, computed as a diff from `autoExpand` depth and pushed over a throttled GraphQL subscription. Redrawing the whole diagram is forbidden. Perf gate: with 500 elements and 20 inserts, median < 800ms and P95 < 2000ms. How this is met under Sirius (which always re-sends the whole diagram) is in "Sirius Web adapter → Refresh is always the whole diagram" above.
 
 **Validation (spec §3.2, T6).** The OCL invariants are NameNotEmpty, InterfaceTypeRequired, PortTypeCompatible, NoSelfLoop, DirectionCompatible and LayerAdjacentOnly. They run on save and on edge drop (`validateOnDrop: true`). Errors use the shape `{code, elementId, message, anchors[]}`.
 - `PortTypeCompatible` is plain string equality on `interfaceType`, with no inheritance. Document this limit in code.
@@ -156,7 +156,7 @@ backend → polarion proxy → Polarion REST v2   (browser never calls Polarion 
 
 **Polarion sync (spec §6.2–6.3, §7).**
 - Each field has exactly one writer, per the ownership matrix in §6.2. Fields the matrix doesn't cover are recorded as CONFLICT and never auto-merged. Only creates merge automatically. New Work Items go into an "unbound pool" until someone claims them.
-- `/sync/push` and `/sync/pull` require an `Idempotency-Key`, with 24h dedup.
+- `/sync/push` requires an `Idempotency-Key`, with 24h dedup; `/sync/pull` honours one when sent (spec §6.3 wants it required, but the verbatim OpenAPI has no such parameter for pull).
 - Push runs a full precheck first and rolls back the whole batch on any failure.
 - Polarion calls go through a token bucket (10 rps). On 429, back off per `Retry-After`, up to 3 times.
 - Every sync writes to the `sync_audit` table.
@@ -188,6 +188,7 @@ This machine has no Docker. It runs a local PostgreSQL 16.13 instead: the zip bi
 # PostgreSQL starts with Windows (service postgresql-16); check it with: /c/PostgreSQL/16/bin/pg_isready.exe -h localhost
 ./gradlew :backend:bootJar
 set -a; . ./.env; set +a; POSTGRES_URL=jdbc:postgresql://localhost:5432/sysarch java -jar backend/build/libs/backend-0.1.0-SNAPSHOT.jar
+# against the local Polarion: also set POLARION_BASE_URL=http://localhost/polarion and SYSARCH_POLARION_PROJECTS_SYSARCH=<Sirius project name>
 # UI: Sirius Web at http://localhost:8080 (served by the backend)
 cd frontend && npm run build && npx vite preview --port 3000 --strictPort   # T1 placeholder shell; proxies /api, /graphql, /actuator, /subscriptions to :8080
 ```
