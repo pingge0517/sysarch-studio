@@ -4,6 +4,7 @@ import com.example.sysarch.model.SysarchPackage;
 import com.example.sysarch.validation.ChangeGuard;
 import com.example.sysarch.validation.ConstraintValidator;
 import com.example.sysarch.validation.SysarchEValidator;
+import com.example.sysarch.validation.VetoNotices;
 import com.example.sysarch.validation.ValidationError;
 
 import java.util.List;
@@ -58,8 +59,8 @@ public final class ConstraintEnforcement {
     @Configuration
     public static class Registration {
 
-        public Registration(EValidator.Registry eValidatorRegistry, ConstraintValidator constraints) {
-            eValidatorRegistry.put(SysarchPackage.eINSTANCE, new SysarchEValidator(constraints));
+        public Registration(EValidator.Registry eValidatorRegistry, ConstraintValidator constraints, VetoNotices notices) {
+            eValidatorRegistry.put(SysarchPackage.eINSTANCE, new SysarchEValidator(constraints, notices));
         }
     }
 
@@ -71,11 +72,14 @@ public final class ConstraintEnforcement {
 
         private final ChangeGuard guard;
 
+        private final VetoNotices notices;
+
         /** One recorder per editing context; Sirius processes an editing context's inputs one at a time. */
         private final Map<String, ChangeRecorder> recorders = new ConcurrentHashMap<>();
 
-        public Guard(ConstraintValidator constraints) {
+        public Guard(ConstraintValidator constraints, VetoNotices notices) {
             this.guard = new ChangeGuard(Objects.requireNonNull(constraints));
+            this.notices = Objects.requireNonNull(notices);
         }
 
         @Override
@@ -97,7 +101,10 @@ public final class ConstraintEnforcement {
             }
             var change = recorder.endRecording();
             recorder.dispose();
+            var edited = ChangeGuard.edited(change); // before check: a rollback reverses the change description
             List<ValidationError> introduced = this.guard.check(resourceSet.get(), change);
+            // The client already has its answer, so the reason goes onto the edited fields until the next edit.
+            this.notices.record(resourceSet.get(), edited, introduced);
             if (!introduced.isEmpty()) {
                 this.logger.warn("Rejected edit {} in editing context {}: {}", changeDescription.getInput().getClass().getSimpleName(), editingContext.getId(),
                         introduced.stream().map(e -> e.code() + " " + e.message()).collect(Collectors.joining("; ")));

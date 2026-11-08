@@ -34,10 +34,16 @@ public final class SysarchEValidator implements EValidator {
     /** Feature(s) each constraint is about, i.e. the properties fields to mark, in a fixed order (diagnostic codes). */
     static final Map<String, List<String>> FEATURES = orderedFeatures();
 
+    /** Diagnostic code of a vetoed-edit notice ({@link VetoNotices}), after the constraint codes. */
+    public static final int VETO_NOTICE = 100;
+
     private final ConstraintValidator constraints;
 
-    public SysarchEValidator(ConstraintValidator constraints) {
+    private final VetoNotices notices;
+
+    public SysarchEValidator(ConstraintValidator constraints, VetoNotices notices) {
         this.constraints = Objects.requireNonNull(constraints);
+        this.notices = Objects.requireNonNull(notices);
     }
 
     @Override
@@ -53,6 +59,15 @@ public final class SysarchEValidator implements EValidator {
                 valid = false;
                 if (diagnostics != null) {
                     diagnostics.add(new BasicDiagnostic(Diagnostic.ERROR, SOURCE, code(error.code()), error.message(), data(eObject, error.code())));
+                }
+            }
+            for (var notice : this.notices.noticesFor(eObject).entrySet()) {
+                valid = false;
+                if (diagnostics != null) {
+                    List<Object> data = new ArrayList<>();
+                    data.add(eObject);
+                    data.addAll(notice.getValue());
+                    diagnostics.add(new BasicDiagnostic(Diagnostic.ERROR, SOURCE, VETO_NOTICE, notice.getKey(), data.toArray()));
                 }
             }
         }

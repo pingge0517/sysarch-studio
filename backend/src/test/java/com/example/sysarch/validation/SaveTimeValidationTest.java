@@ -52,6 +52,8 @@ class SaveTimeValidationTest {
 
     private int counter;
 
+    private final VetoNotices notices = new VetoNotices();
+
     @BeforeAll
     static void loadOcl() {
         constraints = new ConstraintValidator();
@@ -227,6 +229,37 @@ class SaveTimeValidationTest {
         assertEquals(Diagnostic.OK, this.diagnostician().validate(this.allocate).getSeverity());
     }
 
+    // ---- notice of a vetoed edit (the handler has already answered, so it is shown on the edited field) ----
+
+    /** The vetoed edit is rolled back, and the field the user edited says why until the next edit. */
+    @Test
+    void aVetoedEditIsExplainedOnTheEditedField() {
+        List<ValidationError> rejected = this.editWithNotice(m -> this.physical.setLayer(Layer.EPBS)); // breaks the Allocate LA -> PA
+
+        assertEquals(List.of("LayerAdjacentOnly"), codes(rejected));
+        assertEquals(Layer.PHYSICAL, this.physical.getLayer(), "rolled back");
+        Diagnostic notice = this.child(this.diagnostician().validate(this.physical), "修改未保存：跨层跳过：LA → EPBS");
+        assertEquals(Diagnostic.ERROR, notice.getSeverity());
+        assertEquals(List.of(this.physical, SysarchPackage.eINSTANCE.getArchElement_Layer()), notice.getData());
+        assertEquals(Diagnostic.OK, this.diagnostician().validate(this.logical).getSeverity(), "only the edited element carries the notice");
+    }
+
+    @Test
+    void theNoticeClearsOnTheNextEdit() {
+        this.editWithNotice(m -> this.physical.setLayer(Layer.EPBS));
+
+        this.editWithNotice(m -> this.logical.setName("Main controller"));
+
+        assertEquals(Diagnostic.OK, this.diagnostician().validate(this.physical).getSeverity());
+    }
+
+    @Test
+    void aKeptEditLeavesNoNotice() {
+        this.editWithNotice(m -> this.physical.setName("ECU 2"));
+
+        assertEquals(Diagnostic.OK, this.diagnostician().validate(this.physical).getSeverity());
+    }
+
     // ---- helpers ----
 
     /** Records {@code edit} the way the Sirius pipeline does, then lets the guard decide. */
@@ -238,9 +271,21 @@ class SaveTimeValidationTest {
         return new ChangeGuard(constraints).check(this.resourceSet, change);
     }
 
+    /** Like {@link #edit}, and then what ConstraintEnforcement.Guard does next: record the notice of a veto. */
+    private List<ValidationError> editWithNotice(Consumer<Resource> edit) {
+        ChangeRecorder recorder = new ChangeRecorder(this.resourceSet);
+        edit.accept(this.model);
+        var change = recorder.endRecording();
+        recorder.dispose();
+        var edited = ChangeGuard.edited(change);
+        List<ValidationError> rejected = new ChangeGuard(constraints).check(this.resourceSet, change);
+        this.notices.record(this.resourceSet, edited, rejected);
+        return rejected;
+    }
+
     private Diagnostician diagnostician() {
         EValidator.Registry registry = new EValidatorRegistryImpl();
-        registry.put(SysarchPackage.eINSTANCE, new SysarchEValidator(constraints));
+        registry.put(SysarchPackage.eINSTANCE, new SysarchEValidator(constraints, this.notices));
         return new Diagnostician(registry);
     }
 

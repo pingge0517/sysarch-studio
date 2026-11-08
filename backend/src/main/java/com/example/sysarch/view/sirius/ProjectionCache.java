@@ -1,5 +1,6 @@
 package com.example.sysarch.view.sirius;
 
+import com.example.sysarch.ModelStamp;
 import com.example.sysarch.view.api.DiagramDescription;
 import com.example.sysarch.view.projection.DiagramProjector;
 import com.example.sysarch.view.projection.DiagramProjector.ProjectionResult;
@@ -13,11 +14,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 
-import org.eclipse.emf.common.notify.Notification;
-import org.eclipse.emf.common.notify.Notifier;
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.util.EContentAdapter;
-import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.springframework.stereotype.Component;
 
 /**
@@ -26,7 +23,7 @@ import org.springframework.stereotype.Component;
  * <p>Sirius renders a diagram by calling a node description's {@code semanticElementsProvider} once per parent
  * node instance, and the label and style providers once per node. Without a cache each call would re-project
  * the whole diagram. A cached projection is reused until anything in the root's resource set changes; a
- * counter maintained by an {@link EContentAdapter} on the resource set detects that.
+ * {@link ModelStamp} on the resource set detects that.
  */
 @Component
 public class ProjectionCache {
@@ -92,37 +89,5 @@ public class ProjectionCache {
     }
 
     private record Entry(long stamp, Projection projection) {
-    }
-
-    /** Change counter of the root's resource set (or resource, or containment tree). */
-    static final class ModelStamp extends EContentAdapter {
-
-        private volatile long stamp;
-
-        /** The notifier whose changes the stamp counts: the resource set, else the resource, else the containment root. */
-        static Notifier scope(EObject root) {
-            return root.eResource() == null ? EcoreUtil.getRootContainer(root)
-                    : root.eResource().getResourceSet() != null ? root.eResource().getResourceSet() : root.eResource();
-        }
-
-        static long of(EObject root) {
-            Notifier target = scope(root);
-            for (Object adapter : target.eAdapters()) {
-                if (adapter instanceof ModelStamp modelStamp) {
-                    return modelStamp.stamp;
-                }
-            }
-            ModelStamp modelStamp = new ModelStamp();
-            target.eAdapters().add(modelStamp);
-            return modelStamp.stamp;
-        }
-
-        @Override
-        public void notifyChanged(Notification notification) {
-            super.notifyChanged(notification);
-            if (!notification.isTouch() && notification.getEventType() != Notification.REMOVING_ADAPTER) {
-                this.stamp++;
-            }
-        }
     }
 }

@@ -68,6 +68,24 @@ public final class ChangeGuard {
         return introduced;
     }
 
+    /**
+     * The features each existing element had changed by the edit, for the notice of a veto ({@link VetoNotices}). Take
+     * it before {@link #check}: a rollback reverses the change description. Elements created by the edit are left
+     * out, because a rollback removes them.
+     */
+    public static Map<EObject, Set<EStructuralFeature>> edited(ChangeDescription change) {
+        Map<EObject, Set<EStructuralFeature>> edited = new IdentityHashMap<>();
+        Set<EObject> created = new java.util.HashSet<>(change.getObjectsToDetach());
+        change.getObjectChanges().map().forEach((element, featureChanges) -> {
+            if (!created.contains(element)) {
+                Set<EStructuralFeature> features = new LinkedHashSet<>();
+                featureChanges.forEach(featureChange -> features.add(featureChange.getFeature()));
+                edited.put(element, features);
+            }
+        });
+        return edited;
+    }
+
     /** Elements the edit changed or created, and the elements that reference any of them. */
     static Set<EObject> touched(ResourceSet resourceSet, ChangeDescription change) {
         Set<EObject> changed = new LinkedHashSet<>(change.getObjectChanges().keySet());
