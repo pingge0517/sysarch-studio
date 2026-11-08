@@ -87,6 +87,15 @@ public class SiriusModelGateway implements ModelGateway {
         return ((RepairedPayload) payload).failure();
     }
 
+    @Override
+    public void refreshViews(String polarionProjectId) {
+        try {
+            this.dispatch(polarionProjectId, new RefreshViewsInput(UUID.randomUUID()));
+        } catch (UnmappedProjectException e) {
+            // no Sirius project, so no views to refresh
+        }
+    }
+
     /** The Polarion project an editing context belongs to, if one is mapped to it. */
     public Optional<String> polarionProjectOf(String editingContextId) {
         for (String polarionProjectId : this.properties.getProjects().keySet()) {
@@ -155,6 +164,10 @@ public class SiriusModelGateway implements ModelGateway {
     record RepairedPayload(UUID id, String failure) implements IPayload {
     }
 
+    /** Changes nothing; answered with a semantic change so that Sirius recomputes the open views. */
+    record RefreshViewsInput(UUID id) implements IInput {
+    }
+
     /** Executes the gateway's inputs on the editing context thread. */
     @Service
     public static class Handler implements IEditingContextEventHandler {
@@ -168,7 +181,8 @@ public class SiriusModelGateway implements ModelGateway {
         @Override
         public boolean canHandle(IEditingContext editingContext, IInput input) {
             return editingContext instanceof IEMFEditingContext
-                    && (input instanceof ReadElementsInput || input instanceof ApplyPolarionValuesInput || input instanceof RepairConnectionInput);
+                    && (input instanceof ReadElementsInput || input instanceof ApplyPolarionValuesInput || input instanceof RepairConnectionInput
+                            || input instanceof RefreshViewsInput);
         }
 
         @Override
@@ -186,6 +200,9 @@ public class SiriusModelGateway implements ModelGateway {
                 String failure = ModelOperations.repairConnection(index, repair.repair(), this.constraints);
                 changed = failure == null;
                 payloadSink.tryEmitValue(new RepairedPayload(input.id(), failure));
+            } else if (input instanceof RefreshViewsInput) {
+                changed = true; // nothing in the model changed; the semantic change makes Sirius recompute its views
+                payloadSink.tryEmitValue(new AppliedPayload(input.id(), 0));
             }
             changeDescriptionSink.tryEmitNext(new ChangeDescription(changed ? ChangeKind.SEMANTIC_CHANGE : ChangeKind.NOTHING, editingContext.getId(), input));
         }

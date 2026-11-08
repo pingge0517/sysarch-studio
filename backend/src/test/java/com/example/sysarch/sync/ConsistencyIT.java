@@ -224,6 +224,7 @@ class ConsistencyIT {
         assertTrue(pending.getMessage().contains("待认领（原绑定 SYS-1 已删除）"), pending.getMessage());
         assertEquals("SYS-1", pending.getWorkItemId());
         assertEquals(List.of("REPAIR binding SYS-1 -> null by alice"), this.audit("PD-1"));
+        assertEquals(List.of(PROJECT), this.model.refreshed, "the Validation view must drop the repaired R1, though the model did not change");
 
         this.bind("PD-1", "PartDefinition", "SYS-7");
         assertEquals(Map.of(), this.store.pendingClaims(PROJECT));
@@ -320,6 +321,20 @@ class ConsistencyIT {
 
         assertEquals("REFUSED", action.status());
         assertEquals(Layer.EPBS, epbs.getLayer());
+        assertEquals(List.of(), this.model.refreshed, "nothing was repaired, so nothing to refresh");
+    }
+
+    /**
+     * Incomplete is not wrong (as on the save path): an Allocate whose ends are not both set yet is no layer violation.
+     * Found in the browser acceptance check: a new Allocate from the explorer was reported as R4.
+     */
+    @Test
+    void anAllocateWithoutBothEndsIsNoLayerViolation() {
+        PartDefinition logical = this.boundBlock("PD-4", "Controller", "SYS-4");
+        this.model.allocate("AL-1", null, null);
+        this.model.allocate("AL-2", logical, null);
+
+        assertEquals(List.of(), ids(this.controller.report(PROJECT)));
     }
 
     /** R5: the Work Items are created by one push (all or nothing). */
@@ -377,9 +392,10 @@ class ConsistencyIT {
         assertEquals(202, webhooks.receive("sha256=" + hmac(body), body).getStatusCode().value());
         assertEquals(Map.of(), this.store.pendingChecks(PROJECT), "receiving only queues");
 
-        new PolarionEventConsumer(this.store).consumeQueued();
+        new PolarionEventConsumer(this.store, this.model).consumeQueued();
         assertEquals(Map.of("SYS-1", ConsistencyStore.DELETED), this.store.pendingChecks(PROJECT));
         assertTrue(this.links.find("PD-1").isPresent(), "the consumer changes no data");
+        assertEquals(List.of(PROJECT), this.model.refreshed, "but the Validation view shows the new mark at once");
 
         this.request.removeHeader("Authorization");
         assertEquals(List.of("R1:PD-1"), ids(this.controller.report(PROJECT)));

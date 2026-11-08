@@ -39,6 +39,13 @@ public interface ModelGateway {
     String repairConnection(String polarionProjectId, ConnectionRepair repair);
 
     /**
+     * Makes the project's open views (Sirius' Validation view, diagrams) recompute, without changing the model. Called
+     * after bindings or Polarion marks changed (push, pull, repair, webhook events): those live outside the model, and
+     * Sirius only recomputes a view on a semantic change. A project not mapped to Polarion is ignored.
+     */
+    void refreshViews(String polarionProjectId);
+
+    /**
      * Make the model match Polarion for one Connection: delete it, or set (creating it if needed) its endpoints.
      *
      * @param name used only when the connection has to be created

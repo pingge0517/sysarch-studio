@@ -125,6 +125,7 @@ public class SyncService {
 
         if (!result.getConflicts().isEmpty()) {
             this.markConflicts(result);
+            this.model.refreshViews(projectId); // links became CONFLICT
             return new Outcome(409, result.pushed(0), 0);
         }
         if (!result.getErrors().isEmpty()) {
@@ -135,7 +136,11 @@ public class SyncService {
         if (dryRun) {
             return Outcome.ok(result);
         }
-        return this.execute(projectId, plans, token, actor, result);
+        Outcome outcome = this.execute(projectId, plans, token, actor, result);
+        if (outcome.status() == 200 && outcome.result().getErrors().isEmpty() && outcome.result().getPushed() > 0) {
+            this.model.refreshViews(projectId); // new or changed bindings: recompute the Validation view
+        }
+        return outcome;
     }
 
     /** Decides what to do with one element, without writing anything; failures are added to {@code result}. */
@@ -330,6 +335,7 @@ public class SyncService {
             linkUpdates.forEach(this.links::update);
             audits.forEach(Runnable::run);
         });
+        this.model.refreshViews(projectId); // link states and titles changed: recompute the Validation view
         return Outcome.ok(result.pulled(pulled).skipped(skipped));
     }
 

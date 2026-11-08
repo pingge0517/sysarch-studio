@@ -157,6 +157,7 @@ class PolarionSyncIT {
         assertEquals("architecture_element", link.workItemType());
         assertTrue(this.auditRows("PD-1").contains("PUSH sysarchName null -> DomainController by alice"));
         assertEquals("PD-1", ElementIds.of(controller));
+        assertEquals(List.of("sysarch"), this.model.refreshed, "bindings changed: the Validation view must recompute");
     }
 
     /**
@@ -353,6 +354,7 @@ class PolarionSyncIT {
         assertEquals(1, result.getPulled());
         assertEquals("The controller shall broadcast vehicle speed every 10 ms.", requirement.getText());
         assertTrue(this.auditRows("RQ-1").contains("PULL text old text -> The controller shall broadcast vehicle speed every 10 ms. by alice"));
+        assertEquals(List.of("sysarch", "sysarch"), this.model.refreshed, "the push, then the pull, each refreshed the views");
     }
 
     /** New Work Items in Polarion are not merged into the model: they wait in the unbound pool to be claimed. */

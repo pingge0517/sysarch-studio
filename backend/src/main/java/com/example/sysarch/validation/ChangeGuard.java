@@ -117,7 +117,7 @@ public final class ChangeGuard {
      * OCL invariants evaluate to false on empty ends. Only veto once every feature the constraint is about is set;
      * until then EMF's required-feature check marks the empty fields red.
      */
-    private static boolean complete(EObject element, String code) {
+    public static boolean complete(EObject element, String code) {
         for (String name : SysarchEValidator.FEATURES.getOrDefault(code, List.of())) {
             EStructuralFeature feature = element.eClass().getEStructuralFeature(name);
             if (feature != null && !feature.isMany() && element.eGet(feature) == null) {

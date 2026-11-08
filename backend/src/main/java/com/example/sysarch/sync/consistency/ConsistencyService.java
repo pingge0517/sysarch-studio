@@ -182,6 +182,9 @@ public class ConsistencyService {
         if (!unbound.isEmpty()) {
             actions.addAll(this.repairUnbound(projectId, unbound, token, actor));
         }
+        if (actions.stream().anyMatch(action -> "DONE".equals(action.status()))) {
+            this.model.refreshViews(projectId); // bindings changed outside the model: recompute the Validation view
+        }
         return new RepairResult(projectId, strategy, actions);
     }
 

@@ -34,6 +34,9 @@ final class InMemoryModel implements ModelGateway {
 
     final List<Map<String, Map<String, String>>> applied = new ArrayList<>();
 
+    /** Projects whose views were asked to refresh, in order. */
+    final List<String> refreshed = new ArrayList<>();
+
     private final String projectId;
 
     private final ConstraintValidator constraints;
@@ -71,6 +74,11 @@ final class InMemoryModel implements ModelGateway {
     @Override
     public String repairConnection(String polarionProjectId, ConnectionRepair repair) {
         return ModelOperations.repairConnection(this.index(polarionProjectId), repair, this.constraints);
+    }
+
+    @Override
+    public void refreshViews(String polarionProjectId) {
+        this.refreshed.add(polarionProjectId);
     }
 
     PartDefinition block(String id, String name) {

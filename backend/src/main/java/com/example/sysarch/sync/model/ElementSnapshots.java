@@ -5,7 +5,11 @@ import com.example.sysarch.model.ArchElement;
 import com.example.sysarch.model.Connection;
 import com.example.sysarch.model.Requirement;
 import com.example.sysarch.sync.model.ModelGateway.ElementSnapshot;
+import com.example.sysarch.validation.ChangeGuard;
 import com.example.sysarch.validation.ConstraintValidator;
+import com.example.sysarch.validation.ValidationError;
+
+import java.util.List;
 
 /** Reads the {@link ElementSnapshot} of an element; must run where the model may be read (the editing context thread). */
 public final class ElementSnapshots {
@@ -18,6 +22,17 @@ public final class ElementSnapshots {
         String target = element instanceof Connection connection && connection.getTarget() != null ? ElementIds.of(connection.getTarget()) : null;
         String text = element instanceof Requirement requirement ? requirement.getText() : null;
         return new ElementSnapshot(ElementIds.of(element), element.eClass().getName(), element.getName(), element.getLayer().getLiteral(),
-                element.getStereotypes(), source, target, text, element.getRev(), constraints.validate(element));
+                element.getStereotypes(), source, target, text, element.getRev(), errors(element, constraints));
+    }
+
+    /**
+     * The element's constraint violations, where incomplete is not wrong (as on the save path, {@link ChangeGuard#complete}):
+     * a vetoed constraint over ends that are not all set yet, such as a new Allocate, is no violation. Without this the
+     * consistency report showed an unfinished Allocate as R4 (found in the browser acceptance check).
+     */
+    private static List<ValidationError> errors(ArchElement element, ConstraintValidator constraints) {
+        return constraints.validate(element).stream()
+                .filter(error -> !ChangeGuard.VETOED.contains(error.code()) || ChangeGuard.complete(element, error.code()))
+                .toList();
     }
 }
