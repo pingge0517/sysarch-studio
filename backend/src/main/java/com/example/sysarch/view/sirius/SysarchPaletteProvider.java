@@ -8,6 +8,7 @@ import org.eclipse.sirius.components.collaborative.diagrams.DiagramContext;
 import org.eclipse.sirius.components.collaborative.diagrams.api.IConnectorToolsProvider;
 import org.eclipse.sirius.components.collaborative.diagrams.api.IPaletteProvider;
 import org.eclipse.sirius.components.collaborative.diagrams.dto.Palette;
+import org.eclipse.sirius.components.collaborative.diagrams.dto.ToolSection;
 import org.eclipse.sirius.components.core.api.IEditingContext;
 import org.eclipse.sirius.components.core.api.IRepresentationDescriptionSearchService;
 import org.eclipse.sirius.components.diagrams.Diagram;
@@ -45,8 +46,16 @@ public class SysarchPaletteProvider implements IPaletteProvider {
                 .map(SysarchPaletteProvider::toDto)
                 .toList();
         String paletteId = diagramDescription.getId() + "/palette/" + Objects.requireNonNullElse(elementDescriptionId, "diagram");
-        return new Palette(paletteId, tools, List.of());
+        // One labelled section, not quick access tools: Sirius 2025.8 shows quick access tools as icons only (ours
+        // have none, so they were invisible), and it draws a node's connection handles only for edge tools found in
+        // paletteEntries. Found in the browser check of AC-5.
+        List<org.eclipse.sirius.components.collaborative.diagrams.dto.IPaletteEntry> entries = tools.isEmpty() ? List.of()
+                : List.of(new ToolSection(paletteId + "/section/tools", SECTION_LABEL, List.of(), tools));
+        return new Palette(paletteId, List.of(), entries);
     }
+
+    /** Label of the palette section that holds the tools of the VSM views. */
+    static final String SECTION_LABEL = "建模工具";
 
     /** The palette sent to the frontend uses DTO tools; the description keeps the executable ones (with handlers). */
     private static org.eclipse.sirius.components.collaborative.diagrams.dto.ITool toDto(ITool tool) {

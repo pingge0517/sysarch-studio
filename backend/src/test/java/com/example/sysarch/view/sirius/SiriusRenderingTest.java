@@ -229,6 +229,26 @@ class SiriusRenderingTest {
         assertEquals(List.of("新建部件"), toolLabels(palettes.handle(null, null, this.ibd, ibdFrame, null, null)));
         var portOnPart = ibdFrame.getChildNodeDescriptions().get(0).getBorderNodeDescriptions().get(0);
         assertEquals(List.of("建立连接"), toolLabels(palettes.handle(null, null, this.ibd, portOnPart, null, null)), "connect starts from a port");
+        var portOnFrame = ibdFrame.getBorderNodeDescriptions().get(0);
+        assertEquals(List.of("建立连接"), toolLabels(palettes.handle(null, null, this.ibd, portOnFrame, null, null)), "and from a port on the frame");
+    }
+
+    /**
+     * Sirius 2025.8 draws connection handles on a node only for edge tools in {@code paletteEntries} (directly or in a
+     * tool section), never for {@code quickAccessTools}, and draws quick access tools as icons only. So our tools are in
+     * one labelled section: visible by name, and connectable by dragging (found in the browser check of AC-5).
+     */
+    @Test
+    void toolsAreInALabelledSectionNotQuickAccess() {
+        var portOnPart = this.nodeDescription(this.ibd, "/node/frame").getChildNodeDescriptions().get(0).getBorderNodeDescriptions().get(0);
+
+        var palette = new SysarchPaletteProvider().handle(null, null, this.ibd, portOnPart, null, null);
+
+        assertEquals(List.of(), palette.quickAccessTools());
+        assertEquals(1, palette.paletteEntries().size());
+        var section = (org.eclipse.sirius.components.collaborative.diagrams.dto.ToolSection) palette.paletteEntries().get(0);
+        assertEquals("建模工具", section.label());
+        assertTrue(section.tools().get(0) instanceof org.eclipse.sirius.components.collaborative.diagrams.dto.SingleClickOnTwoDiagramElementsTool);
     }
 
     @Test
@@ -366,7 +386,11 @@ class SiriusRenderingTest {
     }
 
     private static List<String> toolLabels(org.eclipse.sirius.components.collaborative.diagrams.dto.Palette palette) {
-        return palette.quickAccessTools().stream().map(org.eclipse.sirius.components.collaborative.diagrams.dto.ITool::label).toList();
+        return palette.paletteEntries().stream()
+                .filter(org.eclipse.sirius.components.collaborative.diagrams.dto.ToolSection.class::isInstance)
+                .map(org.eclipse.sirius.components.collaborative.diagrams.dto.ToolSection.class::cast)
+                .flatMap(section -> section.tools().stream())
+                .map(org.eclipse.sirius.components.collaborative.diagrams.dto.ITool::label).toList();
     }
 
     // ---- helpers ----
