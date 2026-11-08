@@ -243,20 +243,52 @@ class SiriusRenderingTest {
         assertEquals("part1", this.car.getOwnedParts().get(0).getName(), "a default name keeps NameNotEmpty satisfied");
     }
 
-    /** AC-5: connecting ports of different interface types is rejected before anything is created. */
+    /**
+     * AC-5: connecting ports of different interface types is rejected before anything is created, with the reason as
+     * an error message, and the two ports are drawn red. The status is a {@link Success} only so that Sirius refreshes
+     * the diagram (a Failure would not); it carries no model change.
+     */
     @Test
     void connectRejectsIncompatiblePortsWithoutTouchingTheModel() {
         Port can = this.port("can0", "CAN");
         can.setDirection(com.example.sysarch.model.PortDirection.OUT);
         Port eth = this.port("eth0", "ETH");
-        this.vehicle.getOwnedPorts().addAll(List.of(can, eth));
+        Port other = this.port("other", "CAN");
+        this.vehicle.getOwnedPorts().addAll(List.of(can, eth, other));
         int before = this.model.getContents().size();
 
         IStatus status = this.connect(can, eth);
 
-        assertTrue(status instanceof org.eclipse.sirius.components.representations.Failure failure
-                && failure.getMessages().get(0).body().startsWith("端口接口类型不一致：「CAN」≠「ETH」"), String.valueOf(status));
+        assertTrue(status instanceof Success success && success.getMessages().size() == 1
+                && success.getMessages().get(0).level() == org.eclipse.sirius.components.representations.MessageLevel.ERROR
+                && success.getMessages().get(0).body().startsWith("端口接口类型不一致：「CAN」≠「ETH」"), String.valueOf(status));
         assertEquals(before, this.model.getContents().size(), "no Connection was stored");
+        assertEquals(Map.of("can0", "#D32F2F", "eth0", "#D32F2F", "other", "#1A2B4A"), this.portBorders());
+    }
+
+    /** "两端端口描红" lasts until the next edit of the model, whatever it is. */
+    @Test
+    void theRedPortsClearOnTheNextEdit() {
+        Port can = this.port("can0", "CAN");
+        can.setDirection(com.example.sysarch.model.PortDirection.OUT);
+        Port eth = this.port("eth0", "ETH");
+        this.vehicle.getOwnedPorts().addAll(List.of(can, eth));
+        this.connect(can, eth);
+        assertEquals("#D32F2F", this.portBorders().get("can0"));
+
+        eth.setInterfaceType("CAN");
+
+        assertEquals(Map.of("can0", "#1A2B4A", "eth0", "#1A2B4A"), this.portBorders());
+    }
+
+    /** Border colour of each port on the IBD frame, by port name. */
+    private Map<String, String> portBorders() {
+        Diagram diagram = this.render(this.ibd, this.vehicle, Optional.empty());
+        Map<String, String> borders = new java.util.TreeMap<>();
+        for (Node port : diagram.getNodes().get(0).getBorderNodes()) {
+            borders.put(port.getOutsideLabels().get(0).text(), ((org.eclipse.sirius.components.diagrams.RectangularNodeStyle) port.getStyle()).getBorderColor());
+        }
+        return borders;
     }
 
     @Test

@@ -99,13 +99,16 @@ public final class SiriusDiagramDescriptionFactory {
 
     private final ToolFactory tools;
 
+    /** Ports of the last rejected connection, shared with the connect tool (AC-5). */
+    private final DropRejections rejections = new DropRejections();
+
     public SiriusDiagramDescriptionFactory(EPackage ePackage, IIdentityService identityService, ProjectionCache projections, DiagramFilterState filters,
             ConstraintValidator validator) {
         this.ePackage = Objects.requireNonNull(ePackage);
         this.identityService = Objects.requireNonNull(identityService);
         this.projections = Objects.requireNonNull(projections);
         this.filters = Objects.requireNonNull(filters);
-        this.tools = new ToolFactory(filters, Objects.requireNonNull(validator));
+        this.tools = new ToolFactory(filters, Objects.requireNonNull(validator), this.rejections);
     }
 
     public static String diagramDescriptionId(DiagramDescription source) {
@@ -167,7 +170,8 @@ public final class SiriusDiagramDescriptionFactory {
                 .targetObjectKindProvider(vm -> self(vm).map(this::kind).orElse(""))
                 .targetObjectLabelProvider(vm -> this.node(source, vm).map(DiagramSnapshot.Node::label).orElse(""))
                 .semanticElementsProvider(semanticElements)
-                .styleProvider(vm -> rectangle(style.color(), style.borderColor(), style.borderWidth()))
+                .styleProvider(vm -> this.rejected(vm) ? rectangle(style.color(), DropRejections.REJECTED_BORDER_COLOR, 2)
+                        : rectangle(style.color(), style.borderColor(), style.borderWidth()))
                 .borderNodeDescriptions(borders)
                 .deleteHandler(this::deleteElement)
                 .labelEditHandler(this::rename)
@@ -401,6 +405,11 @@ public final class SiriusDiagramDescriptionFactory {
 
     private static boolean isPeer(EClass type, EClass domainClass) {
         return type.isSuperTypeOf(domainClass) || domainClass.isSuperTypeOf(type);
+    }
+
+    /** A port of the last rejected connection (AC-5): drawn with a red border until the next edit. */
+    private boolean rejected(VariableManager vm) {
+        return selfElement(vm).filter(this.rejections::isRejected).isPresent();
     }
 
     private static Optional<Object> self(VariableManager vm) {

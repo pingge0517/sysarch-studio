@@ -30,10 +30,12 @@ import org.eclipse.sirius.components.diagrams.tools.Palette;
 import org.eclipse.sirius.components.diagrams.tools.SingleClickOnDiagramElementTool;
 import org.eclipse.sirius.components.diagrams.tools.SingleClickOnTwoDiagramElementsCandidate;
 import org.eclipse.sirius.components.diagrams.tools.SingleClickOnTwoDiagramElementsTool;
+import org.eclipse.sirius.components.collaborative.api.ChangeKind;
 import org.eclipse.sirius.components.representations.Failure;
 import org.eclipse.sirius.components.representations.IStatus;
 import org.eclipse.sirius.components.representations.Message;
 import org.eclipse.sirius.components.representations.MessageLevel;
+import org.eclipse.sirius.components.representations.Success;
 import org.eclipse.sirius.components.representations.VariableManager;
 
 /**
@@ -60,7 +62,10 @@ final class ToolFactory {
 
     private final ConstraintValidator validator;
 
-    ToolFactory(DiagramFilterState filters, ConstraintValidator validator) {
+    private final DropRejections rejections;
+
+    ToolFactory(DiagramFilterState filters, ConstraintValidator validator, DropRejections rejections) {
+        this.rejections = Objects.requireNonNull(rejections);
         this.filters = Objects.requireNonNull(filters);
         this.validator = Objects.requireNonNull(validator);
     }
@@ -163,8 +168,12 @@ final class ToolFactory {
         if (tool.validateOnDrop() && from.get() instanceof Port sourcePort && to.get() instanceof Port targetPort) {
             List<ValidationError> errors = this.validator.validateEdgeDrop(sourcePort, targetPort, ConnectionKind.ASSEMBLY);
             if (!errors.isEmpty()) {
-                // Nothing has been created yet: a rejected connection never reaches the model (spec AC-5).
-                return new Failure(errors.stream().map(error -> new Message(error.message(), MessageLevel.ERROR)).toList());
+                // Nothing has been created: a rejected connection never reaches the model (spec AC-5). The two ports are
+                // marked red, and the status is a Success carrying the error messages only because Sirius refreshes the
+                // diagram after a Success and never after a Failure; it changes nothing in the model.
+                this.rejections.reject(sourcePort, targetPort);
+                return new Success(ChangeKind.SEMANTIC_CHANGE, new java.util.HashMap<>(),
+                        errors.stream().map(error -> new Message(error.message(), MessageLevel.ERROR)).toList());
             }
         }
         EObject connection = EcoreUtil.create(connectionType);

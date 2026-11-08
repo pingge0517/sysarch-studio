@@ -99,9 +99,14 @@ public class ProjectionCache {
 
         private volatile long stamp;
 
-        static long of(EObject root) {
-            Notifier target = root.eResource() == null ? EcoreUtil.getRootContainer(root)
+        /** The notifier whose changes the stamp counts: the resource set, else the resource, else the containment root. */
+        static Notifier scope(EObject root) {
+            return root.eResource() == null ? EcoreUtil.getRootContainer(root)
                     : root.eResource().getResourceSet() != null ? root.eResource().getResourceSet() : root.eResource();
+        }
+
+        static long of(EObject root) {
+            Notifier target = scope(root);
             for (Object adapter : target.eAdapters()) {
                 if (adapter instanceof ModelStamp modelStamp) {
                     return modelStamp.stamp;
