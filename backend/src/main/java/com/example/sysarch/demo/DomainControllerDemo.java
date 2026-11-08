@@ -3,6 +3,7 @@ package com.example.sysarch.demo;
 import com.example.sysarch.model.Allocate;
 import com.example.sysarch.model.ArchElement;
 import com.example.sysarch.model.Connection;
+import com.example.sysarch.model.InterfaceDef;
 import com.example.sysarch.model.ConnectionKind;
 import com.example.sysarch.model.Layer;
 import com.example.sysarch.model.Part;
@@ -24,7 +25,7 @@ import org.eclipse.emf.ecore.EObject;
  *
  * <ul>
  * <li>LA: {@code PD-001 域控制器} owns the parts {@code 感知融合}, {@code 决策规划} and {@code 执行控制}, typed by
- * {@code PD-002..PD-004}. Each part has one IN and one OUT port on the in-vehicle bus ({@code CAN-FD}); the
+ * {@code PD-002..PD-004}. Each part has one IN and one OUT port on the in-vehicle bus, the interface {@code IF-001 CAN-FD} (an InterfaceDef since P1); the
  * connections carry {@code ObjectList}, {@code Trajectory} and {@code VehicleState} (the connection's interface
  * type, shown as the IBD edge label).</li>
  * <li>PA: the SoC {@code PD-005} and the safety MCU {@code PD-006}; three Allocates map the logical blocks onto them
@@ -56,14 +57,19 @@ public final class DomainControllerDemo {
         Part planner = part(system, "PT-002", "决策规划", plannerType);
         Part control = part(system, "PT-003", "执行控制", controlType);
 
-        Port fusionOut = port(fusion, "PO-001", "objects", PortDirection.OUT);
-        Port fusionIn = port(fusion, "PO-002", "egoState", PortDirection.IN);
-        Port plannerIn = port(planner, "PO-003", "perception", PortDirection.IN);
-        Port plannerOut = port(planner, "PO-004", "trajectory", PortDirection.OUT);
-        Port controlIn = port(control, "PO-005", "trajectory", PortDirection.IN);
-        Port controlOut = port(control, "PO-006", "egoState", PortDirection.OUT);
+        InterfaceDef bus = FACTORY.createInterfaceDef();
+        init(bus, "IF-001", "CAN-FD", Layer.LOGICAL);
+        bus.setProtocol("CAN FD");
+        bus.setDataType("frame");
 
-        List<EObject> roots = new java.util.ArrayList<>(List.of(system, fusionType, plannerType, controlType, soc, mcu));
+        Port fusionOut = port(fusion, "PO-001", "objects", PortDirection.OUT, bus);
+        Port fusionIn = port(fusion, "PO-002", "egoState", PortDirection.IN, bus);
+        Port plannerIn = port(planner, "PO-003", "perception", PortDirection.IN, bus);
+        Port plannerOut = port(planner, "PO-004", "trajectory", PortDirection.OUT, bus);
+        Port controlIn = port(control, "PO-005", "trajectory", PortDirection.IN, bus);
+        Port controlOut = port(control, "PO-006", "egoState", PortDirection.OUT, bus);
+
+        List<EObject> roots = new java.util.ArrayList<>(List.of(system, fusionType, plannerType, controlType, soc, mcu, bus));
         roots.add(connection("CO-001", "目标列表", fusionOut, plannerIn, "ObjectList"));
         roots.add(connection("CO-002", "轨迹", plannerOut, controlIn, "Trajectory"));
         roots.add(connection("CO-003", "自车状态（感知）", controlOut, fusionIn, "VehicleState"));
@@ -101,11 +107,11 @@ public final class DomainControllerDemo {
         return part;
     }
 
-    private static Port port(Part owner, String id, String name, PortDirection direction) {
+    private static Port port(Part owner, String id, String name, PortDirection direction, InterfaceDef interfaceType) {
         Port port = FACTORY.createPort();
         init(port, id, name, Layer.LOGICAL);
         port.setDirection(direction);
-        port.setInterfaceType("CAN-FD");
+        port.setInterfaceType(interfaceType);
         owner.getPorts().add(port);
         return port;
     }

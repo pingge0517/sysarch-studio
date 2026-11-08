@@ -5,4 +5,5 @@
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
     <include file="db/sysarch/001-polarion-sync.xml"/>
     <include file="db/sysarch/002-consistency.xml"/>
+    <include file="db/sysarch/003-interface-migration.xml"/>
 </databaseChangeLog>

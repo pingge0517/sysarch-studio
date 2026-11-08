@@ -90,8 +90,8 @@ public class PortItemProvider extends ArchElementItemProvider {
 				 SysarchPackage.Literals.PORT__INTERFACE_TYPE,
 				 true,
 				 false,
-				 false,
-				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 true,
+				 null,
 				 null,
 				 null));
 	}
@@ -167,7 +167,6 @@ public class PortItemProvider extends ArchElementItemProvider {
 
 		switch (notification.getFeatureID(Port.class)) {
 			case SysarchPackage.PORT__DIRECTION:
-			case SysarchPackage.PORT__INTERFACE_TYPE:
 			case SysarchPackage.PORT__IS_CONJUGATED:
 				fireNotifyChanged(new ViewerNotification(notification, notification.getNotifier(), false, true));
 				return;

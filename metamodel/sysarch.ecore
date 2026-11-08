@@ -67,12 +67,12 @@
 
   <eClassifiers xsi:type="ecore:EClass" name="Port" eSuperTypes="#//ArchElement">
     <eAnnotations source="http://www.eclipse.org/emf/2002/Ecore/OCL/Pivot">
-      <details key="InterfaceTypeRequired" value="direction = PortDirection::INOUT or (not interfaceType.oclIsUndefined() and interfaceType.size() &gt; 0)"/>
+      <details key="InterfaceTypeRequired" value="direction = PortDirection::INOUT or not interfaceType.oclIsUndefined()"/>
     </eAnnotations>
     <eStructuralFeatures xsi:type="ecore:EReference" name="owner" eType="#//PartDefinition" eOpposite="#//PartDefinition/ownedPorts"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="partOwner" eType="#//Part" eOpposite="#//Part/ports"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="direction" eType="#//PortDirection" defaultValueLiteral="INOUT"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="interfaceType" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="interfaceType" eType="#//InterfaceDef"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="isConjugated" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean" defaultValueLiteral="false"/>
   </eClassifiers>
 
@@ -99,6 +99,18 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="text" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="verifyMethod" eType="#//VerifyMethod" defaultValueLiteral="TEST"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="priority" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt" defaultValueLiteral="3"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="satisfiedBy" upperBound="-1" eType="#//ArchElement"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="verifiedBy" upperBound="-1" eType="#//ArchElement"/>
+  </eClassifiers>
+
+  <!-- 新增：接口定义 -->
+  <eClassifiers xsi:type="ecore:EClass" name="InterfaceDef" eSuperTypes="#//ArchElement">
+    <eAnnotations source="http://www.eclipse.org/emf/2002/Ecore/OCL/Pivot">
+      <details key="ProtocolRequired" value="not protocol.oclIsUndefined() and protocol.size() &gt; 0"/>
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="protocol" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="dataType" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="superTypes" upperBound="-1" eType="#//InterfaceDef"/>
   </eClassifiers>
 
   <eClassifiers xsi:type="ecore:EClass" name="Allocate" eSuperTypes="#//ArchElement">

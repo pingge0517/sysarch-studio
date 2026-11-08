@@ -226,7 +226,10 @@ public final class ConstraintValidator implements AutoCloseable {
     }
 
     private static String type(Port port) {
-        return port == null || port.getInterfaceType() == null ? "未设置" : port.getInterfaceType();
+        if (port == null || port.getInterfaceType() == null) {
+            return "未设置";
+        }
+        return port.getInterfaceType().getName() == null ? "?" : port.getInterfaceType().getName();
     }
 
     private static String direction(Port port) {

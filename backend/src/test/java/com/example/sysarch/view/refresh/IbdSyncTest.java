@@ -351,7 +351,7 @@ class IbdSyncTest {
         Port port = FACTORY.createPort();
         port.setId("PO-" + ++this.counter);
         port.setName(name);
-        port.setInterfaceType(interfaceType);
+        port.setInterfaceType(com.example.sysarch.TestInterfaces.named(interfaceType));
         return port;
     }
 
@@ -362,7 +362,7 @@ class IbdSyncTest {
         connection.setSource(source);
         connection.setTarget(target);
         connection.setKind(kind);
-        connection.setInterfaceType(source.getInterfaceType());
+        connection.setInterfaceType(source.getInterfaceType() == null ? null : source.getInterfaceType().getName());
         return connection;
     }
 

@@ -2,6 +2,7 @@
  */
 package com.example.sysarch.model.impl;
 
+import com.example.sysarch.model.InterfaceDef;
 import com.example.sysarch.model.Part;
 import com.example.sysarch.model.PartDefinition;
 import com.example.sysarch.model.Port;
@@ -57,24 +58,14 @@ public class PortImpl extends ArchElementImpl implements Port {
 	protected PortDirection direction = DIRECTION_EDEFAULT;
 
 	/**
-	 * The default value of the '{@link #getInterfaceType() <em>Interface Type</em>}' attribute.
+	 * The cached value of the '{@link #getInterfaceType() <em>Interface Type</em>}' reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #getInterfaceType()
 	 * @generated
 	 * @ordered
 	 */
-	protected static final String INTERFACE_TYPE_EDEFAULT = null;
-
-	/**
-	 * The cached value of the '{@link #getInterfaceType() <em>Interface Type</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getInterfaceType()
-	 * @generated
-	 * @ordered
-	 */
-	protected String interfaceType = INTERFACE_TYPE_EDEFAULT;
+	protected InterfaceDef interfaceType;
 
 	/**
 	 * The default value of the '{@link #isIsConjugated() <em>Is Conjugated</em>}' attribute.
@@ -230,7 +221,24 @@ public class PortImpl extends ArchElementImpl implements Port {
 	 * @generated
 	 */
 	@Override
-	public String getInterfaceType() {
+	public InterfaceDef getInterfaceType() {
+		if (interfaceType != null && interfaceType.eIsProxy()) {
+			InternalEObject oldInterfaceType = (InternalEObject)interfaceType;
+			interfaceType = (InterfaceDef)eResolveProxy(oldInterfaceType);
+			if (interfaceType != oldInterfaceType) {
+				if (eNotificationRequired())
+					eNotify(new ENotificationImpl(this, Notification.RESOLVE, SysarchPackage.PORT__INTERFACE_TYPE, oldInterfaceType, interfaceType));
+			}
+		}
+		return interfaceType;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public InterfaceDef basicGetInterfaceType() {
 		return interfaceType;
 	}
 
@@ -240,8 +248,8 @@ public class PortImpl extends ArchElementImpl implements Port {
 	 * @generated
 	 */
 	@Override
-	public void setInterfaceType(String newInterfaceType) {
-		String oldInterfaceType = interfaceType;
+	public void setInterfaceType(InterfaceDef newInterfaceType) {
+		InterfaceDef oldInterfaceType = interfaceType;
 		interfaceType = newInterfaceType;
 		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, SysarchPackage.PORT__INTERFACE_TYPE, oldInterfaceType, interfaceType));
@@ -337,7 +345,8 @@ public class PortImpl extends ArchElementImpl implements Port {
 			case SysarchPackage.PORT__DIRECTION:
 				return getDirection();
 			case SysarchPackage.PORT__INTERFACE_TYPE:
-				return getInterfaceType();
+				if (resolve) return getInterfaceType();
+				return basicGetInterfaceType();
 			case SysarchPackage.PORT__IS_CONJUGATED:
 				return isIsConjugated();
 		}
@@ -362,7 +371,7 @@ public class PortImpl extends ArchElementImpl implements Port {
 				setDirection((PortDirection)newValue);
 				return;
 			case SysarchPackage.PORT__INTERFACE_TYPE:
-				setInterfaceType((String)newValue);
+				setInterfaceType((InterfaceDef)newValue);
 				return;
 			case SysarchPackage.PORT__IS_CONJUGATED:
 				setIsConjugated((Boolean)newValue);
@@ -389,7 +398,7 @@ public class PortImpl extends ArchElementImpl implements Port {
 				setDirection(DIRECTION_EDEFAULT);
 				return;
 			case SysarchPackage.PORT__INTERFACE_TYPE:
-				setInterfaceType(INTERFACE_TYPE_EDEFAULT);
+				setInterfaceType((InterfaceDef)null);
 				return;
 			case SysarchPackage.PORT__IS_CONJUGATED:
 				setIsConjugated(IS_CONJUGATED_EDEFAULT);
@@ -413,7 +422,7 @@ public class PortImpl extends ArchElementImpl implements Port {
 			case SysarchPackage.PORT__DIRECTION:
 				return direction != DIRECTION_EDEFAULT;
 			case SysarchPackage.PORT__INTERFACE_TYPE:
-				return INTERFACE_TYPE_EDEFAULT == null ? interfaceType != null : !INTERFACE_TYPE_EDEFAULT.equals(interfaceType);
+				return interfaceType != null;
 			case SysarchPackage.PORT__IS_CONJUGATED:
 				return isConjugated != IS_CONJUGATED_EDEFAULT;
 		}
@@ -432,8 +441,6 @@ public class PortImpl extends ArchElementImpl implements Port {
 		StringBuilder result = new StringBuilder(super.toString());
 		result.append(" (direction: ");
 		result.append(direction);
-		result.append(", interfaceType: ");
-		result.append(interfaceType);
 		result.append(", isConjugated: ");
 		result.append(isConjugated);
 		result.append(')');

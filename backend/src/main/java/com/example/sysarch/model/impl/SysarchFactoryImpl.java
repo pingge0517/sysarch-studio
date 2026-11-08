@@ -63,6 +63,7 @@ public class SysarchFactoryImpl extends EFactoryImpl implements SysarchFactory {
 			case SysarchPackage.CONNECTION: return createConnection();
 			case SysarchPackage.ITEM_FLOW: return createItemFlow();
 			case SysarchPackage.REQUIREMENT: return createRequirement();
+			case SysarchPackage.INTERFACE_DEF: return createInterfaceDef();
 			case SysarchPackage.ALLOCATE: return createAllocate();
 			case SysarchPackage.DIAGRAM_LAYOUT: return createDiagramLayout();
 			default:
@@ -176,6 +177,17 @@ public class SysarchFactoryImpl extends EFactoryImpl implements SysarchFactory {
 	public Requirement createRequirement() {
 		RequirementImpl requirement = new RequirementImpl();
 		return requirement;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public InterfaceDef createInterfaceDef() {
+		InterfaceDefImpl interfaceDef = new InterfaceDefImpl();
+		return interfaceDef;
 	}
 
 	/**

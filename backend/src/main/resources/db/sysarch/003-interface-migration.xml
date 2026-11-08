@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- P1 T1: backup of the Port.interfaceType string -> InterfaceDef migration, the source of its report and rollback. -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <changeSet id="sysarch-003-interface-migration-backup" author="sysarch">
+        <comment>One row per port the migration saw: its old string and the InterfaceDef it now refers to (CONVERTED), or
+            EMPTY for a port without a value (listed in the report, left empty).</comment>
+        <createTable tableName="interface_migration_backup">
+            <column name="document_key" type="VARCHAR(255)"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="port_id" type="VARCHAR(255)"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="port_name" type="TEXT"/>
+            <column name="old_value" type="TEXT"/>
+            <column name="interface_def_id" type="VARCHAR(255)"/>
+            <column name="status" type="VARCHAR(16)"><constraints nullable="false"/></column>
+            <column name="migrated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+        </createTable>
+    </changeSet>
+</databaseChangeLog>

@@ -59,7 +59,7 @@ class DomainControllerDemoTest {
                 layers.add(block.getLayer());
             }
         }
-        assertEquals(Map.of("Allocate", 3, "Connection", 4, "Part", 3, "PartDefinition", 6, "Port", 6, "Requirement", 5), counts);
+        assertEquals(Map.of("Allocate", 3, "Connection", 4, "InterfaceDef", 1, "Part", 3, "PartDefinition", 6, "Port", 6, "Requirement", 5), counts);
         assertEquals(new TreeSet<>(List.of(Layer.LOGICAL, Layer.PHYSICAL)), layers);
     }
 

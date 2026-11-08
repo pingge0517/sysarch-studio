@@ -2,15 +2,22 @@
  */
 package com.example.sysarch.model.impl;
 
+import com.example.sysarch.model.ArchElement;
 import com.example.sysarch.model.Requirement;
 import com.example.sysarch.model.SysarchPackage;
 import com.example.sysarch.model.VerifyMethod;
 
+import java.util.Collection;
+
 import org.eclipse.emf.common.notify.Notification;
+
+import org.eclipse.emf.common.util.EList;
 
 import org.eclipse.emf.ecore.EClass;
 
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
+
+import org.eclipse.emf.ecore.util.EObjectResolvingEList;
 
 /**
  * <!-- begin-user-doc -->
@@ -24,6 +31,8 @@ import org.eclipse.emf.ecore.impl.ENotificationImpl;
  *   <li>{@link com.example.sysarch.model.impl.RequirementImpl#getText <em>Text</em>}</li>
  *   <li>{@link com.example.sysarch.model.impl.RequirementImpl#getVerifyMethod <em>Verify Method</em>}</li>
  *   <li>{@link com.example.sysarch.model.impl.RequirementImpl#getPriority <em>Priority</em>}</li>
+ *   <li>{@link com.example.sysarch.model.impl.RequirementImpl#getSatisfiedBy <em>Satisfied By</em>}</li>
+ *   <li>{@link com.example.sysarch.model.impl.RequirementImpl#getVerifiedBy <em>Verified By</em>}</li>
  * </ul>
  *
  * @generated
@@ -108,6 +117,26 @@ public class RequirementImpl extends ArchElementImpl implements Requirement {
 	 * @ordered
 	 */
 	protected int priority = PRIORITY_EDEFAULT;
+
+	/**
+	 * The cached value of the '{@link #getSatisfiedBy() <em>Satisfied By</em>}' reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getSatisfiedBy()
+	 * @generated
+	 * @ordered
+	 */
+	protected EList<ArchElement> satisfiedBy;
+
+	/**
+	 * The cached value of the '{@link #getVerifiedBy() <em>Verified By</em>}' reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getVerifiedBy()
+	 * @generated
+	 * @ordered
+	 */
+	protected EList<ArchElement> verifiedBy;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -226,6 +255,32 @@ public class RequirementImpl extends ArchElementImpl implements Requirement {
 	 * @generated
 	 */
 	@Override
+	public EList<ArchElement> getSatisfiedBy() {
+		if (satisfiedBy == null) {
+			satisfiedBy = new EObjectResolvingEList<ArchElement>(ArchElement.class, this, SysarchPackage.REQUIREMENT__SATISFIED_BY);
+		}
+		return satisfiedBy;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EList<ArchElement> getVerifiedBy() {
+		if (verifiedBy == null) {
+			verifiedBy = new EObjectResolvingEList<ArchElement>(ArchElement.class, this, SysarchPackage.REQUIREMENT__VERIFIED_BY);
+		}
+		return verifiedBy;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
 			case SysarchPackage.REQUIREMENT__REQ_ID:
@@ -236,6 +291,10 @@ public class RequirementImpl extends ArchElementImpl implements Requirement {
 				return getVerifyMethod();
 			case SysarchPackage.REQUIREMENT__PRIORITY:
 				return getPriority();
+			case SysarchPackage.REQUIREMENT__SATISFIED_BY:
+				return getSatisfiedBy();
+			case SysarchPackage.REQUIREMENT__VERIFIED_BY:
+				return getVerifiedBy();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -245,6 +304,7 @@ public class RequirementImpl extends ArchElementImpl implements Requirement {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
 	public void eSet(int featureID, Object newValue) {
 		switch (featureID) {
@@ -259,6 +319,14 @@ public class RequirementImpl extends ArchElementImpl implements Requirement {
 				return;
 			case SysarchPackage.REQUIREMENT__PRIORITY:
 				setPriority((Integer)newValue);
+				return;
+			case SysarchPackage.REQUIREMENT__SATISFIED_BY:
+				getSatisfiedBy().clear();
+				getSatisfiedBy().addAll((Collection<? extends ArchElement>)newValue);
+				return;
+			case SysarchPackage.REQUIREMENT__VERIFIED_BY:
+				getVerifiedBy().clear();
+				getVerifiedBy().addAll((Collection<? extends ArchElement>)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -284,6 +352,12 @@ public class RequirementImpl extends ArchElementImpl implements Requirement {
 			case SysarchPackage.REQUIREMENT__PRIORITY:
 				setPriority(PRIORITY_EDEFAULT);
 				return;
+			case SysarchPackage.REQUIREMENT__SATISFIED_BY:
+				getSatisfiedBy().clear();
+				return;
+			case SysarchPackage.REQUIREMENT__VERIFIED_BY:
+				getVerifiedBy().clear();
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -304,6 +378,10 @@ public class RequirementImpl extends ArchElementImpl implements Requirement {
 				return verifyMethod != VERIFY_METHOD_EDEFAULT;
 			case SysarchPackage.REQUIREMENT__PRIORITY:
 				return priority != PRIORITY_EDEFAULT;
+			case SysarchPackage.REQUIREMENT__SATISFIED_BY:
+				return satisfiedBy != null && !satisfiedBy.isEmpty();
+			case SysarchPackage.REQUIREMENT__VERIFIED_BY:
+				return verifiedBy != null && !verifiedBy.isEmpty();
 		}
 		return super.eIsSet(featureID);
 	}

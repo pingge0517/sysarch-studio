@@ -109,3 +109,14 @@ val checkPerfThreshold = tasks.register("checkPerfThreshold") {
 tasks.named("check") {
     dependsOn(checkPerfThreshold)
 }
+
+// P1 T1 step 5: offline rollback of the interface migration (backend stopped). Dry run unless -Papply.
+tasks.register<JavaExec>("rollbackInterfaceMigration") {
+    group = "migration"
+    description = "Restores Port.interfaceType strings from interface_migration_backup (dry run unless -Papply); run with the backend stopped."
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("com.example.sysarch.migration.InterfaceMigrationRollback")
+    if (project.hasProperty("apply")) {
+        args("--apply")
+    }
+}

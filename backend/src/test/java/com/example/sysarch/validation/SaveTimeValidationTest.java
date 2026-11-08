@@ -302,7 +302,7 @@ class SaveTimeValidationTest {
 
     private Port port(String name, String interfaceType, PortDirection direction) {
         Port port = this.named(FACTORY.createPort(), name);
-        port.setInterfaceType(interfaceType);
+        port.setInterfaceType(com.example.sysarch.TestInterfaces.named(interfaceType));
         port.setDirection(direction);
         return port;
     }

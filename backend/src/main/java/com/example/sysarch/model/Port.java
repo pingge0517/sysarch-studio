@@ -20,7 +20,7 @@ package com.example.sysarch.model;
  * </ul>
  *
  * @see com.example.sysarch.model.SysarchPackage#getPort()
- * @model annotation="http://www.eclipse.org/emf/2002/Ecore/OCL/Pivot InterfaceTypeRequired='direction = PortDirection::INOUT or (not interfaceType.oclIsUndefined() and interfaceType.size() &gt; 0)'"
+ * @model annotation="http://www.eclipse.org/emf/2002/Ecore/OCL/Pivot InterfaceTypeRequired='direction = PortDirection::INOUT or not interfaceType.oclIsUndefined()'"
  * @generated
  */
 public interface Port extends ArchElement {
@@ -99,26 +99,26 @@ public interface Port extends ArchElement {
 	void setDirection(PortDirection value);
 
 	/**
-	 * Returns the value of the '<em><b>Interface Type</b></em>' attribute.
+	 * Returns the value of the '<em><b>Interface Type</b></em>' reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Interface Type</em>' attribute.
-	 * @see #setInterfaceType(String)
+	 * @return the value of the '<em>Interface Type</em>' reference.
+	 * @see #setInterfaceType(InterfaceDef)
 	 * @see com.example.sysarch.model.SysarchPackage#getPort_InterfaceType()
 	 * @model
 	 * @generated
 	 */
-	String getInterfaceType();
+	InterfaceDef getInterfaceType();
 
 	/**
-	 * Sets the value of the '{@link com.example.sysarch.model.Port#getInterfaceType <em>Interface Type</em>}' attribute.
+	 * Sets the value of the '{@link com.example.sysarch.model.Port#getInterfaceType <em>Interface Type</em>}' reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Interface Type</em>' attribute.
+	 * @param value the new value of the '<em>Interface Type</em>' reference.
 	 * @see #getInterfaceType()
 	 * @generated
 	 */
-	void setInterfaceType(String value);
+	void setInterfaceType(InterfaceDef value);
 
 	/**
 	 * Returns the value of the '<em><b>Is Conjugated</b></em>' attribute.

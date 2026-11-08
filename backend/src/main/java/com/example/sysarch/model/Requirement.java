@@ -2,6 +2,7 @@
  */
 package com.example.sysarch.model;
 
+import org.eclipse.emf.common.util.EList;
 
 /**
  * <!-- begin-user-doc -->
@@ -16,6 +17,8 @@ package com.example.sysarch.model;
  *   <li>{@link com.example.sysarch.model.Requirement#getText <em>Text</em>}</li>
  *   <li>{@link com.example.sysarch.model.Requirement#getVerifyMethod <em>Verify Method</em>}</li>
  *   <li>{@link com.example.sysarch.model.Requirement#getPriority <em>Priority</em>}</li>
+ *   <li>{@link com.example.sysarch.model.Requirement#getSatisfiedBy <em>Satisfied By</em>}</li>
+ *   <li>{@link com.example.sysarch.model.Requirement#getVerifiedBy <em>Verified By</em>}</li>
  * </ul>
  *
  * @see com.example.sysarch.model.SysarchPackage#getRequirement()
@@ -115,5 +118,29 @@ public interface Requirement extends ArchElement {
 	 * @generated
 	 */
 	void setPriority(int value);
+
+	/**
+	 * Returns the value of the '<em><b>Satisfied By</b></em>' reference list.
+	 * The list contents are of type {@link com.example.sysarch.model.ArchElement}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Satisfied By</em>' reference list.
+	 * @see com.example.sysarch.model.SysarchPackage#getRequirement_SatisfiedBy()
+	 * @model
+	 * @generated
+	 */
+	EList<ArchElement> getSatisfiedBy();
+
+	/**
+	 * Returns the value of the '<em><b>Verified By</b></em>' reference list.
+	 * The list contents are of type {@link com.example.sysarch.model.ArchElement}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Verified By</em>' reference list.
+	 * @see com.example.sysarch.model.SysarchPackage#getRequirement_VerifiedBy()
+	 * @model
+	 * @generated
+	 */
+	EList<ArchElement> getVerifiedBy();
 
 } // Requirement

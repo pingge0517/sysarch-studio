@@ -210,6 +210,29 @@ public class SysarchItemProviderAdapterFactory extends SysarchAdapterFactory imp
 	}
 
 	/**
+	 * This keeps track of the one adapter used for all {@link com.example.sysarch.model.InterfaceDef} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected InterfaceDefItemProvider interfaceDefItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link com.example.sysarch.model.InterfaceDef}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createInterfaceDefAdapter() {
+		if (interfaceDefItemProvider == null) {
+			interfaceDefItemProvider = new InterfaceDefItemProvider(this);
+		}
+
+		return interfaceDefItemProvider;
+	}
+
+	/**
 	 * This keeps track of the one adapter used for all {@link com.example.sysarch.model.Allocate} instances.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -366,6 +389,7 @@ public class SysarchItemProviderAdapterFactory extends SysarchAdapterFactory imp
 		if (connectionItemProvider != null) connectionItemProvider.dispose();
 		if (itemFlowItemProvider != null) itemFlowItemProvider.dispose();
 		if (requirementItemProvider != null) requirementItemProvider.dispose();
+		if (interfaceDefItemProvider != null) interfaceDefItemProvider.dispose();
 		if (allocateItemProvider != null) allocateItemProvider.dispose();
 		if (diagramLayoutItemProvider != null) diagramLayoutItemProvider.dispose();
 	}

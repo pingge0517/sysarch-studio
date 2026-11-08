@@ -121,7 +121,7 @@ class BddSnapshotTest {
         Port port = FACTORY.createPort();
         port.setId("PO-1");
         port.setName("can0");
-        port.setInterfaceType("CAN");
+        port.setInterfaceType(com.example.sysarch.TestInterfaces.named("CAN"));
         this.car.getOwnedPorts().add(port);
 
         DiagramSnapshot snapshot = DiagramProjector.project(this.bdd, this.car);

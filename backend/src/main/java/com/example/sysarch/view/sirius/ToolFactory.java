@@ -250,7 +250,15 @@ final class ToolFactory {
         EStructuralFeature source = from.eClass().getEStructuralFeature(attribute);
         EStructuralFeature target = to.eClass().getEStructuralFeature(attribute);
         if (source != null && target != null && !source.isMany() && !target.isMany()) {
-            to.eSet(target, from.eGet(source));
+            Object value = from.eGet(source);
+            // A referenced element (a port's InterfaceDef, P1) goes into a text attribute (the connection's interfaceType) as its name.
+            if (value instanceof EObject element && target.getEType().getInstanceClass() == String.class) {
+                EStructuralFeature name = element.eClass().getEStructuralFeature("name");
+                value = name == null ? null : element.eGet(name);
+            }
+            if (value == null || target.getEType().isInstance(value)) {
+                to.eSet(target, value);
+            }
         }
     }
 }

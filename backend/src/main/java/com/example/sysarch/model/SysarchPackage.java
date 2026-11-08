@@ -506,7 +506,7 @@ public interface SysarchPackage extends EPackage {
 	int PORT__DIRECTION = ARCH_ELEMENT_FEATURE_COUNT + 2;
 
 	/**
-	 * The feature id for the '<em><b>Interface Type</b></em>' attribute.
+	 * The feature id for the '<em><b>Interface Type</b></em>' reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -896,13 +896,31 @@ public interface SysarchPackage extends EPackage {
 	int REQUIREMENT__PRIORITY = ARCH_ELEMENT_FEATURE_COUNT + 3;
 
 	/**
+	 * The feature id for the '<em><b>Satisfied By</b></em>' reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int REQUIREMENT__SATISFIED_BY = ARCH_ELEMENT_FEATURE_COUNT + 4;
+
+	/**
+	 * The feature id for the '<em><b>Verified By</b></em>' reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int REQUIREMENT__VERIFIED_BY = ARCH_ELEMENT_FEATURE_COUNT + 5;
+
+	/**
 	 * The number of structural features of the '<em>Requirement</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int REQUIREMENT_FEATURE_COUNT = ARCH_ELEMENT_FEATURE_COUNT + 4;
+	int REQUIREMENT_FEATURE_COUNT = ARCH_ELEMENT_FEATURE_COUNT + 6;
 
 	/**
 	 * The number of operations of the '<em>Requirement</em>' class.
@@ -914,6 +932,124 @@ public interface SysarchPackage extends EPackage {
 	int REQUIREMENT_OPERATION_COUNT = ARCH_ELEMENT_OPERATION_COUNT + 0;
 
 	/**
+	 * The meta object id for the '{@link com.example.sysarch.model.impl.InterfaceDefImpl <em>Interface Def</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see com.example.sysarch.model.impl.InterfaceDefImpl
+	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getInterfaceDef()
+	 * @generated
+	 */
+	int INTERFACE_DEF = 7;
+
+	/**
+	 * The feature id for the '<em><b>Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INTERFACE_DEF__ID = ARCH_ELEMENT__ID;
+
+	/**
+	 * The feature id for the '<em><b>Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INTERFACE_DEF__NAME = ARCH_ELEMENT__NAME;
+
+	/**
+	 * The feature id for the '<em><b>Description</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INTERFACE_DEF__DESCRIPTION = ARCH_ELEMENT__DESCRIPTION;
+
+	/**
+	 * The feature id for the '<em><b>Layer</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INTERFACE_DEF__LAYER = ARCH_ELEMENT__LAYER;
+
+	/**
+	 * The feature id for the '<em><b>Stereotypes</b></em>' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INTERFACE_DEF__STEREOTYPES = ARCH_ELEMENT__STEREOTYPES;
+
+	/**
+	 * The feature id for the '<em><b>Work Item Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INTERFACE_DEF__WORK_ITEM_ID = ARCH_ELEMENT__WORK_ITEM_ID;
+
+	/**
+	 * The feature id for the '<em><b>Rev</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INTERFACE_DEF__REV = ARCH_ELEMENT__REV;
+
+	/**
+	 * The feature id for the '<em><b>Protocol</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INTERFACE_DEF__PROTOCOL = ARCH_ELEMENT_FEATURE_COUNT + 0;
+
+	/**
+	 * The feature id for the '<em><b>Data Type</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INTERFACE_DEF__DATA_TYPE = ARCH_ELEMENT_FEATURE_COUNT + 1;
+
+	/**
+	 * The feature id for the '<em><b>Super Types</b></em>' reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INTERFACE_DEF__SUPER_TYPES = ARCH_ELEMENT_FEATURE_COUNT + 2;
+
+	/**
+	 * The number of structural features of the '<em>Interface Def</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INTERFACE_DEF_FEATURE_COUNT = ARCH_ELEMENT_FEATURE_COUNT + 3;
+
+	/**
+	 * The number of operations of the '<em>Interface Def</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INTERFACE_DEF_OPERATION_COUNT = ARCH_ELEMENT_OPERATION_COUNT + 0;
+
+	/**
 	 * The meta object id for the '{@link com.example.sysarch.model.impl.AllocateImpl <em>Allocate</em>}' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -921,7 +1057,7 @@ public interface SysarchPackage extends EPackage {
 	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getAllocate()
 	 * @generated
 	 */
-	int ALLOCATE = 7;
+	int ALLOCATE = 8;
 
 	/**
 	 * The feature id for the '<em><b>Id</b></em>' attribute.
@@ -1039,7 +1175,7 @@ public interface SysarchPackage extends EPackage {
 	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getDiagramLayout()
 	 * @generated
 	 */
-	int DIAGRAM_LAYOUT = 8;
+	int DIAGRAM_LAYOUT = 9;
 
 	/**
 	 * The feature id for the '<em><b>Id</b></em>' attribute.
@@ -1193,7 +1329,7 @@ public interface SysarchPackage extends EPackage {
 	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getLayer()
 	 * @generated
 	 */
-	int LAYER = 9;
+	int LAYER = 10;
 
 	/**
 	 * The meta object id for the '{@link com.example.sysarch.model.PortDirection <em>Port Direction</em>}' enum.
@@ -1203,7 +1339,7 @@ public interface SysarchPackage extends EPackage {
 	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getPortDirection()
 	 * @generated
 	 */
-	int PORT_DIRECTION = 10;
+	int PORT_DIRECTION = 11;
 
 	/**
 	 * The meta object id for the '{@link com.example.sysarch.model.ConnectionKind <em>Connection Kind</em>}' enum.
@@ -1213,7 +1349,7 @@ public interface SysarchPackage extends EPackage {
 	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getConnectionKind()
 	 * @generated
 	 */
-	int CONNECTION_KIND = 11;
+	int CONNECTION_KIND = 12;
 
 	/**
 	 * The meta object id for the '{@link com.example.sysarch.model.VerifyMethod <em>Verify Method</em>}' enum.
@@ -1223,7 +1359,7 @@ public interface SysarchPackage extends EPackage {
 	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getVerifyMethod()
 	 * @generated
 	 */
-	int VERIFY_METHOD = 12;
+	int VERIFY_METHOD = 13;
 
 
 	/**
@@ -1465,15 +1601,15 @@ public interface SysarchPackage extends EPackage {
 	EAttribute getPort_Direction();
 
 	/**
-	 * Returns the meta object for the attribute '{@link com.example.sysarch.model.Port#getInterfaceType <em>Interface Type</em>}'.
+	 * Returns the meta object for the reference '{@link com.example.sysarch.model.Port#getInterfaceType <em>Interface Type</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Interface Type</em>'.
+	 * @return the meta object for the reference '<em>Interface Type</em>'.
 	 * @see com.example.sysarch.model.Port#getInterfaceType()
 	 * @see #getPort()
 	 * @generated
 	 */
-	EAttribute getPort_InterfaceType();
+	EReference getPort_InterfaceType();
 
 	/**
 	 * Returns the meta object for the attribute '{@link com.example.sysarch.model.Port#isIsConjugated <em>Is Conjugated</em>}'.
@@ -1636,6 +1772,71 @@ public interface SysarchPackage extends EPackage {
 	 * @generated
 	 */
 	EAttribute getRequirement_Priority();
+
+	/**
+	 * Returns the meta object for the reference list '{@link com.example.sysarch.model.Requirement#getSatisfiedBy <em>Satisfied By</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the reference list '<em>Satisfied By</em>'.
+	 * @see com.example.sysarch.model.Requirement#getSatisfiedBy()
+	 * @see #getRequirement()
+	 * @generated
+	 */
+	EReference getRequirement_SatisfiedBy();
+
+	/**
+	 * Returns the meta object for the reference list '{@link com.example.sysarch.model.Requirement#getVerifiedBy <em>Verified By</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the reference list '<em>Verified By</em>'.
+	 * @see com.example.sysarch.model.Requirement#getVerifiedBy()
+	 * @see #getRequirement()
+	 * @generated
+	 */
+	EReference getRequirement_VerifiedBy();
+
+	/**
+	 * Returns the meta object for class '{@link com.example.sysarch.model.InterfaceDef <em>Interface Def</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Interface Def</em>'.
+	 * @see com.example.sysarch.model.InterfaceDef
+	 * @generated
+	 */
+	EClass getInterfaceDef();
+
+	/**
+	 * Returns the meta object for the attribute '{@link com.example.sysarch.model.InterfaceDef#getProtocol <em>Protocol</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Protocol</em>'.
+	 * @see com.example.sysarch.model.InterfaceDef#getProtocol()
+	 * @see #getInterfaceDef()
+	 * @generated
+	 */
+	EAttribute getInterfaceDef_Protocol();
+
+	/**
+	 * Returns the meta object for the attribute '{@link com.example.sysarch.model.InterfaceDef#getDataType <em>Data Type</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Data Type</em>'.
+	 * @see com.example.sysarch.model.InterfaceDef#getDataType()
+	 * @see #getInterfaceDef()
+	 * @generated
+	 */
+	EAttribute getInterfaceDef_DataType();
+
+	/**
+	 * Returns the meta object for the reference list '{@link com.example.sysarch.model.InterfaceDef#getSuperTypes <em>Super Types</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the reference list '<em>Super Types</em>'.
+	 * @see com.example.sysarch.model.InterfaceDef#getSuperTypes()
+	 * @see #getInterfaceDef()
+	 * @generated
+	 */
+	EReference getInterfaceDef_SuperTypes();
 
 	/**
 	 * Returns the meta object for class '{@link com.example.sysarch.model.Allocate <em>Allocate</em>}'.
@@ -2015,12 +2216,12 @@ public interface SysarchPackage extends EPackage {
 		EAttribute PORT__DIRECTION = eINSTANCE.getPort_Direction();
 
 		/**
-		 * The meta object literal for the '<em><b>Interface Type</b></em>' attribute feature.
+		 * The meta object literal for the '<em><b>Interface Type</b></em>' reference feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
 		 * @generated
 		 */
-		EAttribute PORT__INTERFACE_TYPE = eINSTANCE.getPort_InterfaceType();
+		EReference PORT__INTERFACE_TYPE = eINSTANCE.getPort_InterfaceType();
 
 		/**
 		 * The meta object literal for the '<em><b>Is Conjugated</b></em>' attribute feature.
@@ -2147,6 +2348,56 @@ public interface SysarchPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute REQUIREMENT__PRIORITY = eINSTANCE.getRequirement_Priority();
+
+		/**
+		 * The meta object literal for the '<em><b>Satisfied By</b></em>' reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference REQUIREMENT__SATISFIED_BY = eINSTANCE.getRequirement_SatisfiedBy();
+
+		/**
+		 * The meta object literal for the '<em><b>Verified By</b></em>' reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference REQUIREMENT__VERIFIED_BY = eINSTANCE.getRequirement_VerifiedBy();
+
+		/**
+		 * The meta object literal for the '{@link com.example.sysarch.model.impl.InterfaceDefImpl <em>Interface Def</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see com.example.sysarch.model.impl.InterfaceDefImpl
+		 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getInterfaceDef()
+		 * @generated
+		 */
+		EClass INTERFACE_DEF = eINSTANCE.getInterfaceDef();
+
+		/**
+		 * The meta object literal for the '<em><b>Protocol</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute INTERFACE_DEF__PROTOCOL = eINSTANCE.getInterfaceDef_Protocol();
+
+		/**
+		 * The meta object literal for the '<em><b>Data Type</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute INTERFACE_DEF__DATA_TYPE = eINSTANCE.getInterfaceDef_DataType();
+
+		/**
+		 * The meta object literal for the '<em><b>Super Types</b></em>' reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference INTERFACE_DEF__SUPER_TYPES = eINSTANCE.getInterfaceDef_SuperTypes();
 
 		/**
 		 * The meta object literal for the '{@link com.example.sysarch.model.impl.AllocateImpl <em>Allocate</em>}' class.

@@ -296,7 +296,7 @@ class SiriusRenderingTest {
         this.connect(can, eth);
         assertEquals("#D32F2F", this.portBorders().get("can0"));
 
-        eth.setInterfaceType("CAN");
+        eth.setInterfaceType(com.example.sysarch.TestInterfaces.named("CAN"));
 
         assertEquals(Map.of("can0", "#1A2B4A", "eth0", "#1A2B4A"), this.portBorders());
     }
@@ -461,7 +461,7 @@ class SiriusRenderingTest {
         Port port = FACTORY.createPort();
         port.setId("PO-" + ++this.counter);
         port.setName(name);
-        port.setInterfaceType(interfaceType);
+        port.setInterfaceType(com.example.sysarch.TestInterfaces.named(interfaceType));
         return port;
     }
 }

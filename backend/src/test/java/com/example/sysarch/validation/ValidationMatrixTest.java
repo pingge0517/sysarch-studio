@@ -182,19 +182,20 @@ class ValidationMatrixTest {
         assertTrue(codes(validator.validate(allocate)).contains("NoSelfAllocate"));
     }
 
-    /** The invariants come from the Ecore annotations, not from Java: all seven are loaded (spec text says six). */
+    /** The invariants come from the Ecore annotations, not from Java: all eight are loaded (P0 text says six; P1 adds ProtocolRequired). */
     @Test
     void invariantsAreLoadedFromTheEcore() {
         assertEquals(Map.of(
                 "ArchElement", List.of("NameNotEmpty"),
                 "Port", List.of("InterfaceTypeRequired"),
                 "Connection", List.of("PortTypeCompatible", "NoSelfLoop", "DirectionCompatible"),
-                "Allocate", List.of("LayerAdjacentOnly", "NoSelfAllocate")), validator.constraintNames());
+                "Allocate", List.of("LayerAdjacentOnly", "NoSelfAllocate"),
+                "InterfaceDef", List.of("ProtocolRequired")), validator.constraintNames());
     }
 
     private Port port(String interfaceType, PortDirection direction) {
         Port port = this.named(FACTORY.createPort(), "p" + (this.counter + 1));
-        port.setInterfaceType(interfaceType);
+        port.setInterfaceType(com.example.sysarch.TestInterfaces.named(interfaceType));
         port.setDirection(direction);
         return port;
     }

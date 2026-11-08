@@ -7,6 +7,7 @@ import com.example.sysarch.model.ArchElement;
 import com.example.sysarch.model.Connection;
 import com.example.sysarch.model.ConnectionKind;
 import com.example.sysarch.model.DiagramLayout;
+import com.example.sysarch.model.InterfaceDef;
 import com.example.sysarch.model.ItemFlow;
 import com.example.sysarch.model.Layer;
 import com.example.sysarch.model.Part;
@@ -81,6 +82,13 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 	 * @generated
 	 */
 	private EClass requirementEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass interfaceDefEClass = null;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -410,8 +418,8 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 	 * @generated
 	 */
 	@Override
-	public EAttribute getPort_InterfaceType() {
-		return (EAttribute)portEClass.getEStructuralFeatures().get(3);
+	public EReference getPort_InterfaceType() {
+		return (EReference)portEClass.getEStructuralFeatures().get(3);
 	}
 
 	/**
@@ -562,6 +570,66 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 	@Override
 	public EAttribute getRequirement_Priority() {
 		return (EAttribute)requirementEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getRequirement_SatisfiedBy() {
+		return (EReference)requirementEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getRequirement_VerifiedBy() {
+		return (EReference)requirementEClass.getEStructuralFeatures().get(5);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getInterfaceDef() {
+		return interfaceDefEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getInterfaceDef_Protocol() {
+		return (EAttribute)interfaceDefEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getInterfaceDef_DataType() {
+		return (EAttribute)interfaceDefEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getInterfaceDef_SuperTypes() {
+		return (EReference)interfaceDefEClass.getEStructuralFeatures().get(2);
 	}
 
 	/**
@@ -778,7 +846,7 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 		createEReference(portEClass, PORT__OWNER);
 		createEReference(portEClass, PORT__PART_OWNER);
 		createEAttribute(portEClass, PORT__DIRECTION);
-		createEAttribute(portEClass, PORT__INTERFACE_TYPE);
+		createEReference(portEClass, PORT__INTERFACE_TYPE);
 		createEAttribute(portEClass, PORT__IS_CONJUGATED);
 
 		connectionEClass = createEClass(CONNECTION);
@@ -797,6 +865,13 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 		createEAttribute(requirementEClass, REQUIREMENT__TEXT);
 		createEAttribute(requirementEClass, REQUIREMENT__VERIFY_METHOD);
 		createEAttribute(requirementEClass, REQUIREMENT__PRIORITY);
+		createEReference(requirementEClass, REQUIREMENT__SATISFIED_BY);
+		createEReference(requirementEClass, REQUIREMENT__VERIFIED_BY);
+
+		interfaceDefEClass = createEClass(INTERFACE_DEF);
+		createEAttribute(interfaceDefEClass, INTERFACE_DEF__PROTOCOL);
+		createEAttribute(interfaceDefEClass, INTERFACE_DEF__DATA_TYPE);
+		createEReference(interfaceDefEClass, INTERFACE_DEF__SUPER_TYPES);
 
 		allocateEClass = createEClass(ALLOCATE);
 		createEReference(allocateEClass, ALLOCATE__FROM);
@@ -853,6 +928,7 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 		connectionEClass.getESuperTypes().add(this.getArchElement());
 		itemFlowEClass.getESuperTypes().add(this.getArchElement());
 		requirementEClass.getESuperTypes().add(this.getArchElement());
+		interfaceDefEClass.getESuperTypes().add(this.getArchElement());
 		allocateEClass.getESuperTypes().add(this.getArchElement());
 		diagramLayoutEClass.getESuperTypes().add(this.getArchElement());
 
@@ -882,7 +958,7 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 		initEReference(getPort_Owner(), this.getPartDefinition(), this.getPartDefinition_OwnedPorts(), "owner", null, 0, 1, Port.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getPort_PartOwner(), this.getPart(), this.getPart_Ports(), "partOwner", null, 0, 1, Port.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getPort_Direction(), this.getPortDirection(), "direction", "INOUT", 0, 1, Port.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getPort_InterfaceType(), ecorePackage.getEString(), "interfaceType", null, 0, 1, Port.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getPort_InterfaceType(), this.getInterfaceDef(), null, "interfaceType", null, 0, 1, Port.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getPort_IsConjugated(), ecorePackage.getEBoolean(), "isConjugated", "false", 0, 1, Port.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(connectionEClass, Connection.class, "Connection", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
@@ -901,6 +977,13 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 		initEAttribute(getRequirement_Text(), ecorePackage.getEString(), "text", null, 0, 1, Requirement.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getRequirement_VerifyMethod(), this.getVerifyMethod(), "verifyMethod", "TEST", 0, 1, Requirement.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getRequirement_Priority(), ecorePackage.getEInt(), "priority", "3", 0, 1, Requirement.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getRequirement_SatisfiedBy(), this.getArchElement(), null, "satisfiedBy", null, 0, -1, Requirement.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getRequirement_VerifiedBy(), this.getArchElement(), null, "verifiedBy", null, 0, -1, Requirement.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(interfaceDefEClass, InterfaceDef.class, "InterfaceDef", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getInterfaceDef_Protocol(), ecorePackage.getEString(), "protocol", null, 0, 1, InterfaceDef.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getInterfaceDef_DataType(), ecorePackage.getEString(), "dataType", null, 0, 1, InterfaceDef.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getInterfaceDef_SuperTypes(), this.getInterfaceDef(), null, "superTypes", null, 0, -1, InterfaceDef.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(allocateEClass, Allocate.class, "Allocate", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEReference(getAllocate_From(), this.getArchElement(), null, "from", null, 1, 1, Allocate.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -966,7 +1049,7 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 		  (portEClass,
 		   source,
 		   new String[] {
-			   "InterfaceTypeRequired", "direction = PortDirection::INOUT or (not interfaceType.oclIsUndefined() and interfaceType.size() > 0)"
+			   "InterfaceTypeRequired", "direction = PortDirection::INOUT or not interfaceType.oclIsUndefined()"
 		   });
 		addAnnotation
 		  (connectionEClass,
@@ -975,6 +1058,12 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 			   "PortTypeCompatible", "kind = ConnectionKind::ASSEMBLY implies source.interfaceType = target.interfaceType",
 			   "NoSelfLoop", "source <> target",
 			   "DirectionCompatible", "kind = ConnectionKind::ASSEMBLY implies (source.direction <> target.direction or source.direction = PortDirection::INOUT or target.direction = PortDirection::INOUT)"
+		   });
+		addAnnotation
+		  (interfaceDefEClass,
+		   source,
+		   new String[] {
+			   "ProtocolRequired", "not protocol.oclIsUndefined() and protocol.size() > 0"
 		   });
 		addAnnotation
 		  (allocateEClass,

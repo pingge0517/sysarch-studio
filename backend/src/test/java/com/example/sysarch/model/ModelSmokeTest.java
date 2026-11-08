@@ -71,9 +71,11 @@ class ModelSmokeTest {
     @Test
     void modelRoundTripsThroughXmi() throws IOException {
         PartDefinition controller = element(FACTORY.createPartDefinition(), "PD-1", "DomainController", Layer.LOGICAL, "LogicalComponent");
+        InterfaceDef can = element(FACTORY.createInterfaceDef(), "IF-CAN", "CAN", Layer.LOGICAL);
+        can.setProtocol("CAN 2.0B");
         Port canPort = element(FACTORY.createPort(), "PO-1", "can0", Layer.LOGICAL, "LogicalPort");
         canPort.setDirection(PortDirection.OUT);
-        canPort.setInterfaceType("CAN");
+        canPort.setInterfaceType(can);
         controller.getOwnedPorts().add(canPort);
 
         PartDefinition vehicle = element(FACTORY.createPartDefinition(), "PD-2", "Vehicle", Layer.LOGICAL);
@@ -82,7 +84,7 @@ class ModelSmokeTest {
         vehicle.getOwnedParts().add(controllerPart);
         Port partPort = element(FACTORY.createPort(), "PO-2", "can0", Layer.LOGICAL);
         partPort.setDirection(PortDirection.IN);
-        partPort.setInterfaceType("CAN");
+        partPort.setInterfaceType(can);
         controllerPart.getPorts().add(partPort);
 
         Connection connection = element(FACTORY.createConnection(), "CO-1", "bus", Layer.LOGICAL);
@@ -99,7 +101,10 @@ class ModelSmokeTest {
         allocate.setFrom(controller);
         allocate.setTo(ecu);
 
-        List<EObject> roots = List.of(controller, vehicle, ecu, connection, flow, requirement, allocate);
+        requirement.getSatisfiedBy().add(controller);
+        requirement.getVerifiedBy().add(ecu);
+
+        List<EObject> roots = List.of(controller, vehicle, ecu, connection, flow, requirement, allocate, can);
         Resource loaded = load(save(roots));
 
         assertEquals(roots.size(), loaded.getContents().size());
@@ -111,6 +116,9 @@ class ModelSmokeTest {
         assertSame(loadedController, loadedCanPort.getOwner());
         assertEquals(PortDirection.OUT, loadedCanPort.getDirection());
         assertEquals(List.of("LogicalPort"), loadedCanPort.getStereotypes());
+        InterfaceDef loadedCan = (InterfaceDef) loaded.getEObject("IF-CAN");
+        assertSame(loadedCan, loadedCanPort.getInterfaceType(), "P1: a port refers to an interface entity");
+        assertEquals("CAN 2.0B", loadedCan.getProtocol());
 
         Part loadedPart = (Part) loaded.getEObject("PA-1");
         assertSame(loadedController, loadedPart.getTypedBy());
@@ -124,6 +132,8 @@ class ModelSmokeTest {
         Requirement loadedRequirement = (Requirement) loaded.getEObject("RQ-1");
         assertEquals(Layer.SYSTEM, loadedRequirement.getLayer());
         assertEquals(requirement.getText(), loadedRequirement.getText());
+        assertEquals(List.of(loadedController), loadedRequirement.getSatisfiedBy(), "P1: Satisfy");
+        assertEquals(List.of(loaded.getEObject("PD-3")), loadedRequirement.getVerifiedBy(), "P1: Verify");
 
         Allocate loadedAllocate = (Allocate) loaded.getEObject("AL-1");
         assertSame(loadedController, loadedAllocate.getFrom());

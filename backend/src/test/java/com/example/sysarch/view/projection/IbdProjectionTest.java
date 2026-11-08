@@ -78,7 +78,7 @@ class IbdProjectionTest {
         Port port = FACTORY.createPort();
         port.setId(id);
         port.setName(name);
-        port.setInterfaceType(interfaceType);
+        port.setInterfaceType(com.example.sysarch.TestInterfaces.named(interfaceType));
         return port;
     }
 }

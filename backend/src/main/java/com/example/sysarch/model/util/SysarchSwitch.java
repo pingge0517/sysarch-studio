@@ -114,6 +114,13 @@ public class SysarchSwitch<T> extends Switch<T> {
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
+			case SysarchPackage.INTERFACE_DEF: {
+				InterfaceDef interfaceDef = (InterfaceDef)theEObject;
+				T result = caseInterfaceDef(interfaceDef);
+				if (result == null) result = caseArchElement(interfaceDef);
+				if (result == null) result = defaultCase(theEObject);
+				return result;
+			}
 			case SysarchPackage.ALLOCATE: {
 				Allocate allocate = (Allocate)theEObject;
 				T result = caseAllocate(allocate);
@@ -234,6 +241,21 @@ public class SysarchSwitch<T> extends Switch<T> {
 	 * @generated
 	 */
 	public T caseRequirement(Requirement object) {
+		return null;
+	}
+
+	/**
+	 * Returns the result of interpreting the object as an instance of '<em>Interface Def</em>'.
+	 * <!-- begin-user-doc -->
+	 * This implementation returns null;
+	 * returning a non-null result will terminate the switch.
+	 * <!-- end-user-doc -->
+	 * @param object the target of the switch.
+	 * @return the result of interpreting the object as an instance of '<em>Interface Def</em>'.
+	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
+	 * @generated
+	 */
+	public T caseInterfaceDef(InterfaceDef object) {
 		return null;
 	}
 

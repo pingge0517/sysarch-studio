@@ -135,7 +135,7 @@ final class InMemoryModel implements ModelGateway {
         Port port = FACTORY.createPort();
         port.setId(id);
         port.setName(id);
-        port.setInterfaceType("CAN");
+        port.setInterfaceType(com.example.sysarch.TestInterfaces.named("CAN"));
         port.setDirection(direction);
         return port;
     }
