@@ -103,6 +103,12 @@ public class ProjectModels {
         return ids.get(0);
     }
 
+    /** The Sirius project's name (read-only, Sirius' {@code project} table). */
+    public String projectName(String project) {
+        String id = this.siriusProjectId(project);
+        return this.jdbc.sql("SELECT name FROM project WHERE CAST(id AS VARCHAR) = :id").param("id", id).query(String.class).optional().orElse(id);
+    }
+
     record TaskInput(UUID id, Function<List<Resource>, ? extends Outcome<?>> task) implements IInput {
     }
 
