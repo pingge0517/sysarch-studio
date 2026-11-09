@@ -35,6 +35,112 @@ public class SyncProperties {
 
     private Fields fields = new Fields();
 
+    /**
+     * Token of a Polarion service account for the scheduled pull (P1 T6, user's decision), from POLARION_SYNC_TOKEN.
+     * Configured by operations, read from the environment only: never stored in the database or logged. Empty: the
+     * scheduled pull does not run. Every user-triggered call still uses the caller's own token.
+     */
+    private String syncToken = "";
+
+    /** Polarion link roles for the model-owned trace (P1 T6): element Work Item {role} requirement Work Item. */
+    private LinkRoles linkRoles = new LinkRoles();
+
+    private Schedule schedule = new Schedule();
+
+    public static class LinkRoles {
+
+        private String satisfiedBy = "implements";
+
+        private String verifiedBy = "verifies";
+
+        public String getSatisfiedBy() {
+            return this.satisfiedBy;
+        }
+
+        public void setSatisfiedBy(String satisfiedBy) {
+            this.satisfiedBy = satisfiedBy;
+        }
+
+        public String getVerifiedBy() {
+            return this.verifiedBy;
+        }
+
+        public void setVerifiedBy(String verifiedBy) {
+            this.verifiedBy = verifiedBy;
+        }
+    }
+
+    /** The scheduled incremental pull (P1 T6 step 2). */
+    public static class Schedule {
+
+        private java.time.Duration interval = java.time.Duration.ofMinutes(15);
+
+        /** After a failure, one retry after this delay. */
+        private java.time.Duration retryDelay = java.time.Duration.ofMinutes(2);
+
+        /** Consecutive failures that pause the scheduled pull and raise the alert. */
+        private int maxFailures = 3;
+
+        /** How often the scheduler checks whether a pull is due. */
+        private java.time.Duration tick = java.time.Duration.ofSeconds(30);
+
+        public java.time.Duration getInterval() {
+            return this.interval;
+        }
+
+        public void setInterval(java.time.Duration interval) {
+            this.interval = interval;
+        }
+
+        public java.time.Duration getRetryDelay() {
+            return this.retryDelay;
+        }
+
+        public void setRetryDelay(java.time.Duration retryDelay) {
+            this.retryDelay = retryDelay;
+        }
+
+        public int getMaxFailures() {
+            return this.maxFailures;
+        }
+
+        public void setMaxFailures(int maxFailures) {
+            this.maxFailures = maxFailures;
+        }
+
+        public java.time.Duration getTick() {
+            return this.tick;
+        }
+
+        public void setTick(java.time.Duration tick) {
+            this.tick = tick;
+        }
+    }
+
+    public String getSyncToken() {
+        return this.syncToken;
+    }
+
+    public void setSyncToken(String syncToken) {
+        this.syncToken = syncToken;
+    }
+
+    public LinkRoles getLinkRoles() {
+        return this.linkRoles;
+    }
+
+    public void setLinkRoles(LinkRoles linkRoles) {
+        this.linkRoles = linkRoles;
+    }
+
+    public Schedule getSchedule() {
+        return this.schedule;
+    }
+
+    public void setSchedule(Schedule schedule) {
+        this.schedule = schedule;
+    }
+
     /** Ordered, so the Polarion queries built from it are the same on every run. */
     private Map<String, String> workItemTypes = defaultWorkItemTypes();
 

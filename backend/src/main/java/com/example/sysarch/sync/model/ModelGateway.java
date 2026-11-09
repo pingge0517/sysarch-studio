@@ -63,16 +63,23 @@ public interface ModelGateway {
      * @param rev the element's revision counter
      * @param errors constraint violations, for the push precheck
      */
-    /** @param satisfiedBy for a Requirement: the ids of the elements that satisfy it (P1 R6); empty otherwise */
+    /**
+     * @param satisfiedBy for a Requirement: the ids of the elements that satisfy it (P1 R6, T6 links); empty otherwise
+     * @param verifiedBy for a Requirement: the ids of the elements that verify it (P1 T6 links); empty otherwise
+     * @param reqId for a Requirement: its requirement id (Polarion-owned since P1 T6: the bound Work Item's id)
+     */
     record ElementSnapshot(String id, String type, String name, String layer, List<String> stereotypes, String sourceId, String targetId, String text,
-            Integer rev, List<ValidationError> errors, List<String> satisfiedBy) {
+            Integer rev, List<ValidationError> errors, List<String> satisfiedBy, List<String> verifiedBy, String reqId) {
 
         public static final String TEXT = "text";
+
+        public static final String REQ_ID = "reqId";
 
         public ElementSnapshot {
             stereotypes = List.copyOf(stereotypes);
             errors = List.copyOf(errors);
             satisfiedBy = List.copyOf(satisfiedBy);
+            verifiedBy = List.copyOf(verifiedBy);
         }
     }
 

@@ -49,7 +49,10 @@ public class SyncController implements SyncApi {
 
     private final HttpServletRequest request;
 
-    public SyncController(SyncService sync, SyncStore store, ObjectMapper json, HttpServletRequest request) {
+    private final SyncStatusStore status;
+
+    public SyncController(SyncService sync, SyncStore store, ObjectMapper json, HttpServletRequest request, SyncStatusStore status) {
+        this.status = Objects.requireNonNull(status);
         this.sync = Objects.requireNonNull(sync);
         this.store = Objects.requireNonNull(store);
         this.json = Objects.requireNonNull(json);
@@ -62,14 +65,30 @@ public class SyncController implements SyncApi {
         String projectId = required(body.getProjectId(), "projectId");
         List<String> elementIds = body.getElementIds() == null ? List.of() : body.getElementIds();
         boolean dryRun = Boolean.TRUE.equals(body.getDryRun());
-        return this.idempotent(idempotencyKey, "push", () -> this.sync.push(projectId, elementIds, dryRun, token, this.actor()));
+        return this.idempotent(idempotencyKey, "push", () -> {
+            SyncService.Outcome outcome = this.sync.push(projectId, elementIds, dryRun, token, this.actor());
+            if (!dryRun && outcome.status() == 200 && outcome.result().getErrors().isEmpty()) {
+                this.status.pushed(projectId, java.time.OffsetDateTime.now()); // P1 T6: the panel's "上次推送"
+            }
+            return outcome;
+        });
     }
 
     @Override
     public ResponseEntity<SyncResult> syncPullPost(SyncPullPostRequest body) {
         PolarionToken token = this.token();
         String projectId = required(body.getProjectId(), "projectId");
-        return this.idempotent(this.request.getHeader(IDEMPOTENCY_HEADER), "pull", () -> this.sync.pull(projectId, body.getSince(), token, this.actor()));
+        return this.idempotent(this.request.getHeader(IDEMPOTENCY_HEADER), "pull", () -> {
+            SyncService.Outcome outcome = this.sync.pull(projectId, body.getSince(), token, this.actor());
+            boolean failed = outcome.status() != 200 || outcome.result().getErrors().stream().anyMatch(e -> ScheduledPull.FAILURES.contains(e.getCode()));
+            if (!failed) {
+                this.status.pulled(projectId, java.time.OffsetDateTime.now()); // P1 T6: the panel's "上次拉取"
+                if (this.status.status(projectId).schedulePaused()) {
+                    this.status.resume(projectId); // Polarion answers again: the paused schedule may run
+                }
+            }
+            return outcome;
+        });
     }
 
     private ResponseEntity<SyncResult> idempotent(String key, String endpoint, Supplier<SyncService.Outcome> call) {

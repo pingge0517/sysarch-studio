@@ -127,7 +127,7 @@ class PolarionSyncIT {
         this.request = new MockHttpServletRequest();
         this.request.addHeader("Authorization", TOKEN);
         this.request.addHeader(SyncController.ACTOR_HEADER, "alice");
-        this.controller = new SyncController(service, store, this.json, this.request);
+        this.controller = new SyncController(service, store, this.json, this.request, new SyncStatusStore(this.jdbc));
     }
 
     @AfterEach

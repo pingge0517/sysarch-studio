@@ -71,6 +71,15 @@ public class ConsistencyService {
 
     private final ConsistencyRules rules;
 
+    /** P1 T6: records the time of each report; null in tests that do not need it. */
+    private com.example.sysarch.sync.SyncStatusStore status;
+
+    /** P1 T6 (setter injection keeps the existing constructor). */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    public void setStatus(com.example.sysarch.sync.SyncStatusStore status) {
+        this.status = status;
+    }
+
     public ConsistencyService(ModelGateway model, LinkRepository links, ConsistencyStore store, SyncStore audit, SyncService sync, PolarionClient polarion,
             SyncProperties syncProperties, ConsistencyProperties properties, ObjectMapper json, TransactionTemplate transaction) {
         this.model = Objects.requireNonNull(model);
@@ -93,6 +102,9 @@ public class ConsistencyService {
      *            what is recorded (pull results, webhook marks), so R1 is still found but R2 only on the canvas side
      */
     public ConsistencyReport report(String projectId, PolarionToken token) {
+        if (this.status != null) {
+            this.status.checked(projectId, OffsetDateTime.now()); // P1 T6: the panel's "上次一致性校验"
+        }
         Facts facts = this.facts(projectId, token);
         List<Issue> issues = this.rules.evaluate(facts);
         if (facts.isLive()) {

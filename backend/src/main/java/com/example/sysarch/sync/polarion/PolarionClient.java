@@ -121,6 +121,36 @@ public class PolarionClient {
         this.requireSuccess(response, "delete work items in " + projectId);
     }
 
+    /** Adds outgoing links to a Work Item (P1 T6: satisfy/verify as native Polarion links). */
+    public void addLinks(String projectId, String workItemId, List<WorkItemLink> links, PolarionToken token) {
+        if (links.isEmpty()) {
+            return;
+        }
+        ObjectNode body = this.json.createObjectNode();
+        ArrayNode data = body.putArray("data");
+        for (WorkItemLink link : links) {
+            ObjectNode resource = data.addObject();
+            resource.put("type", "linkedworkitems");
+            resource.putObject("attributes").put("role", link.role());
+            resource.putObject("relationships").putObject("workItem").putObject("data").put("type", TYPE)
+                    .put("id", link.targetProject() + "/" + link.targetId());
+        }
+        HttpResponse<String> response = this.send(token, "POST", this.workItemUrl(projectId, workItemId) + "/linkedworkitems", body);
+        this.requireSuccess(response, "link work item " + projectId + "/" + workItemId);
+    }
+
+    /** Removes outgoing links of a Work Item. */
+    public void removeLinks(String projectId, String workItemId, List<WorkItemLink> links, PolarionToken token) {
+        if (links.isEmpty()) {
+            return;
+        }
+        ObjectNode body = this.json.createObjectNode();
+        ArrayNode data = body.putArray("data");
+        links.forEach(link -> data.addObject().put("type", "linkedworkitems").put("id", link.id(projectId, workItemId)));
+        HttpResponse<String> response = this.send(token, "DELETE", this.workItemUrl(projectId, workItemId) + "/linkedworkitems", body);
+        this.requireSuccess(response, "unlink work item " + projectId + "/" + workItemId);
+    }
+
     /** Work Items matching a Polarion (Lucene) query, all pages. */
     public List<WorkItem> queryWorkItems(String projectId, String query, PolarionToken token) {
         List<WorkItem> result = new ArrayList<>();
@@ -158,7 +188,9 @@ public class PolarionClient {
                 }
                 response = this.http.send(request.build(), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             } catch (IOException e) {
-                throw new PolarionException(method + " " + url + " failed: " + e.getMessage(), e);
+                // No query string (it can be long), and the exception type when there is no message (a refused connection has none).
+                throw new PolarionException(method + " " + URI.create(url).getPath() + " failed: "
+                        + (e.getMessage() == null || e.getMessage().isBlank() ? e.getClass().getSimpleName() : e.getMessage()), e);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new PolarionException(method + " " + url + " interrupted", e);
@@ -216,8 +248,15 @@ public class PolarionClient {
         JsonNode attributes = resource.path("attributes");
         Map<String, Object> values = this.json.convertValue(attributes, this.json.getTypeFactory().constructMapType(LinkedHashMap.class, String.class, Object.class));
         String updated = attributes.path("updated").asText(null);
+        List<WorkItemLink> links = new ArrayList<>();
+        resource.path("relationships").path("linkedWorkItems").path("data").forEach(link -> {
+            WorkItemLink parsed = WorkItemLink.parse(link.path("id").asText(""));
+            if (parsed != null) {
+                links.add(parsed);
+            }
+        });
         return new WorkItem(shortId(resource.path("id").asText()), attributes.path("type").asText(null), attributes.path("title").asText(null), values,
-                updated == null ? null : OffsetDateTime.parse(updated));
+                updated == null ? null : OffsetDateTime.parse(updated), links);
     }
 
     private String projectUrl(String projectId) {
@@ -250,10 +289,36 @@ public class PolarionClient {
      * @param attributes every attribute Polarion returned, including custom fields
      * @param updated last change, used as the Work Item revision
      */
-    public record WorkItem(String id, String type, String title, Map<String, Object> attributes, OffsetDateTime updated) {
+    public record WorkItem(String id, String type, String title, Map<String, Object> attributes, OffsetDateTime updated, List<WorkItemLink> links) {
+
+        public WorkItem {
+            links = links == null ? List.of() : List.copyOf(links);
+        }
+
+        public WorkItem(String id, String type, String title, Map<String, Object> attributes, OffsetDateTime updated) {
+            this(id, type, title, attributes, updated, List.of());
+        }
 
         public Object attribute(String name) {
             return this.attributes.get(name);
+        }
+    }
+
+    /**
+     * An outgoing Work Item link (P1 T6): this Work Item {@code role} the target, e.g. {@code implements}. Polarion 2512
+     * names a link {@code <project>/<source>/<role>/<project>/<target>} and returns a Work Item's outgoing links in
+     * {@code relationships.linkedWorkItems} when it is read with all fields (verified against the local install).
+     */
+    public record WorkItemLink(String role, String targetProject, String targetId) {
+
+        /** {@code null} for an id that is not a Work Item link id. */
+        static WorkItemLink parse(String linkId) {
+            String[] parts = linkId.split("/");
+            return parts.length == 5 ? new WorkItemLink(parts[2], parts[3], parts[4]) : null;
+        }
+
+        String id(String sourceProject, String sourceId) {
+            return sourceProject + "/" + sourceId + "/" + this.role + "/" + this.targetProject + "/" + this.targetId;
         }
     }
 }

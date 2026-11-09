@@ -54,8 +54,14 @@ public class ConsistencyDiagnostics implements IValidationService {
 
     private final ConsistencyRules rules;
 
+    private final SyncProperties properties;
+
+    private final com.example.sysarch.sync.SyncStatusStore status;
+
     public ConsistencyDiagnostics(ObjectProvider<SiriusModelGateway> gateway, LinkRepository links, ConsistencyStore store, ConstraintValidator constraints,
-            SyncProperties properties) {
+            SyncProperties properties, com.example.sysarch.sync.SyncStatusStore status) {
+        this.properties = Objects.requireNonNull(properties);
+        this.status = Objects.requireNonNull(status);
         this.gateway = Objects.requireNonNull(gateway);
         this.links = Objects.requireNonNull(links);
         this.store = Objects.requireNonNull(store);
@@ -76,7 +82,7 @@ public class ConsistencyDiagnostics implements IValidationService {
             Map<String, ArchElement> index = ModelOperations.index(emf.getDomain().getResourceSet().getAllContents());
             Facts facts = new Facts(projectId.get(), ModelOperations.snapshots(index, null, this.constraints), this.links.findByProject(projectId.get(), null),
                     this.store.pendingChecks(projectId.get()), this.store.pendingClaims(projectId.get()), null);
-            List<Object> diagnostics = new ArrayList<>();
+            List<Object> diagnostics = new ArrayList<>(this.syncStatus(projectId.get()));
             for (Issue issue : this.rules.evaluate(facts)) {
                 if (!"R4".equals(issue.rule())) {
                     ArchElement element = issue.elementId() == null ? null : index.get(issue.elementId());
@@ -89,6 +95,33 @@ public class ConsistencyDiagnostics implements IValidationService {
             this.logger.warn("consistency diagnostics unavailable: {}", e.getMessage());
             return List.of();
         }
+    }
+
+    /**
+     * The sync panel (P1 T6 step 4): the three times as an info line, and the scheduled pull's state: an error when it is
+     * paused (the alert), a warning after a failure, an info line when no service account is configured.
+     */
+    private List<Diagnostic> syncStatus(String projectId) {
+        java.time.OffsetDateTime now = java.time.OffsetDateTime.now();
+        this.status.checked(projectId, now);
+        com.example.sysarch.sync.SyncStatusStore.Status state = this.status.status(projectId);
+        List<Diagnostic> lines = new ArrayList<>();
+        lines.add(new BasicDiagnostic(Diagnostic.INFO, SOURCE, 0, "[同步] 上次推送：" + time(state.lastPushAt()) + "；上次拉取：" + time(state.lastPullAt())
+                + "；上次一致性校验：" + time(now), new Object[0]));
+        if (this.properties.getSyncToken() == null || this.properties.getSyncToken().isBlank()) {
+            lines.add(new BasicDiagnostic(Diagnostic.INFO, SOURCE, 0, "[同步] 未配置后台同步账号（POLARION_SYNC_TOKEN），定时拉取未运行", new Object[0]));
+        } else if (state.schedulePaused()) {
+            lines.add(new BasicDiagnostic(Diagnostic.ERROR, SOURCE, 0, "[同步] 定时拉取已暂停：连续 " + state.scheduleFailures() + " 次失败，最后一次："
+                    + state.scheduleLastError() + "。可以继续编辑；Polarion 恢复后手动拉取一次或调用 POST /api/v1/sync/status/resume", new Object[0]));
+        } else if (state.scheduleFailures() > 0) {
+            lines.add(new BasicDiagnostic(Diagnostic.WARNING, SOURCE, 0, "[同步] 定时拉取失败 " + state.scheduleFailures() + " 次：" + state.scheduleLastError()
+                    + "；下次尝试：" + time(state.scheduleNextAttemptAt()), new Object[0]));
+        }
+        return lines;
+    }
+
+    private static String time(java.time.OffsetDateTime at) {
+        return at == null ? "从未" : at.atZoneSameInstant(java.time.ZoneId.systemDefault()).format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
     }
 
     /** Diagnostics are per editing context; nothing per property field. */

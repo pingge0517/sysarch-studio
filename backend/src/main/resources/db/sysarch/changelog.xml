@@ -7,4 +7,5 @@
     <include file="db/sysarch/002-consistency.xml"/>
     <include file="db/sysarch/003-interface-migration.xml"/>
     <include file="db/sysarch/004-interface-migration-element-class.xml"/>
+    <include file="db/sysarch/005-sync-status.xml"/>
 </databaseChangeLog>

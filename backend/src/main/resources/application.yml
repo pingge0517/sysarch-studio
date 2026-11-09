@@ -65,6 +65,19 @@ sysarch:
     # HMAC-SHA256 secret of Polarion webhooks (X-Polarion-Signature); unset = webhooks are refused (503).
     webhook-secret: ${POLARION_WEBHOOK_SECRET:}
     event-poll-ms: 2000
+    # P1 T6: token of a Polarion service account, only for the scheduled pull (users' calls use their own token).
+    # Set by operations in the environment; never stored or logged. Unset: no scheduled pull.
+    sync-token: ${POLARION_SYNC_TOKEN:}
+    # Satisfy / verify are pushed as native Polarion links: element Work Item <role> requirement Work Item.
+    link-roles:
+      satisfied-by: implements
+      verified-by: verifies
+    # Incremental pull: every interval; after a failure one retry after retry-delay; max-failures in a row pause it.
+    schedule:
+      interval: PT15M
+      retry-delay: PT2M
+      max-failures: 3
+      tick: PT30S
   view:
     refresh-budget-ms: ${VIEW_REFRESH_BUDGET_MS:2000}
   consistency:

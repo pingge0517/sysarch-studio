@@ -45,6 +45,13 @@ import org.springframework.transaction.support.TransactionTemplate;
  * text (the Work Item description).</li>
  * <li>Connection kind stays in the model only. Only <i>creation</i> merges automatically: pushing an unbound element
  * creates its Work Item, and pulling finds new Work Items for the unbound pool.</li>
+ * <li>(P1 T6) A Requirement's {@code satisfiedBy}/{@code verifiedBy} is model-owned and pushed as native Polarion
+ * links (user's decision): the satisfying element's Work Item {@code implements} (or {@code verifies}, configurable)
+ * the requirement's Work Item. The links belong to the element's push; pushing a requirement also pushes the elements
+ * it links to and the ones it used to link to, so a removed relation is removed in Polarion too. Both ends must be
+ * bound or created in the same push. Only links with these roles to Work Items bound to requirements are managed;
+ * a change to them in Polarion is a CONFLICT ({@code traceLinks}), like a model-owned field.</li>
+ * <li>(P1 T6) A Requirement's {@code reqId} is Polarion-owned: the bound Work Item's id, written on pull.</li>
  * </ul>
  *
  * <p><b>Push is all or nothing</b> (§6.3). Every element is prechecked first (exists, maps to a Work Item type, has no
@@ -61,6 +68,11 @@ public class SyncService {
     private static final String TITLE = "title";
 
     private static final String DESCRIPTION = "description";
+
+    /** The pseudo-field under which pushed_fields records the trace links last written ("role:WI,..."), P1 T6. */
+    static final String TRACE_LINKS = "traceLinks";
+
+    private static final String REQUIREMENT = "Requirement";
 
     private final Logger logger = LoggerFactory.getLogger(SyncService.class);
 
@@ -104,22 +116,34 @@ public class SyncService {
 
     public Outcome push(String projectId, List<String> elementIds, boolean dryRun, PolarionToken token, String actor) {
         SyncResult result = emptyResult();
-        List<String> ids = List.copyOf(new LinkedHashSet<>(elementIds));
         Map<String, ElementSnapshot> elements;
         try {
-            elements = this.model.read(projectId, ids);
+            elements = this.model.readAll(projectId);
         } catch (ModelGateway.UnmappedProjectException e) {
             return Outcome.ok(error(result, null, "PROJECT_NOT_MAPPED", e.getMessage()));
         }
+        Trace trace = new Trace(projectId, elements, this.links.findByProject(projectId, null));
+        List<String> ids = trace.withOwners(new LinkedHashSet<>(elementIds));
 
         List<Plan> plans = new ArrayList<>();
         for (String id : ids) {
             try {
-                this.precheck(projectId, id, elements.get(id), token, result).ifPresent(plans::add);
+                this.precheck(projectId, id, elements.get(id), token, result, trace).ifPresent(plans::add);
             } catch (PolarionException.RateLimited e) {
                 return new Outcome(429, error(result, id, "POLARION_RATE_LIMITED", e.getMessage()), e.retryAfterSeconds());
             } catch (PolarionException e) {
                 error(result, id, "POLARION_ERROR", e.getMessage());
+            }
+        }
+
+        Set<String> creating = new LinkedHashSet<>();
+        plans.stream().filter(plan -> plan.kind == Plan.Kind.CREATE).forEach(plan -> creating.add(plan.element.id()));
+        for (Plan plan : plans) {
+            for (TraceTarget target : plan.desiredTrace) {
+                if (trace.requirementWorkItems.get(target.requirementId()) == null && !creating.contains(target.requirementId())) {
+                    error(result, plan.element.id(), "TRACE_TARGET_NOT_BOUND", "requirement " + target.requirementId()
+                            + " has no Work Item yet; push it together with this element (or first)");
+                }
             }
         }
 
@@ -131,7 +155,7 @@ public class SyncService {
         if (!result.getErrors().isEmpty()) {
             return Outcome.ok(result.pushed(0)); // nothing is written when any element fails the precheck
         }
-        long skipped = plans.stream().filter(p -> p.kind == Plan.Kind.SKIP).count();
+        long skipped = plans.stream().filter(p -> p.kind == Plan.Kind.SKIP && !p.traceDiffers).count();
         result.pushed((int) (plans.size() - skipped)).skipped((int) skipped);
         if (dryRun) {
             return Outcome.ok(result);
@@ -144,7 +168,7 @@ public class SyncService {
     }
 
     /** Decides what to do with one element, without writing anything; failures are added to {@code result}. */
-    private Optional<Plan> precheck(String projectId, String id, ElementSnapshot element, PolarionToken token, SyncResult result) {
+    private Optional<Plan> precheck(String projectId, String id, ElementSnapshot element, PolarionToken token, SyncResult result, Trace trace) {
         if (element == null) {
             error(result, id, "ELEMENT_NOT_FOUND", "no element '" + id + "' in the model of project " + projectId);
             return Optional.empty();
@@ -159,9 +183,10 @@ public class SyncService {
             return Optional.empty();
         }
         Map<String, String> desired = this.modelOwned(element);
+        List<TraceTarget> desiredTrace = trace.targetsOf(element);
         var existing = this.links.find(id);
         if (existing.isEmpty()) {
-            return Optional.of(Plan.create(element, workItemType, desired));
+            return Optional.of(Plan.create(element, workItemType, desired).trace(trace.isOwner(element), desiredTrace, Set.of(), !desiredTrace.isEmpty()));
         }
         StoredLink link = existing.get();
         if (!link.projectId().equals(projectId)) {
@@ -174,7 +199,11 @@ public class SyncService {
             return Optional.empty();
         }
         Map<String, String> current = this.modelOwnedOn(workItem.get());
-        List<String> editedInPolarion = this.editedInPolarion(link, current);
+        List<String> editedInPolarion = new ArrayList<>(this.editedInPolarion(link, current));
+        Set<String> currentTrace = trace.managedLinks(workItem.get());
+        if (trace.isOwner(element) && this.traceEdited(link, currentTrace)) {
+            editedInPolarion.add(TRACE_LINKS);
+        }
         if (!editedInPolarion.isEmpty() || Link.StateEnum.CONFLICT.getValue().equals(link.state())) {
             result.addConflictsItem(new SyncResultConflictsInner().elementId(id).fields(editedInPolarion));
             return Optional.empty();
@@ -185,7 +214,15 @@ public class SyncService {
                 changes.put(field, value);
             }
         });
-        return Optional.of(changes.isEmpty() ? Plan.skip(element, link) : Plan.update(element, link, workItem.get(), desired, changes, current));
+        boolean traceDiffers = trace.isOwner(element) && !trace.resolvedOrNull(desiredTrace).equals(currentTrace);
+        Plan plan = changes.isEmpty() ? Plan.skip(element, link, desired) : Plan.update(element, link, workItem.get(), desired, changes, current);
+        return Optional.of(plan.trace(trace.isOwner(element), desiredTrace, currentTrace, traceDiffers));
+    }
+
+    /** Whether the managed trace links on the Work Item differ from what this service last wrote ("" if it never did). */
+    private boolean traceEdited(StoredLink link, Set<String> current) {
+        String pushed = link.pushedFields() == null ? null : this.fromJson(link.pushedFields()).get(TRACE_LINKS);
+        return !Objects.equals(blankAsNull(pushed), blankAsNull(Trace.join(current)));
     }
 
     private Outcome execute(String projectId, List<Plan> plans, PolarionToken token, String actor, SyncResult result) {
@@ -212,6 +249,45 @@ public class SyncService {
                 return new Outcome(retryAfter > 0 ? 429 : 200, failed, retryAfter);
             }
         }
+        // Phase 2 (P1 T6): trace links, now that every Work Item of the push exists.
+        Map<String, String> workItemOf = new LinkedHashMap<>();
+        plans.forEach(plan -> {
+            if (plan.workItemId != null) {
+                workItemOf.put(plan.element.id(), plan.workItemId);
+            }
+        });
+        for (Plan plan : plans) {
+            if (!plan.traceOwner) {
+                continue;
+            }
+            try {
+                Set<String> desired = new java.util.TreeSet<>();
+                for (TraceTarget target : plan.desiredTrace) {
+                    String requirementWorkItem = workItemOf.containsKey(target.requirementId()) ? workItemOf.get(target.requirementId())
+                            : this.workItemOfElement(projectId, target.requirementId());
+                    desired.add(target.role() + ":" + requirementWorkItem);
+                }
+                plan.resolvedTrace = desired;
+                List<String> add = desired.stream().filter(link -> !plan.currentTrace.contains(link)).toList();
+                List<String> remove = plan.currentTrace.stream().filter(link -> !desired.contains(link)).toList();
+                String owner = plan.workItemId;
+                if (!add.isEmpty()) {
+                    this.polarion.addLinks(projectId, owner, Trace.links(projectId, add), token);
+                    undo.add(() -> this.polarion.removeLinks(projectId, owner, Trace.links(projectId, add), token));
+                }
+                if (!remove.isEmpty()) {
+                    this.polarion.removeLinks(projectId, owner, Trace.links(projectId, remove), token);
+                    undo.add(() -> this.polarion.addLinks(projectId, owner, Trace.links(projectId, remove), token));
+                }
+            } catch (PolarionException e) {
+                List<String> undoFailures = this.undo(undo);
+                SyncResult failed = emptyResult().pushed(0);
+                error(failed, plan.element.id(), e instanceof PolarionException.RateLimited ? "POLARION_RATE_LIMITED" : "POLARION_ERROR", e.getMessage());
+                error(failed, null, "ROLLED_BACK", "the earlier writes of this push were undone" + (undoFailures.isEmpty() ? "" : "; undo failed: " + undoFailures));
+                long retryAfter = e instanceof PolarionException.RateLimited limited ? limited.retryAfterSeconds() : 0;
+                return new Outcome(retryAfter > 0 ? 429 : 200, failed, retryAfter);
+            }
+        }
         try {
             this.transaction.executeWithoutResult(status -> plans.forEach(plan -> this.record(projectId, plan, actor)));
         } catch (RuntimeException e) {
@@ -223,13 +299,25 @@ public class SyncService {
         return Outcome.ok(result);
     }
 
+    private String workItemOfElement(String projectId, String elementId) {
+        return this.links.find(elementId).filter(link -> link.projectId().equals(projectId)).map(StoredLink::workItemId)
+                .orElseThrow(() -> new IllegalStateException("no Work Item for " + elementId));
+    }
+
     /** Links and audit for one written element; runs in the push transaction. */
     private void record(String projectId, Plan plan, String actor) {
-        if (plan.kind == Plan.Kind.SKIP) {
+        if (plan.kind == Plan.Kind.SKIP && !plan.traceDiffers) {
             return;
         }
         OffsetDateTime now = OffsetDateTime.now();
-        String pushed = this.toJson(plan.desired);
+        Map<String, String> pushedValues = new LinkedHashMap<>(plan.desired);
+        if (plan.traceOwner) {
+            pushedValues.put(TRACE_LINKS, Trace.join(plan.resolvedTrace));
+            if (!plan.resolvedTrace.equals(plan.currentTrace)) {
+                this.store.audit(projectId, plan.element.id(), plan.workItemId, PUSH, TRACE_LINKS, Trace.join(plan.currentTrace), Trace.join(plan.resolvedTrace), actor);
+            }
+        }
+        String pushed = this.toJson(pushedValues);
         if (plan.kind == Plan.Kind.CREATE) {
             this.links.insert(new StoredLink(plan.element.id(), plan.element.type(), plan.workItemId, plan.workItemType, projectId,
                     Link.StateEnum.ACTIVE.getValue(), plan.element.rev(), null, null, now, null, pushed, plan.element.name()));
@@ -265,7 +353,21 @@ public class SyncService {
 
     // =========================================================== pull
 
+    /** Full pull (the API's /sync/pull): every bound Work Item is read. */
     public Outcome pull(String projectId, OffsetDateTime since, PolarionToken token, String actor) {
+        return this.pull(projectId, since, token, actor, false);
+    }
+
+    /**
+     * Incremental pull (P1 T6, the scheduled job; spec P1 §4.3: "只拉取增量，不拉全量"): only the Work Items updated since
+     * {@code since} are read; the other bindings are only checked for existence (one query per 50 ids), so a deleted
+     * Work Item still becomes ORPHAN. New Work Items created since then go to the unbound pool.
+     */
+    public Outcome pullIncremental(String projectId, OffsetDateTime since, PolarionToken token, String actor) {
+        return this.pull(projectId, Objects.requireNonNull(since), token, actor, true);
+    }
+
+    private Outcome pull(String projectId, OffsetDateTime since, PolarionToken token, String actor, boolean incremental) {
         SyncResult result = emptyResult();
         List<StoredLink> bound = this.links.findByProject(projectId, null).stream()
                 .filter(l -> !Link.StateEnum.ORPHAN.getValue().equals(l.state()))
@@ -276,15 +378,20 @@ public class SyncService {
         } catch (ModelGateway.UnmappedProjectException e) {
             return Outcome.ok(error(result, null, "PROJECT_NOT_MAPPED", e.getMessage()));
         }
+        Trace trace = new Trace(projectId, elements, this.links.findByProject(projectId, null));
 
         List<StoredLink> linkUpdates = new ArrayList<>();
-        Map<String, Map<String, String>> textChanges = new LinkedHashMap<>();
+        Map<String, Map<String, String>> modelChanges = new LinkedHashMap<>();
         List<Runnable> audits = new ArrayList<>();
         int pulled = 0;
         int skipped = 0;
         try {
+            Map<String, Optional<WorkItem>> observed = incremental ? this.observeIncrementally(projectId, since, bound, token) : this.observeAll(projectId, bound, token);
             for (StoredLink link : bound) {
-                var found = this.polarion.getWorkItem(projectId, link.workItemId(), token);
+                if (!observed.containsKey(link.workItemId())) {
+                    continue; // unchanged since the last pull (incremental only)
+                }
+                var found = observed.get(link.workItemId());
                 if (found.isEmpty()) {
                     linkUpdates.add(link.withState(Link.StateEnum.ORPHAN.getValue()));
                     error(result, link.elementId(), "WORK_ITEM_DELETED", "work item " + link.workItemId() + " was deleted in Polarion; binding marked ORPHAN");
@@ -294,7 +401,11 @@ public class SyncService {
                 WorkItem workItem = found.get();
                 boolean changed = false;
                 String state = link.state();
-                List<String> edited = this.editedInPolarion(link, this.modelOwnedOn(workItem));
+                List<String> edited = new ArrayList<>(this.editedInPolarion(link, this.modelOwnedOn(workItem)));
+                boolean owner = !REQUIREMENT.equals(link.elementType()) && this.properties.getWorkItemTypes().containsKey(link.elementType());
+                if (owner && this.traceEdited(link, trace.managedLinks(workItem))) {
+                    edited.add(TRACE_LINKS);
+                }
                 if (!edited.isEmpty()) {
                     result.addConflictsItem(new SyncResultConflictsInner().elementId(link.elementId()).fields(edited));
                     state = Link.StateEnum.CONFLICT.getValue();
@@ -305,11 +416,19 @@ public class SyncService {
                     changed = true;
                 }
                 ElementSnapshot element = elements.get(link.elementId());
-                String text = description(workItem);
-                if (element != null && "Requirement".equals(element.type()) && text != null && !text.equals(element.text())) {
-                    textChanges.put(element.id(), Map.of(ElementSnapshot.TEXT, text));
-                    audits.add(() -> this.store.audit(projectId, link.elementId(), link.workItemId(), PULL, ElementSnapshot.TEXT, element.text(), text, actor));
-                    changed = true;
+                if (element != null && REQUIREMENT.equals(element.type())) {
+                    String text = description(workItem);
+                    if (text != null && !text.equals(element.text())) {
+                        modelChanges.computeIfAbsent(element.id(), k -> new LinkedHashMap<>()).put(ElementSnapshot.TEXT, text);
+                        audits.add(() -> this.store.audit(projectId, link.elementId(), link.workItemId(), PULL, ElementSnapshot.TEXT, element.text(), text, actor));
+                        changed = true;
+                    }
+                    if (!workItem.id().equals(element.reqId())) { // P1 T6: reqId is the Work Item id (Polarion-owned)
+                        modelChanges.computeIfAbsent(element.id(), k -> new LinkedHashMap<>()).put(ElementSnapshot.REQ_ID, workItem.id());
+                        audits.add(() -> this.store.audit(projectId, link.elementId(), link.workItemId(), PULL, ElementSnapshot.REQ_ID, element.reqId(),
+                                workItem.id(), actor));
+                        changed = true;
+                    }
                 }
                 linkUpdates.add(new StoredLink(link.elementId(), link.elementType(), link.workItemId(), link.workItemType(), link.projectId(), state,
                         link.modelRev(), workItem.updated() == null ? link.wiRev() : workItem.updated().toString(), link.etag(), link.lastPushAt(),
@@ -330,13 +449,47 @@ public class SyncService {
         }
 
         // Polarion-owned values go into the model as one edit through the editing context, then the bookkeeping.
-        this.model.applyPolarionOwned(projectId, textChanges);
+        this.model.applyPolarionOwned(projectId, modelChanges);
         this.transaction.executeWithoutResult(status -> {
             linkUpdates.forEach(this.links::update);
             audits.forEach(Runnable::run);
         });
         this.model.refreshViews(projectId); // link states and titles changed: recompute the Validation view
         return Outcome.ok(result.pulled(pulled).skipped(skipped));
+    }
+
+    /** Every bound Work Item, read one by one (empty = deleted). */
+    private Map<String, Optional<WorkItem>> observeAll(String projectId, List<StoredLink> bound, PolarionToken token) {
+        Map<String, Optional<WorkItem>> observed = new LinkedHashMap<>();
+        for (StoredLink link : bound) {
+            observed.put(link.workItemId(), this.polarion.getWorkItem(projectId, link.workItemId(), token));
+        }
+        return observed;
+    }
+
+    /** The bound Work Items updated since {@code since}, and the bound ones that no longer exist (empty). */
+    private Map<String, Optional<WorkItem>> observeIncrementally(String projectId, OffsetDateTime since, List<StoredLink> bound, PolarionToken token) {
+        Set<String> boundIds = new LinkedHashSet<>();
+        bound.forEach(link -> boundIds.add(link.workItemId()));
+        Map<String, Optional<WorkItem>> observed = new LinkedHashMap<>();
+        if (boundIds.isEmpty()) {
+            return observed;
+        }
+        Set<String> types = new LinkedHashSet<>(this.properties.getWorkItemTypes().values());
+        String query = "type:(" + String.join(" ", types) + ") AND updated:[" + since.format(DateTimeFormatter.BASIC_ISO_DATE).substring(0, 8) + " TO *]";
+        for (WorkItem workItem : this.polarion.queryWorkItems(projectId, query, token)) {
+            if (boundIds.contains(workItem.id()) && (workItem.updated() == null || !workItem.updated().isBefore(since))) {
+                observed.put(workItem.id(), Optional.of(workItem));
+            }
+        }
+        List<String> ids = List.copyOf(boundIds);
+        Set<String> existing = new LinkedHashSet<>();
+        for (int i = 0; i < ids.size(); i += 50) {
+            List<String> batch = ids.subList(i, Math.min(ids.size(), i + 50));
+            this.polarion.queryWorkItems(projectId, "id:(" + String.join(" ", batch) + ")", token).forEach(w -> existing.add(w.id()));
+        }
+        ids.stream().filter(id -> !existing.contains(id)).forEach(id -> observed.put(id, Optional.empty()));
+        return observed;
     }
 
     /** New Work Items of the synchronized types, created since {@code since}, that no element is bound to (spec §6.2). */
@@ -396,7 +549,7 @@ public class SyncService {
         Map<String, String> pushed = this.fromJson(link.pushedFields());
         List<String> edited = new ArrayList<>();
         pushed.forEach((field, value) -> {
-            if (!Objects.equals(blankAsNull(value), blankAsNull(current.get(field)))) {
+            if (!TRACE_LINKS.equals(field) && !Objects.equals(blankAsNull(value), blankAsNull(current.get(field)))) { // links: traceEdited
                 edited.add(field);
             }
         });
@@ -445,6 +598,119 @@ public class SyncService {
         return result;
     }
 
+    /** A trace link the model wants: the owner element {@code role} the requirement (element id). */
+    record TraceTarget(String role, String requirementId) {
+    }
+
+    /**
+     * The trace view of one project for push and pull (P1 T6): which requirements each element satisfies or verifies,
+     * which Work Items are bound to requirements, and which links on a Work Item are therefore managed.
+     */
+    final class Trace {
+
+        private final String projectId;
+
+        private final Map<String, ElementSnapshot> elements;
+
+        private final List<StoredLink> projectLinks;
+
+        /** Requirement element id → its Work Item (bound in this project). */
+        final Map<String, String> requirementWorkItems = new LinkedHashMap<>();
+
+        Trace(String projectId, Map<String, ElementSnapshot> elements, List<StoredLink> projectLinks) {
+            this.projectId = projectId;
+            this.elements = elements;
+            this.projectLinks = projectLinks;
+            projectLinks.stream().filter(link -> REQUIREMENT.equals(link.elementType()))
+                    .forEach(link -> this.requirementWorkItems.put(link.elementId(), link.workItemId()));
+        }
+
+        boolean isOwner(ElementSnapshot element) {
+            return element != null && !REQUIREMENT.equals(element.type()) && SyncService.this.properties.getWorkItemTypes().containsKey(element.type());
+        }
+
+        /** The requirements this element satisfies / verifies, sorted. */
+        List<TraceTarget> targetsOf(ElementSnapshot element) {
+            if (!this.isOwner(element)) {
+                return List.of();
+            }
+            SyncProperties.LinkRoles roles = SyncService.this.properties.getLinkRoles();
+            List<TraceTarget> targets = new ArrayList<>();
+            for (ElementSnapshot requirement : this.elements.values()) {
+                if (requirement.satisfiedBy().contains(element.id())) {
+                    targets.add(new TraceTarget(roles.getSatisfiedBy(), requirement.id()));
+                }
+                if (requirement.verifiedBy().contains(element.id())) {
+                    targets.add(new TraceTarget(roles.getVerifiedBy(), requirement.id()));
+                }
+            }
+            targets.sort(java.util.Comparator.comparing(TraceTarget::role).thenComparing(TraceTarget::requirementId));
+            return targets;
+        }
+
+        /** The targets as "role:WI", or a set that cannot equal any current set if a requirement has no Work Item yet. */
+        Set<String> resolvedOrNull(List<TraceTarget> targets) {
+            Set<String> resolved = new java.util.TreeSet<>();
+            for (TraceTarget target : targets) {
+                String workItem = this.requirementWorkItems.get(target.requirementId());
+                resolved.add(target.role() + ":" + (workItem == null ? "#" + target.requirementId() : workItem));
+            }
+            return resolved;
+        }
+
+        /** The Work Item's links that this service manages: a trace role, to a Work Item bound to a requirement. */
+        Set<String> managedLinks(WorkItem workItem) {
+            SyncProperties.LinkRoles roles = SyncService.this.properties.getLinkRoles();
+            Set<String> requirementItems = new LinkedHashSet<>(this.requirementWorkItems.values());
+            Set<String> managed = new java.util.TreeSet<>();
+            for (PolarionClient.WorkItemLink link : workItem.links()) {
+                if ((link.role().equals(roles.getSatisfiedBy()) || link.role().equals(roles.getVerifiedBy())) && this.projectId.equals(link.targetProject())
+                        && requirementItems.contains(link.targetId())) {
+                    managed.add(link.role() + ":" + link.targetId());
+                }
+            }
+            return managed;
+        }
+
+        /**
+         * The ids to push: the given ones, plus for each requirement among them the elements that satisfy or verify it
+         * and the elements whose last pushed links point at its Work Item (so a removed relation is removed in Polarion).
+         */
+        List<String> withOwners(Set<String> ids) {
+            Set<String> all = new LinkedHashSet<>(ids);
+            for (String id : ids) {
+                ElementSnapshot requirement = this.elements.get(id);
+                if (requirement == null || !REQUIREMENT.equals(requirement.type())) {
+                    continue;
+                }
+                requirement.satisfiedBy().stream().filter(this.elements::containsKey).forEach(all::add);
+                requirement.verifiedBy().stream().filter(this.elements::containsKey).forEach(all::add);
+                String workItem = this.requirementWorkItems.get(id);
+                if (workItem != null) {
+                    for (StoredLink link : this.projectLinks) {
+                        String pushed = link.pushedFields() == null ? null : SyncService.this.fromJson(link.pushedFields()).get(TRACE_LINKS);
+                        if (pushed != null && java.util.Arrays.stream(pushed.split(",")).anyMatch(entry -> entry.endsWith(":" + workItem))
+                                && this.elements.containsKey(link.elementId())) {
+                            all.add(link.elementId());
+                        }
+                    }
+                }
+            }
+            return List.copyOf(all);
+        }
+
+        static String join(Set<String> links) {
+            return String.join(",", new java.util.TreeSet<>(links));
+        }
+
+        static List<PolarionClient.WorkItemLink> links(String projectId, List<String> entries) {
+            return entries.stream().map(entry -> {
+                int colon = entry.indexOf(':');
+                return new PolarionClient.WorkItemLink(entry.substring(0, colon), projectId, entry.substring(colon + 1));
+            }).toList();
+        }
+    }
+
     /** What push will do with one element. */
     private static final class Plan {
 
@@ -468,6 +734,29 @@ public class SyncService {
 
         String workItemId;
 
+        /** P1 T6: this element's Work Item carries managed trace links. */
+        boolean traceOwner;
+
+        List<TraceTarget> desiredTrace = List.of();
+
+        /** The managed links on the Work Item now, as "role:WI". */
+        Set<String> currentTrace = Set.of();
+
+        /** The links written by this push, as "role:WI"; set during execution. */
+        Set<String> resolvedTrace = Set.of();
+
+        /** The links will change (decided in the precheck, for counting and dry runs). */
+        boolean traceDiffers;
+
+        Plan trace(boolean owner, List<TraceTarget> desired, Set<String> current, boolean differs) {
+            this.traceOwner = owner;
+            this.desiredTrace = List.copyOf(desired);
+            this.currentTrace = Set.copyOf(current);
+            this.resolvedTrace = Set.copyOf(current);
+            this.traceDiffers = differs;
+            return this;
+        }
+
         private Plan(Kind kind, ElementSnapshot element, StoredLink link, String workItemType, String workItemId, Map<String, String> desired,
                 Map<String, String> changes, Map<String, String> previous) {
             this.kind = kind;
@@ -489,8 +778,8 @@ public class SyncService {
             return new Plan(Kind.UPDATE, element, link, link.workItemType(), workItem.id(), desired, changes, previous);
         }
 
-        static Plan skip(ElementSnapshot element, StoredLink link) {
-            return new Plan(Kind.SKIP, element, link, link.workItemType(), link.workItemId(), Map.of(), Map.of(), Map.of());
+        static Plan skip(ElementSnapshot element, StoredLink link, Map<String, String> desired) {
+            return new Plan(Kind.SKIP, element, link, link.workItemType(), link.workItemId(), desired, Map.of(), Map.of());
         }
 
         /**

@@ -57,9 +57,15 @@ public final class ModelOperations {
     public static int applyPolarionOwned(Map<String, ArchElement> index, Map<String, Map<String, String>> changes) {
         int applied = 0;
         for (var change : changes.entrySet()) {
-            if (index.get(change.getKey()) instanceof Requirement requirement && change.getValue().containsKey(ElementSnapshot.TEXT)) {
-                requirement.setText(change.getValue().get(ElementSnapshot.TEXT));
-                applied++;
+            if (index.get(change.getKey()) instanceof Requirement requirement) {
+                if (change.getValue().containsKey(ElementSnapshot.TEXT)) {
+                    requirement.setText(change.getValue().get(ElementSnapshot.TEXT));
+                    applied++;
+                }
+                if (change.getValue().containsKey(ElementSnapshot.REQ_ID)) {
+                    requirement.setReqId(change.getValue().get(ElementSnapshot.REQ_ID)); // P1 T6: Polarion owns reqId
+                    applied++;
+                }
             }
         }
         return applied;
