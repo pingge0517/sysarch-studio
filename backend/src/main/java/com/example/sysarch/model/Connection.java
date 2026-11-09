@@ -19,7 +19,7 @@ package com.example.sysarch.model;
  * </ul>
  *
  * @see com.example.sysarch.model.SysarchPackage#getConnection()
- * @model annotation="http://www.eclipse.org/emf/2002/Ecore/OCL/Pivot PortTypeCompatible='kind = ConnectionKind::ASSEMBLY implies source.interfaceType = target.interfaceType' NoSelfLoop='source &lt;&gt; target' DirectionCompatible='kind = ConnectionKind::ASSEMBLY implies (source.direction &lt;&gt; target.direction or source.direction = PortDirection::INOUT or target.direction = PortDirection::INOUT)'"
+ * @model annotation="http://www.eclipse.org/emf/2002/Ecore/OCL/Pivot PortInterfaceAssignable='kind = ConnectionKind::ASSEMBLY implies (not source.interfaceType.oclIsUndefined() and not target.interfaceType.oclIsUndefined() and source.interfaceType.compatibleWith(target.interfaceType))' NoSelfLoop='source &lt;&gt; target' DirectionCompatible='kind = ConnectionKind::ASSEMBLY implies (source.direction &lt;&gt; target.direction or source.direction = PortDirection::INOUT or target.direction = PortDirection::INOUT)'"
  * @generated
  */
 public interface Connection extends ArchElement {

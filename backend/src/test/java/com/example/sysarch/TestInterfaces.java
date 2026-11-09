@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Interface entities for tests written when {@code Port.interfaceType} was a string (P0). Since metamodel v1.1 it
  * refers to an {@link InterfaceDef}; one shared entity per name keeps "same name = same interface", which is what the
- * P0 tests mean (and what {@code PortTypeCompatible} compares until P1 T2 replaces it).
+ * P0 tests mean (different names are unrelated interfaces, which {@code PortInterfaceAssignable} rejects).
  */
 public final class TestInterfaces {
 

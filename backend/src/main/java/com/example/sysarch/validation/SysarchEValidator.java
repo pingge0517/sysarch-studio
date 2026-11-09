@@ -101,11 +101,12 @@ public final class SysarchEValidator implements EValidator {
         Map<String, List<String>> features = new LinkedHashMap<>();
         features.put("NameNotEmpty", List.of("name"));
         features.put("InterfaceTypeRequired", List.of("interfaceType", "direction"));
-        features.put("PortTypeCompatible", List.of("source", "target"));
+        features.put("PortInterfaceAssignable", List.of("source", "target"));
         features.put("NoSelfLoop", List.of("source", "target"));
         features.put("DirectionCompatible", List.of("source", "target"));
         features.put("LayerAdjacentOnly", List.of("from", "to"));
         features.put("NoSelfAllocate", List.of("from", "to"));
+        features.put("ProtocolRequired", List.of("protocol"));
         return Collections.unmodifiableMap(features);
     }
 }

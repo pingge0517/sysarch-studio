@@ -84,6 +84,9 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//InterfaceDef/protocol"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//InterfaceDef/dataType"/>
       <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sysarch.ecore#//InterfaceDef/superTypes"/>
+      <genOperations ecoreOperation="sysarch.ecore#//InterfaceDef/compatibleWith">
+        <genParameters ecoreParameter="sysarch.ecore#//InterfaceDef/compatibleWith/other"/>
+      </genOperations>
     </genClasses>
     <genClasses ecoreClass="sysarch.ecore#//Allocate">
       <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sysarch.ecore#//Allocate/from"/>

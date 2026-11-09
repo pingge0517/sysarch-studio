@@ -148,7 +148,7 @@ class SaveTimeValidationTest {
 
         List<ValidationError> rejected = this.edit(m -> connection.setTarget(eth));
 
-        assertEquals(List.of("PortTypeCompatible"), codes(rejected));
+        assertEquals(List.of("PortInterfaceAssignable"), codes(rejected));
         assertEquals(can2, connection.getTarget());
     }
 

@@ -79,4 +79,15 @@ public interface InterfaceDef extends ArchElement {
 	 */
 	EList<InterfaceDef> getSuperTypes();
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * <!-- begin-model-doc -->
+	 * P1 T2: the same entity, or one an ancestor of the other along superTypes (transitively). Implemented in Java with a cache (spec P1 §2.3); OCL calls it.
+	 * <!-- end-model-doc -->
+	 * @model
+	 * @generated
+	 */
+	boolean compatibleWith(InterfaceDef other);
+
 } // InterfaceDef

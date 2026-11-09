@@ -5,6 +5,7 @@ package com.example.sysarch.model;
 import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EEnum;
+import org.eclipse.emf.ecore.EOperation;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EReference;
 
@@ -1041,13 +1042,22 @@ public interface SysarchPackage extends EPackage {
 	int INTERFACE_DEF_FEATURE_COUNT = ARCH_ELEMENT_FEATURE_COUNT + 3;
 
 	/**
+	 * The operation id for the '<em>Compatible With</em>' operation.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INTERFACE_DEF___COMPATIBLE_WITH__INTERFACEDEF = ARCH_ELEMENT_OPERATION_COUNT + 0;
+
+	/**
 	 * The number of operations of the '<em>Interface Def</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int INTERFACE_DEF_OPERATION_COUNT = ARCH_ELEMENT_OPERATION_COUNT + 0;
+	int INTERFACE_DEF_OPERATION_COUNT = ARCH_ELEMENT_OPERATION_COUNT + 1;
 
 	/**
 	 * The meta object id for the '{@link com.example.sysarch.model.impl.AllocateImpl <em>Allocate</em>}' class.
@@ -1839,6 +1849,16 @@ public interface SysarchPackage extends EPackage {
 	EReference getInterfaceDef_SuperTypes();
 
 	/**
+	 * Returns the meta object for the '{@link com.example.sysarch.model.InterfaceDef#compatibleWith(com.example.sysarch.model.InterfaceDef) <em>Compatible With</em>}' operation.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the '<em>Compatible With</em>' operation.
+	 * @see com.example.sysarch.model.InterfaceDef#compatibleWith(com.example.sysarch.model.InterfaceDef)
+	 * @generated
+	 */
+	EOperation getInterfaceDef__CompatibleWith__InterfaceDef();
+
+	/**
 	 * Returns the meta object for class '{@link com.example.sysarch.model.Allocate <em>Allocate</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -2398,6 +2418,14 @@ public interface SysarchPackage extends EPackage {
 		 * @generated
 		 */
 		EReference INTERFACE_DEF__SUPER_TYPES = eINSTANCE.getInterfaceDef_SuperTypes();
+
+		/**
+		 * The meta object literal for the '<em><b>Compatible With</b></em>' operation.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EOperation INTERFACE_DEF___COMPATIBLE_WITH__INTERFACEDEF = eINSTANCE.getInterfaceDef__CompatibleWith__InterfaceDef();
 
 		/**
 		 * The meta object literal for the '{@link com.example.sysarch.model.impl.AllocateImpl <em>Allocate</em>}' class.

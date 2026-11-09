@@ -4,6 +4,7 @@ import com.example.sysarch.model.Allocate;
 import com.example.sysarch.model.ArchElement;
 import com.example.sysarch.model.Connection;
 import com.example.sysarch.model.ConnectionKind;
+import com.example.sysarch.model.InterfaceDef;
 import com.example.sysarch.model.Layer;
 import com.example.sysarch.model.Port;
 import com.example.sysarch.model.SysarchFactory;
@@ -42,8 +43,9 @@ import org.eclipse.ocl.xtext.essentialocl.EssentialOCLStandaloneSetup;
  * checked on a connection that is not yet in the model. A rejected edge is therefore never stored.</li>
  * </ul>
  *
- * <p>{@code PortTypeCompatible} compares {@code interfaceType} as plain strings. There is no interface
- * inheritance or compatibility reasoning in P0 (spec §3.2): "CAN" and "CAN-FD" are different types.
+ * <p>{@code PortInterfaceAssignable} (P1 T2) replaced P0's string comparison {@code PortTypeCompatible}: both ports
+ * need an interface, and the two must be the same {@code InterfaceDef} or one an ancestor of the other
+ * ({@link InterfaceCompatibility}). A port without an interface is never assignable.
  *
  * <p>Not thread-safe internally; the public methods are synchronized. Call {@link #close()} to release OCL.
  */
@@ -52,7 +54,7 @@ public final class ConstraintValidator implements AutoCloseable {
     static final String PIVOT_ANNOTATION = "http://www.eclipse.org/emf/2002/Ecore/OCL/Pivot";
 
     /** Constraints checked when a connection is dropped on the canvas (spec §3.2 "连线落位时"). */
-    static final Set<String> EDGE_DROP_CONSTRAINTS = Set.of("PortTypeCompatible", "NoSelfLoop", "DirectionCompatible");
+    static final Set<String> EDGE_DROP_CONSTRAINTS = Set.of("PortInterfaceAssignable", "NoSelfLoop", "DirectionCompatible");
 
     private final OCL ocl;
 
@@ -164,6 +166,8 @@ public final class ConstraintValidator implements AutoCloseable {
             case Connection connection -> new ValidationError(code, id, connectionMessage(code, connection),
                     ids(connection.getSource(), connection.getTarget()));
             case Allocate allocate -> new ValidationError(code, id, allocateMessage(code, allocate), ids(allocate.getFrom(), allocate.getTo()));
+            case InterfaceDef interfaceDef when code.equals("ProtocolRequired") -> new ValidationError(code, id,
+                    "接口「" + name(interfaceDef) + "」未设置协议", ids(interfaceDef));
             case Port port when code.equals("InterfaceTypeRequired") -> new ValidationError(code, id,
                     "端口「" + name(port) + "」未设置接口类型（仅 INOUT 端口可以不设）", ids(port));
             default -> code.equals("NameNotEmpty") ? new ValidationError(code, id, "名称不能为空", ids(element))
@@ -175,12 +179,23 @@ public final class ConstraintValidator implements AutoCloseable {
         Port source = connection.getSource();
         Port target = connection.getTarget();
         return switch (code) {
-            case "PortTypeCompatible" -> "端口接口类型不一致：「" + type(source) + "」≠「" + type(target) + "」（按字符串比较，不做继承推导）";
+            case "PortInterfaceAssignable" -> assignableMessage(source, target);
             case "NoSelfLoop" -> "连接的两端不能是同一个端口";
             case "DirectionCompatible" -> "端口方向不兼容：" + direction(source) + " → " + direction(target);
             case "NameNotEmpty" -> "名称不能为空";
             default -> "违反约束 " + code;
         };
+    }
+
+    /** Why two ports are not assignable: a missing interface first, otherwise the two unrelated interfaces. */
+    private static String assignableMessage(Port source, Port target) {
+        if (source != null && source.getInterfaceType() == null) {
+            return "端口接口不可赋值：源端口未设置接口，请先给端口设置接口";
+        }
+        if (target != null && target.getInterfaceType() == null) {
+            return "端口接口不可赋值：目标端口未设置接口，请先给端口设置接口";
+        }
+        return "端口接口不可赋值：「" + type(source) + "」与「" + type(target) + "」不在同一继承链上";
     }
 
     /** Spec §3.2: a rejected allocation says e.g. "跨层跳过：LA → EPBS". */

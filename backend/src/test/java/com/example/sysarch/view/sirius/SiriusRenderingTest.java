@@ -40,6 +40,7 @@ import org.eclipse.sirius.components.representations.Element;
 import org.eclipse.sirius.components.representations.IStatus;
 import org.eclipse.sirius.components.representations.Success;
 import org.eclipse.sirius.components.representations.VariableManager;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -69,6 +70,15 @@ class SiriusRenderingTest {
 
     /** OCL setup is expensive; one validator for the whole class. */
     private static final ConstraintValidator VALIDATOR = new ConstraintValidator();
+
+    /**
+     * Eclipse OCL keeps one environment per thread: a validator left open makes the next test class's validator a
+     * second live instance on the same thread, and OCL's own assertions then fail in whichever class runs next.
+     */
+    @AfterAll
+    static void disposeOcl() {
+        VALIDATOR.close();
+    }
 
     private final SiriusDiagramDescriptionFactory factory = new SiriusDiagramDescriptionFactory(SysarchPackage.eINSTANCE, IDS, new ProjectionCache(), this.filters,
             VALIDATOR);
@@ -281,7 +291,7 @@ class SiriusRenderingTest {
 
         assertTrue(status instanceof Success success && success.getMessages().size() == 1
                 && success.getMessages().get(0).level() == org.eclipse.sirius.components.representations.MessageLevel.ERROR
-                && success.getMessages().get(0).body().startsWith("端口接口类型不一致：「CAN」≠「ETH」"), String.valueOf(status));
+                && success.getMessages().get(0).body().startsWith("端口接口不可赋值：「CAN」与「ETH」"), String.valueOf(status));
         assertEquals(before, this.model.getContents().size(), "no Connection was stored");
         assertEquals(Map.of("can0", "#D32F2F", "eth0", "#D32F2F", "other", "#1A2B4A"), this.portBorders());
     }

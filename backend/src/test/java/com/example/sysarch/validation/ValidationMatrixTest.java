@@ -62,10 +62,10 @@ class ValidationMatrixTest {
 
         List<ValidationError> errors = validator.validateEdgeDrop(can, eth, ConnectionKind.ASSEMBLY);
 
-        assertEquals(List.of("PortTypeCompatible"), codes(errors));
+        assertEquals(List.of("PortInterfaceAssignable"), codes(errors));
         ValidationError error = errors.get(0);
         assertEquals(List.of(can.getId(), eth.getId()), error.anchors());
-        assertEquals("端口接口类型不一致：「CAN」≠「ETH」（按字符串比较，不做继承推导）", error.message());
+        assertEquals("端口接口不可赋值：「CAN」与「ETH」不在同一继承链上", error.message());
     }
 
     @Test
@@ -125,10 +125,10 @@ class ValidationMatrixTest {
         assertEquals(List.of(), validator.validateEdgeDrop(this.port("CAN", PortDirection.IN), this.port("ETH", PortDirection.IN), ConnectionKind.DELEGATION));
     }
 
-    /** P0 limit, spec §3.2: interface types are compared as strings, with no inheritance or compatibility. */
+    /** Unrelated interfaces are not assignable, even with similar names (P1: entities, not strings; inheritance is in InterfaceCompatibilityTest). */
     @Test
-    void interfaceTypesAreComparedAsPlainStrings() {
-        assertEquals(List.of("PortTypeCompatible"), codes(validator.validateEdgeDrop(this.port("CAN", PortDirection.OUT),
+    void unrelatedInterfacesAreNotAssignable() {
+        assertEquals(List.of("PortInterfaceAssignable"), codes(validator.validateEdgeDrop(this.port("CAN", PortDirection.OUT),
                 this.port("CAN-FD", PortDirection.IN), ConnectionKind.ASSEMBLY)));
     }
 
@@ -169,7 +169,7 @@ class ValidationMatrixTest {
         connection.setSource(this.port("CAN", PortDirection.IN));
         connection.setTarget(this.port("ETH", PortDirection.IN));
 
-        assertEquals(List.of("PortTypeCompatible", "DirectionCompatible"), codes(validator.validate(connection)));
+        assertEquals(List.of("PortInterfaceAssignable", "DirectionCompatible"), codes(validator.validate(connection)));
     }
 
     @Test
@@ -188,7 +188,7 @@ class ValidationMatrixTest {
         assertEquals(Map.of(
                 "ArchElement", List.of("NameNotEmpty"),
                 "Port", List.of("InterfaceTypeRequired"),
-                "Connection", List.of("PortTypeCompatible", "NoSelfLoop", "DirectionCompatible"),
+                "Connection", List.of("PortInterfaceAssignable", "NoSelfLoop", "DirectionCompatible"),
                 "Allocate", List.of("LayerAdjacentOnly", "NoSelfAllocate"),
                 "InterfaceDef", List.of("ProtocolRequired")), validator.constraintNames());
     }

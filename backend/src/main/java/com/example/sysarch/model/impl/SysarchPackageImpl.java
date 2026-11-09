@@ -22,6 +22,7 @@ import com.example.sysarch.model.VerifyMethod;
 import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EEnum;
+import org.eclipse.emf.ecore.EOperation;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EReference;
 
@@ -638,6 +639,16 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 	 * @generated
 	 */
 	@Override
+	public EOperation getInterfaceDef__CompatibleWith__InterfaceDef() {
+		return interfaceDefEClass.getEOperations().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EClass getAllocate() {
 		return allocateEClass;
 	}
@@ -872,6 +883,7 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 		createEAttribute(interfaceDefEClass, INTERFACE_DEF__PROTOCOL);
 		createEAttribute(interfaceDefEClass, INTERFACE_DEF__DATA_TYPE);
 		createEReference(interfaceDefEClass, INTERFACE_DEF__SUPER_TYPES);
+		createEOperation(interfaceDefEClass, INTERFACE_DEF___COMPATIBLE_WITH__INTERFACEDEF);
 
 		allocateEClass = createEClass(ALLOCATE);
 		createEReference(allocateEClass, ALLOCATE__FROM);
@@ -985,6 +997,9 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 		initEAttribute(getInterfaceDef_DataType(), ecorePackage.getEString(), "dataType", null, 0, 1, InterfaceDef.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getInterfaceDef_SuperTypes(), this.getInterfaceDef(), null, "superTypes", null, 0, -1, InterfaceDef.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
+		EOperation op = initEOperation(getInterfaceDef__CompatibleWith__InterfaceDef(), ecorePackage.getEBoolean(), "compatibleWith", 0, 1, IS_UNIQUE, IS_ORDERED);
+		addEParameter(op, this.getInterfaceDef(), "other", 0, 1, IS_UNIQUE, IS_ORDERED);
+
 		initEClass(allocateEClass, Allocate.class, "Allocate", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEReference(getAllocate_From(), this.getArchElement(), null, "from", null, 1, 1, Allocate.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getAllocate_To(), this.getArchElement(), null, "to", null, 1, 1, Allocate.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -1055,7 +1070,7 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 		  (connectionEClass,
 		   source,
 		   new String[] {
-			   "PortTypeCompatible", "kind = ConnectionKind::ASSEMBLY implies source.interfaceType = target.interfaceType",
+			   "PortInterfaceAssignable", "kind = ConnectionKind::ASSEMBLY implies (not source.interfaceType.oclIsUndefined() and not target.interfaceType.oclIsUndefined() and source.interfaceType.compatibleWith(target.interfaceType))",
 			   "NoSelfLoop", "source <> target",
 			   "DirectionCompatible", "kind = ConnectionKind::ASSEMBLY implies (source.direction <> target.direction or source.direction = PortDirection::INOUT or target.direction = PortDirection::INOUT)"
 		   });

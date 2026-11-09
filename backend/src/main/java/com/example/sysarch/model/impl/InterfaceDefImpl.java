@@ -5,6 +5,8 @@ package com.example.sysarch.model.impl;
 import com.example.sysarch.model.InterfaceDef;
 import com.example.sysarch.model.SysarchPackage;
 
+import java.lang.reflect.InvocationTargetException;
+
 import java.util.Collection;
 
 import org.eclipse.emf.common.notify.Notification;
@@ -167,6 +169,16 @@ public class InterfaceDefImpl extends ArchElementImpl implements InterfaceDef {
 	 * @generated
 	 */
 	@Override
+	public boolean compatibleWith(final InterfaceDef other) {
+		return com.example.sysarch.validation.InterfaceCompatibility.compatible(this, other);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
 			case SysarchPackage.INTERFACE_DEF__PROTOCOL:
@@ -239,6 +251,20 @@ public class InterfaceDefImpl extends ArchElementImpl implements InterfaceDef {
 				return superTypes != null && !superTypes.isEmpty();
 		}
 		return super.eIsSet(featureID);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Object eInvoke(int operationID, EList<?> arguments) throws InvocationTargetException {
+		switch (operationID) {
+			case SysarchPackage.INTERFACE_DEF___COMPATIBLE_WITH__INTERFACEDEF:
+				return compatibleWith((InterfaceDef)arguments.get(0));
+		}
+		return super.eInvoke(operationID, arguments);
 	}
 
 	/**
