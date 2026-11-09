@@ -1,0 +1,61 @@
+vsm: "1.0"
+viewpoint:
+  id: "sysarch.core"
+  label: "系统架构建模"
+  metamodelUri: "http://example.com/sysarch/1.0"
+  priority: 10
+
+representations:
+  - id: "pa-architecture"
+    label: "物理架构（PA）"
+    kind: "diagram"
+    domainClass: "sysarch:PartDefinition"
+    synchronization: "auto"
+    refresh:
+      mode: "incremental"
+      budgetMs: 2000
+    filters:
+      - id: "onlyPhysical"
+        label: "仅物理层"
+        expression: "layer == 'PHYSICAL'"
+    autoExpand:
+      - feature: "ownedParts"
+        maxDepth: 2
+      - feature: "ownedPorts"
+        maxDepth: 1
+    nodeStyles:
+      - id: "function"
+        appliesTo: "sysarch:PartDefinition"
+        shape: "rounded-rectangle"
+        color: "#FFFFFF"
+        borderColor: "#0F2A1F"
+        labelExpression: "{name}"
+        subLabelExpression: "{stereotypes}"
+      - id: "role"
+        appliesTo: "sysarch:PartDefinition"
+        shape: "rectangle"
+        color: "#E8EDEA"
+        borderColor: "#5E7268"
+        labelExpression: "{name}"
+    edgeStyles:
+      - id: "exchange"
+        domainClass: "sysarch:Connection"
+        sourceEnd: "source"
+        targetEnd: "target"
+        routing: "spline"
+        color: "#0F2A1F"
+        arrow: "open"
+        labelExpression: "{interfaceType.name}"
+    tools:
+      - id: "createFunction"
+        label: "新建物理组件"
+        action: "create-child"
+        targetClass: "sysarch:Part"
+        containmentFeature: "ownedParts"
+        defaults:
+          layer: "PHYSICAL"
+      - id: "connect"
+        label: "建立物理连接"
+        action: "create-edge"
+        targetClass: "sysarch:Connection"
+        validateOnDrop: true

@@ -1,0 +1,16 @@
+# Parameters of views/pa-architecture.vsm.yaml (spec P1 §3.1): same template as SA, only filter and colours differ.
+template: "layer-architecture.vsm.tpl.yaml"
+output: "pa-architecture.vsm.yaml"
+params:
+  id: "pa-architecture"
+  label: "物理架构（PA）"
+  layer: "PHYSICAL"
+  filterId: "onlyPhysical"
+  filterLabel: "仅物理层"
+  nodeColor: "#FFFFFF"
+  nodeBorderColor: "#0F2A1F"
+  abstractNodeColor: "#E8EDEA"
+  abstractNodeBorderColor: "#5E7268"
+  edgeColor: "#0F2A1F"
+  createLabel: "新建物理组件"
+  connectLabel: "建立物理连接"

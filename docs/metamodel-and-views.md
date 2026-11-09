@@ -2,8 +2,8 @@
 
 本文对应 spec T9 第 1 步，内容包括：
 
-- 元模型及七类元素的字段；
-- BDD、IBD 两张视图如何从模型映射出来；
+- 元模型及各类元素的字段（含 P1 的元模型 v1.1：接口实体、需求追溯引用）；
+- BDD、IBD 以及 P1 的 SA / LA / PA 分层视图如何从模型映射出来；
 - 新增一张视图的完整步骤。
 
 文中的规则以代码为准，引用的文件都在仓库里：
@@ -11,7 +11,7 @@
 | 规则 | 文件 |
 |---|---|
 | 元模型 | `metamodel/sysarch.ecore` |
-| 视图 | `views/*.vsm.yaml` |
+| 视图 | `views/*.vsm.yaml`；分层视图由 `views/_templates/` 的模板生成 |
 | DSL 字段 | `views/schema/vsm.schema.json` |
 | 投影规则 | `backend/.../view/projection/DiagramProjector.java` |
 
@@ -70,12 +70,15 @@ classDiagram
     }
     class Port {
         direction : PortDirection = INOUT
-        interfaceType : EString
         isConjugated : EBoolean = false
     }
     class Connection {
         kind : ConnectionKind = ASSEMBLY
-        interfaceType : EString
+    }
+    class InterfaceDef {
+        protocol : EString
+        dataType : EString
+        compatibleWith(other) EBoolean
     }
     class ItemFlow {
         itemName : EString
@@ -103,6 +106,7 @@ classDiagram
     ArchElement <|-- Requirement
     ArchElement <|-- Allocate
     ArchElement <|-- DiagramLayout
+    ArchElement <|-- InterfaceDef
     PartDefinition "owner 0..1" *-- "ownedParts *" Part
     PartDefinition "owner 0..1" *-- "ownedPorts *" Port
     Part "partOwner 0..1" *-- "ports *" Port
@@ -113,6 +117,11 @@ classDiagram
     ItemFlow --> "connection 0..1" Connection
     Allocate --> "from 1" ArchElement
     Allocate --> "to 1" ArchElement
+    Port --> "interfaceType 0..1" InterfaceDef
+    Connection --> "interfaceType 0..1" InterfaceDef
+    InterfaceDef --> "superTypes *" InterfaceDef
+    Requirement --> "satisfiedBy *" ArchElement
+    Requirement --> "verifiedBy *" ArchElement
 ```
 
 上图中 `*--` 表示包含（containment），`-->` 表示普通引用。三组包含关系都带配对的 `eOpposite`，如果不配对，EMF 的通知链会断，自动同步就收不到变更事件。
@@ -128,7 +137,7 @@ classDiagram
 
 层次通过 `layer` 枚举加 `stereotypes` 表达，不复用 Capella 的元模型。
 
-### 2.3 公共字段（`ArchElement`，七类元素都有）
+### 2.3 公共字段（`ArchElement`，所有元素都有）
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
@@ -140,7 +149,7 @@ classDiagram
 | `workItemId` | EString | 预留字段；实际绑定关系存在 `polarion_link` 表中 |
 | `rev` | EInt | 修订计数，推送时写入绑定记录 |
 
-### 2.4 七类元素
+### 2.4 各类元素
 
 **PartDefinition（块）**：BDD 和 IBD 的根元素类型。
 
@@ -167,7 +176,7 @@ classDiagram
 | `owner` | PartDefinition | 0..1 | 定义级端口的所属块 |
 | `partOwner` | Part | 0..1 | 部件端口的所属部件 |
 | `direction` | PortDirection | 1 | 默认 `INOUT` |
-| `interfaceType` | EString | 0..1 | 接口类型。约束 `InterfaceTypeRequired`：方向不是 `INOUT` 时必填 |
+| `interfaceType` | InterfaceDef | 0..1 | 接口（P1 起是对接口实体的引用，P0 是字符串，旧数据加载时自动迁移）。约束 `InterfaceTypeRequired`：方向不是 `INOUT` 时必填 |
 | `isConjugated` | EBoolean | 1 | 共轭端口 |
 
 **Connection（连接）**：只能作为资源根，没有元素包含它。
@@ -176,7 +185,7 @@ classDiagram
 |---|---|---|---|
 | `source`、`target` | Port | **1** | 两端端口 |
 | `kind` | ConnectionKind | 1 | 默认 `ASSEMBLY`；决定 IBD 的边样式 |
-| `interfaceType` | EString | 0..1 | 连接上传输的内容，作为 IBD 边的标签 |
+| `interfaceType` | InterfaceDef | 0..1 | 连接的接口（P1 T3 起是引用）；连线时取源端口的接口；IBD 边标签 `{interfaceType}`、分层视图 `{interfaceType.name}` |
 
 **ItemFlow（项流）**：只能作为资源根。
 
@@ -193,6 +202,16 @@ classDiagram
 | `text` | EString | 0..1 | 需求文本；**由 Polarion 写入**（spec §6.2），拉取时从 Work Item 描述同步过来 |
 | `verifyMethod` | VerifyMethod | 1 | 默认 `TEST` |
 | `priority` | EInt | 1 | 默认 3 |
+| `satisfiedBy`、`verifiedBy` | ArchElement | 0..* | Satisfy / Verify 追溯（P1） |
+
+**InterfaceDef（接口，P1）**：只能作为资源根。
+
+| 字段 | 类型 | 多重性 | 说明 |
+|---|---|---|---|
+| `protocol` | EString | 0..1 | 协议；约束 `ProtocolRequired`，为空时在 Protocol 字段标红，不阻止保存 |
+| `dataType` | EString | 0..1 | 数据类型 |
+| `superTypes` | InterfaceDef | 0..* | 接口继承 |
+| `compatibleWith(other)` | 操作 | | 同一实体，或者沿 `superTypes`（可跨多层）一方是另一方的祖先；Java 实现带缓存（`InterfaceCompatibility`），OCL 直接调用 |
 
 **Allocate（分配）**：只能作为资源根。
 
@@ -211,11 +230,12 @@ classDiagram
 |---|---|---|---|
 | `NameNotEmpty` | ArchElement | 名称非空 | 标红，不阻止保存 |
 | `InterfaceTypeRequired` | Port | 方向为 `INOUT`，或者 `interfaceType` 非空 | 标红，不阻止保存 |
-| `PortTypeCompatible` | Connection | ASSEMBLY 时两端 `interfaceType` 相等（只比较字符串，不考虑继承） | 连线落位时拒绝；改已有连线时回滚 |
+| `PortInterfaceAssignable` | Connection | ASSEMBLY 时两端口都设了接口，且 `compatibleWith` 成立（P1 T2，取代 P0 按字符串比较的 `PortTypeCompatible`） | 连线落位时拒绝；改已有连线时回滚 |
 | `NoSelfLoop` | Connection | `source <> target` | 同上 |
 | `DirectionCompatible` | Connection | ASSEMBLY 时方向不同，或者有一端是 `INOUT` | 同上 |
 | `LayerAdjacentOnly` | Allocate | 只能分配到相邻的下一层：OP→SYS→LA→PA→EPBS | 回滚；在一致性报告中列为 R4 |
 | `NoSelfAllocate` | Allocate | `from <> to` | 回滚 |
+| `ProtocolRequired` | InterfaceDef | 协议非空 | 标红，不阻止保存 |
 
 "回滚"类约束只在它涉及的两端都已填写时才检查。新建的空 Allocate 两端都还没填，不算违规，由 EMF 的必填检查标红提示。
 
@@ -230,14 +250,15 @@ classDiagram
 | 文件 | `vsm`、`viewpoint`、`representations` |
 | viewpoint | `id`、`label`、`metamodelUri`、`priority` |
 | representation | `id`、`label`、`kind`（diagram / table）、`domainClass`、`synchronization`（auto / manual）、`refresh{mode,budgetMs}`、`autoExpand[{feature,maxDepth}]`、`filters[{id,label,expression}]`、`nodeStyles`、`edgeStyles`、`tools` |
-| nodeStyle | `id`、`appliesTo`、`shape`、`color`、`borderColor`、`borderWidth`、`headerBold`、`italic`、`width`、`height`、`isBorderNode`、`affiliationFeature`、`labelPosition`、`labelExpression`、`subLabelExpression`、`compartments[{feature,label,itemExpression}]` |
-| edgeStyle | `id`、`label`、`labelExpression`、`domainClass`、`sourceEnd`、`targetEnd`、`routing`、`arrow`、`lineStyle`、`color` |
-| tool | `id`、`label`、`action`（create-child / create-edge / external-link）、`targetClass`、`containmentFeature`、`linkType`、`validateOnDrop` |
+| nodeStyle | `id`、`appliesTo`、`shape`（rectangle / rounded-rectangle / square）、`color`、`borderColor`、`borderWidth`、`headerBold`、`italic`、`width`、`height`、`isBorderNode`、`affiliationFeature`、`labelPosition`、`labelExpression`、`subLabelExpression`、`compartments[{feature,label,itemExpression}]` |
+| edgeStyle | `id`、`label`、`labelExpression`、`domainClass`、`sourceEnd`、`targetEnd`、`routing`（straight / manhattan / spline，Sirius 不支持曲线，spline 画成直线）、`arrow`（hollow-triangle / filled-diamond / open）、`lineStyle`、`color` |
+| tool | `id`、`label`、`action`（create-child / create-edge / external-link）、`targetClass`、`containmentFeature`、`linkType`、`validateOnDrop`、`defaults`（create-child 新建时预填的属性，P1） |
 
 几种表达式的写法：
 
 - **标签**：`{feature}` 或 `{a.b}`，按路径读取属性。
-- **过滤**：支持 `not`、`and`、`or`、括号和布尔属性，例如 `not isAbstract`。
+- **过滤**（P1 §3.5）：支持 `not`、`and`、`or`、括号、布尔属性和 `字段 == '值'` / `!=`，例如 `not isAbstract`、`layer == 'LOGICAL'`、`stereotypes == 'ecu'`（含有这个构造型）。**只允许 `layer`、`isAbstract`、`stereotypes` 三个字段**，其他标识符一律报错，即使模型里有这个属性。
+- **图层范围**：表达式里用到 `layer` 的过滤器是这张视图的图层范围，始终生效，不出现在过滤开关里；其他过滤器（如 `hideAbstract`）照旧可以开关。
 - **类名**：写成 `sysarch:<EClass>`。
 
 生成器会拒绝以下情况，打印 `views/<文件>:<行> <原因>` 并以退出码 1 结束：
@@ -247,9 +268,13 @@ classDiagram
 - 标签里引用了未知的 `{属性}`；
 - 边界节点的 `affiliationFeature` 不是容器引用；
 - `create-edge` 工具没有设置 `validateOnDrop: true`；
-- `create-child` 的目标类型放不进指定的包含属性。
+- `create-child` 的目标类型放不进指定的包含属性；
+- 过滤表达式语法错误、用了白名单以外的字段、`layer` 的取值不是枚举值；
+- `defaults` 写了不存在或不能预填的属性，或者值与属性类型不符；
+- 有图层范围的视图里，`create-child` 新建的元素不在本层（`defaults.layer` 必须是本层）；
+- 由模板生成的 YAML 被手工改过（与模板展开结果不一致）。
 
-### 3.2 两张视图共用的投影规则（`DiagramProjector`）
+### 3.2 所有视图共用的投影规则（`DiagramProjector`）
 
 1. **范围**：图根元素所在资源内的全部元素，按文档顺序排列。
 2. **同类节点**：如果节点样式的类型就是根元素的类型（或它的父类、子类），资源里所有这类元素都会显示。BDD 能显示全部块、包括新建的块，靠的就是这条规则。其他节点样式只显示从根元素沿 `autoExpand`（属性、深度）能走到的元素。
@@ -259,7 +284,8 @@ classDiagram
    - 对边样式所属类型的每个元素，按（源端值，目标端值）各画一条边，两端都有节点才画。
    - 类型和两端都相同的多个边样式互为备选，元素按 `kind` 的取值选用 id 与之相同的那个，否则用第一个。
    - 如果某一端的元素自己没有节点，就画到它的 `typedBy` 节点上，标签从这一端的元素读取。
-6. **过滤**：打开的过滤器隐藏表达式为假的元素，连同它们的边界节点和边一起隐藏，模型本身不变。
+   - 如果连 `typedBy` 节点也没有，就画到最近的、有节点的容器上（容器的 `typedBy` 也算），标签不变（P1）。分层视图不画端口，连接因此画在端口所属部件的类型块之间。
+6. **过滤**：打开的过滤器隐藏表达式为假的元素，连同它们的边界节点和边一起隐藏，模型本身不变。图层范围过滤器始终打开。
 7. **自动同步**（`synchronization: auto`）：
    - 模型一变，就重新投影；Sirius 推送整张图，浏览器端做增量更新。
    - 实测 501 个节点时，端到端中位数 69 ms，P95 86 ms。
@@ -305,6 +331,19 @@ edge PD-001 -> PD-002 [composition] "感知融合"
 | tool `createPart` / `connect` | 同 BDD | |
 
 `affiliationFeature` 写错的话，端口会浮在画布中间（spec §11.2），所以生成器会检查它是不是容器引用。
+
+### 3.5 分层视图 SA / LA / PA（P1）
+
+| 视图 id | 名称 | 图层范围 | 新建工具 |
+|---|---|---|---|
+| `sa-function-chain` | 系统功能链（SA） | `layer == 'SYSTEM'` | 新建功能 |
+| `la-architecture` | 逻辑架构（LA） | `layer == 'LOGICAL'` | 新建逻辑组件 |
+| `pa-architecture` | 物理架构（PA） | `layer == 'PHYSICAL'` | 新建物理组件 |
+
+- **一份模板，三份参数**：`views/_templates/layer-architecture.vsm.tpl.yaml` 加上 `sa-function-chain.params.yaml`、`la-architecture.params.yaml`、`pa-architecture.params.yaml` 生成三个 YAML。模板只做 `${参数}` 替换，没有条件和循环；三张视图的差别只在图层、配色和文字。SA 的生成结果与 P1 规格书的原文逐字节相同。要改分层视图，改模板或参数文件，再运行 `generateViews`；直接改生成的 YAML 会让构建失败。
+- **显示**：本层的所有块（规则 2），`function` 样式为圆角矩形，抽象块用 `role` 样式。连接（`exchange`）画在端口所属部件的类型块之间，带开放箭头，标签 `{interfaceType.name}`。其他层的块始终隐藏，打开视图时选的根元素如果不在本层，也会被隐藏。
+- **新建**：在块上或画布空白处用"新建功能 / 新建逻辑组件 / 新建物理组件"，会在该块下建一个 Part，并同时建一个同名、同层的块作为它的类型，这个块会出现在本层视图里，在其他层看不到。
+- **连线**：分层视图不画端口，所以不能在这里建连接；连接在 IBD 里建，分层视图负责展示。
 
 ---
 
@@ -353,6 +392,8 @@ representations:
 
 只能使用 §3.1 列出的字段，JSON Schema 会拒绝其他字段。
 
+如果新视图只是已有模板换个参数（例如再加一个 EPBS 层视图），不用写 YAML：在 `views/_templates/` 里新建一个 `*.params.yaml`，写明 `template`、`output` 和全部参数即可，生成时会自动展开。
+
 ### 第 2 步：生成
 
 ```bash
@@ -360,6 +401,7 @@ representations:
 ```
 
 - 成功时生成 `backend/src/main/java/com/example/sysarch/view/generated/PortsDiagramDescriptionProvider.java`，并重新生成 `ViewpointRegistry.java`。
+- 生成前先展开 `views/_templates/` 里的模板，写出对应的 YAML。
 - 失败时打印出错的文件和行号，并以退出码 1 结束，例如把 `partOwner` 误写成 `partOwnr` 时输出 `views/sysarch-ports.vsm.yaml:30 unknown feature 'partOwnr' on sysarch:Port`。按提示修改 YAML 后重新生成即可。
 - 生成前会先删除 `generated/` 目录，输出与机器无关，逐字节确定。
 - 生成的代码要和 YAML 一起提交。
@@ -383,14 +425,15 @@ representations:
 
 ## 5. 演示数据：域控制器
 
-在 Sirius Web 中新建模型时选择 **"系统架构模型（域控制器演示）"**。内容由 `com.example.sysarch.demo.DomainControllerDemo` 生成，`DomainControllerDemoTest` 会检查元素数量、零约束违规，以及两张图的投影结果。
+在 Sirius Web 中新建模型时选择 **"系统架构模型（域控制器演示）"**。内容由 `com.example.sysarch.demo.DomainControllerDemo` 生成，`DomainControllerDemoTest` 会检查元素数量、零约束违规，以及两张图的投影结果；`LayerViewsTest` 检查它在分层视图中的样子（LA：4 个逻辑块和 4 条 `CAN-FD` 连接；PA：SoC 和 MCU；SA：空）。
 
 | 类别 | 内容 |
 |---|---|
 | 块 | LA 层：`PD-001 域控制器`（system）以及 `PD-002`～`PD-004` 三个部件类型；PA 层：`PD-005 域控 SoC`、`PD-006 安全 MCU` |
 | 逻辑部件（3） | `PT-001 感知融合`、`PT-002 决策规划`、`PT-003 执行控制`，都属于 PD-001 |
-| 端口（6） | 每个部件各有一个 IN 端口和一个 OUT 端口，接口类型都是 `CAN-FD` |
-| 连接（4） | 目标列表（ObjectList）、轨迹（Trajectory）、自车状态 ×2（VehicleState），都是 ASSEMBLY |
+| 接口（1） | `IF-001 CAN-FD`（协议 CAN FD） |
+| 端口（6） | 每个部件各有一个 IN 端口和一个 OUT 端口，接口都是 `CAN-FD` |
+| 连接（4） | 目标列表、轨迹、自车状态 ×2，都是 ASSEMBLY，接口都是 `CAN-FD`（与端口同一个实体，连线标签显示它） |
 | 需求（5） | `DC-REQ-001`～`005`，3 条在 LA 层、2 条在 PA 层 |
 | 分配（3） | 感知融合、决策规划 → SoC；执行控制 → MCU（LA→PA，属于相邻层） |
 

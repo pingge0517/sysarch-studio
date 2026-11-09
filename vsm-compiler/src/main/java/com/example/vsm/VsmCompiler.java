@@ -55,12 +55,37 @@ public final class VsmCompiler {
             System.err.println("usage: VsmCompiler <repoRoot>");
             System.exit(USAGE_OR_IO_ERROR);
         }
-        System.exit(run(Options.forRepository(Path.of(args[0])), System.out, System.err));
+        System.exit(run(Options.forRepository(Path.of(args[0])), System.out, System.err, true));
     }
 
-    /** Compiles all views; returns the process exit code. */
+    /** Compiles all views, checking that template-generated views are up to date; returns the process exit code. */
     public static int run(Options options, PrintStream out, PrintStream err) {
+        return run(options, out, err, false);
+    }
+
+    /**
+     * @param writeTemplates first (re)write the views generated from {@code views/_templates} ({@code generateViews});
+     *        otherwise a generated view that differs from its expansion is an error (tests, CI)
+     */
+    public static int run(Options options, PrintStream out, PrintStream err, boolean writeTemplates) {
         try {
+            List<Diagnostic> templateErrors = new ArrayList<>();
+            List<Diagnostic> staleViews = new ArrayList<>();
+            var expansions = ViewTemplates.expand(options.viewsDir(), path -> display(options.displayRoot(), path), templateErrors);
+            if (templateErrors.isEmpty()) {
+                if (writeTemplates) {
+                    int written = ViewTemplates.write(expansions);
+                    out.println("Expanded " + expansions.size() + " view template(s), " + written + " changed");
+                } else {
+                    // reported with the other errors, so a broken view still gets its own diagnostics
+                    ViewTemplates.checkCommitted(expansions, path -> display(options.displayRoot(), path), staleViews);
+                }
+            }
+            if (!templateErrors.isEmpty()) {
+                templateErrors.stream().distinct().sorted(Diagnostic.ORDER).forEach(err::println);
+                err.println(templateErrors.stream().distinct().count() + " error(s); nothing generated");
+                return INVALID_VIEWS;
+            }
             List<Path> files = listViews(options.viewsDir());
             if (files.isEmpty()) {
                 err.println("no *" + YAML_SUFFIX + " files in " + options.viewsDir());
@@ -87,9 +112,10 @@ public final class VsmCompiler {
                 }
             }
             diagnostics.addAll(semantics.diagnostics());
+            diagnostics.addAll(staleViews);
 
             if (!diagnostics.isEmpty()) {
-                diagnostics.stream().sorted(Diagnostic.ORDER).forEach(err::println);
+                diagnostics.stream().distinct().sorted(Diagnostic.ORDER).forEach(err::println);
                 err.println(diagnostics.size() + " error(s); nothing generated");
                 return INVALID_VIEWS;
             }

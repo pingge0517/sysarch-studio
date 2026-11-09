@@ -25,6 +25,9 @@ public class ViewpointRegistry {
 
     public static final List<Viewpoint> VIEWPOINTS = List.of(
         new Viewpoint("sysarch.core", "系统架构建模", "http://example.com/sysarch/1.0", 10, List.of(
+            new Representation("la-architecture", "逻辑架构（LA）", RepresentationKind.DIAGRAM),
+            new Representation("pa-architecture", "物理架构（PA）", RepresentationKind.DIAGRAM),
+            new Representation("sa-function-chain", "系统功能链（SA）", RepresentationKind.DIAGRAM),
             new Representation("bdd", "块定义图（BDD）", RepresentationKind.DIAGRAM),
             new Representation("ibd", "内部块图（IBD）", RepresentationKind.DIAGRAM)
         ))
@@ -32,8 +35,11 @@ public class ViewpointRegistry {
 
     private final Map<String, IDiagramDescriptionProvider> providers;
 
-    public ViewpointRegistry(BddDiagramDescriptionProvider bddProvider, IbdDiagramDescriptionProvider ibdProvider) {
+    public ViewpointRegistry(LaArchitectureDiagramDescriptionProvider laArchitectureProvider, PaArchitectureDiagramDescriptionProvider paArchitectureProvider, SaFunctionChainDiagramDescriptionProvider saFunctionChainProvider, BddDiagramDescriptionProvider bddProvider, IbdDiagramDescriptionProvider ibdProvider) {
         Map<String, IDiagramDescriptionProvider> byId = new LinkedHashMap<>();
+        byId.put("la-architecture", laArchitectureProvider);
+        byId.put("pa-architecture", paArchitectureProvider);
+        byId.put("sa-function-chain", saFunctionChainProvider);
         byId.put("bdd", bddProvider);
         byId.put("ibd", ibdProvider);
         this.providers = Collections.unmodifiableMap(byId);

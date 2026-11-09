@@ -10,6 +10,9 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.eclipse.emf.ecore.EAttribute;
+import org.eclipse.emf.ecore.EDataType;
+import org.eclipse.emf.ecore.EEnum;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.EStructuralFeature;
@@ -25,9 +28,6 @@ final class SemanticValidator {
 
     private static final Pattern FEATURE_PATH = Pattern.compile("[a-z][A-Za-z0-9_]*(\\.[a-z][A-Za-z0-9_]*)*");
 
-    private static final Pattern IDENTIFIER = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
-
-    private static final Set<String> FILTER_KEYWORDS = Set.of("not", "and", "or", "true", "false");
 
     private final Metamodel metamodel;
 
@@ -91,8 +91,12 @@ final class SemanticValidator {
             this.checkAutoExpand(domainClass, autoExpand.get("feature"));
         }
         this.checkUniqueIds(representation.items("filters"), "filter");
+        List<FilterSyntax.Expr> layerScopes = new ArrayList<>();
         for (YamlNode filter : representation.items("filters")) {
-            this.checkFilter(domainClass, filter.get("expression"));
+            FilterSyntax.Expr expr = this.checkFilter(domainClass, filter.get("expression"));
+            if (expr != null && isLayerScope(expr)) {
+                layerScopes.add(expr);
+            }
         }
         this.checkUniqueIds(representation.items("nodeStyles"), "node style");
         for (YamlNode nodeStyle : representation.items("nodeStyles")) {
@@ -104,8 +108,18 @@ final class SemanticValidator {
         }
         this.checkUniqueIds(representation.items("tools"), "tool");
         for (YamlNode tool : representation.items("tools")) {
-            this.checkTool(domainClass, tool);
+            this.checkTool(domainClass, tool, layerScopes);
         }
+    }
+
+    /**
+     * A filter that names {@code layer} is the view's layer scope (P1 T3, user's decision): always applied, never a
+     * toggle. The generated {@code Filter} says so; see {@code ViewModel}.
+     */
+    static boolean isLayerScope(FilterSyntax.Expr expr) {
+        Set<String> fields = new HashSet<>();
+        expr.fields(fields);
+        return fields.contains("layer");
     }
 
     /** The feature may be declared on the root type or on one of its subclasses (spec §4.2). */
@@ -117,12 +131,63 @@ final class SemanticValidator {
         }
     }
 
-    private void checkFilter(EClass domainClass, YamlNode expression) {
-        Matcher matcher = IDENTIFIER.matcher(expression.scalar());
-        while (matcher.find()) {
-            String identifier = matcher.group();
-            if (!FILTER_KEYWORDS.contains(identifier) && Metamodel.feature(domainClass, identifier) == null) {
-                this.unknownFeature(expression.line(), identifier, domainClass, " in filter expression \"" + expression.scalar() + "\"");
+    /** Grammar, whitelist (spec P1 §3.5), features of the root type, and enum literals. Returns null on an error. */
+    private FilterSyntax.Expr checkFilter(EClass domainClass, YamlNode expression) {
+        String text = expression.scalar();
+        FilterSyntax.Expr expr;
+        try {
+            expr = FilterSyntax.parse(text);
+        } catch (FilterSyntax.FilterSyntaxException e) {
+            this.error(expression.line(), "invalid filter expression \"" + text + "\": " + e.getMessage());
+            return null;
+        }
+        Set<String> fields = new java.util.TreeSet<>();
+        expr.fields(fields);
+        boolean ok = true;
+        for (String field : fields) {
+            EStructuralFeature feature = Metamodel.feature(domainClass, field);
+            if (feature == null) {
+                this.unknownFeature(expression.line(), field, domainClass, " in filter expression \"" + text + "\"");
+                ok = false;
+            }
+        }
+        List<FilterSyntax.Comparison> comparisons = new ArrayList<>();
+        expr.comparisons(comparisons);
+        for (FilterSyntax.Comparison comparison : comparisons) {
+            EStructuralFeature feature = Metamodel.feature(domainClass, comparison.field());
+            if (feature != null && feature.getEType() instanceof EEnum eEnum && eEnum.getEEnumLiteral(comparison.literal()) == null) {
+                this.error(expression.line(), "'" + comparison.literal() + "' is not a literal of " + eEnum.getName() + " in filter expression \""
+                        + text + "\" (expected one of " + eEnum.getELiterals().stream().map(l -> l.getName()).toList() + ")");
+                ok = false;
+            }
+        }
+        for (FilterSyntax.Expr flag : flags(expr)) {
+            EStructuralFeature feature = Metamodel.feature(domainClass, ((FilterSyntax.Flag) flag).field());
+            if (feature != null && (feature.isMany() || feature.getEType().getInstanceClass() != boolean.class
+                    && feature.getEType().getInstanceClass() != Boolean.class)) {
+                this.error(expression.line(), "'" + ((FilterSyntax.Flag) flag).field() + "' is not boolean; compare it, e.g. "
+                        + ((FilterSyntax.Flag) flag).field() + " == '...', in filter expression \"" + text + "\"");
+                ok = false;
+            }
+        }
+        return ok ? expr : null;
+    }
+
+    private static List<FilterSyntax.Expr> flags(FilterSyntax.Expr expr) {
+        List<FilterSyntax.Expr> out = new ArrayList<>();
+        collectFlags(expr, out);
+        return out;
+    }
+
+    private static void collectFlags(FilterSyntax.Expr expr, List<FilterSyntax.Expr> out) {
+        switch (expr) {
+            case FilterSyntax.Flag flag -> out.add(flag);
+            case FilterSyntax.Not not -> collectFlags(not.inner(), out);
+            case FilterSyntax.Binary binary -> {
+                collectFlags(binary.left(), out);
+                collectFlags(binary.right(), out);
+            }
+            default -> {
             }
         }
     }
@@ -184,9 +249,26 @@ final class SemanticValidator {
         this.checkTemplate(domainClass, edgeStyle.get("labelExpression"));
     }
 
-    private void checkTool(EClass domainClass, YamlNode tool) {
+    private void checkTool(EClass domainClass, YamlNode tool, List<FilterSyntax.Expr> layerScopes) {
         EClass targetClass = tool.has("targetClass") ? this.resolveClass(tool.get("targetClass")) : null;
         String action = tool.text("action");
+        if (tool.has("defaults")) {
+            if (!"create-child".equals(action)) {
+                this.error(tool.keyLine("defaults"), "defaults are only allowed on create-child tools ('" + tool.text("id") + "')");
+            } else if (targetClass != null) {
+                this.checkDefaults(targetClass, tool.get("defaults"));
+            }
+        }
+        if ("create-child".equals(action) && targetClass != null && !layerScopes.isEmpty() && Metamodel.feature(targetClass, "layer") != null) {
+            // P1 T3 step 4: what a layer view creates must belong to that layer, or it would vanish from the view at once.
+            YamlNode defaults = tool.get("defaults");
+            String layer = defaults == null || !defaults.has("layer") ? defaultLiteral(targetClass, "layer") : defaults.text("layer");
+            Map<String, Object> created = Map.of("layer", layer, "isAbstract", Boolean.FALSE, "stereotypes", List.of());
+            if (layerScopes.stream().anyMatch(scope -> !scope.test(created))) {
+                this.error(defaults == null ? tool.get("id").line() : defaults.line(), "create-child tool '" + tool.text("id")
+                        + "' creates layer " + layer + ", which this view's layer filter hides; set defaults.layer to the view's layer");
+            }
+        }
         if ("create-child".equals(action)) {
             YamlNode featureNode = tool.get("containmentFeature");
             EReference reference = Metamodel.reference(domainClass, featureNode.scalar());
@@ -204,6 +286,41 @@ final class SemanticValidator {
             // Spec §4.4: without validation on drop, AC-5 cannot reject an edge before it is stored.
             this.error(tool.keyLine("validateOnDrop"), "create-edge tool '" + tool.text("id") + "' must set validateOnDrop: true");
         }
+    }
+
+    /** Each default names a single-valued attribute of the created class and fits its type. */
+    private void checkDefaults(EClass targetClass, YamlNode defaults) {
+        for (String key : defaults.keys()) {
+            YamlNode value = defaults.get(key);
+            EStructuralFeature feature = Metamodel.feature(targetClass, key);
+            if (!(feature instanceof EAttribute attribute) || attribute.isMany() || attribute.isID()) {
+                this.error(value.line(), feature == null ? "unknown feature '" + key + "' on " + this.metamodel.ref(targetClass) + " in defaults"
+                        : "'" + key + "' on " + this.metamodel.ref(targetClass) + " cannot have a default (only single-valued, non-id attributes)");
+                continue;
+            }
+            String text = value.scalar();
+            EDataType type = attribute.getEAttributeType();
+            Class<?> javaType = type.getInstanceClass();
+            boolean fits;
+            if (type instanceof EEnum eEnum) {
+                fits = eEnum.getEEnumLiteral(text) != null;
+            } else if (javaType == boolean.class || javaType == Boolean.class) {
+                fits = text.equals("true") || text.equals("false");
+            } else if (javaType == int.class || javaType == Integer.class) {
+                fits = text.matches("-?[0-9]+");
+            } else {
+                fits = javaType == String.class;
+            }
+            if (!fits) {
+                this.error(value.line(), "default '" + text + "' does not fit " + key + " : " + type.getName() + " on " + this.metamodel.ref(targetClass)
+                        + (type instanceof EEnum eEnum ? " (expected one of " + eEnum.getELiterals().stream().map(l -> l.getName()).toList() + ")" : ""));
+            }
+        }
+    }
+
+    private static String defaultLiteral(EClass eClass, String attribute) {
+        EStructuralFeature feature = Metamodel.feature(eClass, attribute);
+        return feature == null ? null : feature.getDefaultValueLiteral();
     }
 
     /** Every {@code {path}} in a template must resolve, segment by segment, from {@code eClass}. */

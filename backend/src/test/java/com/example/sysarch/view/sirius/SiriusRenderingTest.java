@@ -177,7 +177,7 @@ class SiriusRenderingTest {
         bus.setName("bus");
         bus.setSource(external);
         bus.setTarget(ctrlPort);
-        bus.setInterfaceType("CAN");
+        bus.setInterfaceType(com.example.sysarch.TestInterfaces.named("CAN"));
         this.model.getContents().add(bus);
 
         Diagram diagram = this.render(this.ibd, this.vehicle, Optional.empty());
@@ -335,7 +335,7 @@ class SiriusRenderingTest {
         assertEquals(out, connection.getSource());
         assertEquals(in, connection.getTarget());
         assertEquals("out → in", connection.getName());
-        assertEquals("CAN", connection.getInterfaceType());
+        assertEquals("CAN", connection.getInterfaceType().getName());
     }
 
     @Test

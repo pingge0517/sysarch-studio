@@ -42,6 +42,17 @@ class VsmCompilerTest {
 
     private static final String IBD = "views/sysarch-ibd.vsm.yaml";
 
+    private static final String SA = "views/sa-function-chain.vsm.yaml";
+
+    private static final String LA = "views/la-architecture.vsm.yaml";
+
+    private static final String TEMPLATE = "views/_templates/layer-architecture.vsm.tpl.yaml";
+
+    private static final String LA_PARAMS = "views/_templates/la-architecture.params.yaml";
+
+    /** sha256 of the spec's [COPY] block P1 §3.2: the SA view must stay verbatim although a template now produces it. */
+    private static final String SPEC_SA_SHA256 = "810dba23575cea7c942a8d2b098f2b108781ca51d638295ffeaca2a379134e80";
+
     @TempDir
     Path temp;
 
@@ -50,7 +61,11 @@ class VsmCompilerTest {
     @BeforeEach
     void copyInputs() throws IOException {
         this.workspace = this.temp.resolve("repo");
-        for (String file : List.of(CORE, IBD, "views/schema/vsm.schema.json", "metamodel/sysarch.ecore")) {
+        List<String> inputs = new ArrayList<>(List.of("views/schema/vsm.schema.json", "metamodel/sysarch.ecore"));
+        try (Stream<Path> views = Files.list(REPO.resolve("views")); Stream<Path> templates = Files.list(REPO.resolve("views/_templates"))) {
+            Stream.concat(views, templates).filter(Files::isRegularFile).map(f -> REPO.relativize(f).toString().replace('\\', '/')).forEach(inputs::add);
+        }
+        for (String file : inputs) {
             Path target = this.workspace.resolve(file);
             Files.createDirectories(target.getParent());
             Files.copy(REPO.resolve(file), target);
@@ -61,7 +76,8 @@ class VsmCompilerTest {
     void repositoryViewsCompileToProvidersAndRegistry() throws IOException {
         Result result = this.compile(this.output("out"));
         assertEquals(VsmCompiler.OK, result.exitCode(), result.err());
-        assertEquals(List.of("BddDiagramDescriptionProvider.java", "IbdDiagramDescriptionProvider.java", "ViewpointRegistry.java"),
+        assertEquals(List.of("BddDiagramDescriptionProvider.java", "IbdDiagramDescriptionProvider.java", "LaArchitectureDiagramDescriptionProvider.java",
+                "PaArchitectureDiagramDescriptionProvider.java", "SaFunctionChainDiagramDescriptionProvider.java", "ViewpointRegistry.java"),
                 fileNames(this.output("out")));
         String bdd = Files.readString(this.output("out").resolve("BddDiagramDescriptionProvider.java"));
         assertTrue(bdd.contains(".domainType(\"sysarch::PartDefinition\")"));
@@ -136,8 +152,8 @@ class VsmCompilerTest {
 
     @Test
     void edgeEndThatIsNotAReferenceFails() throws IOException {
-        this.edit(IBD, "targetEnd: \"target\"\n        routing: \"manhattan\"", "targetEnd: \"interfaceType\"\n        routing: \"manhattan\"");
-        this.assertFails(IBD + ":56 unknown feature 'interfaceType' on sysarch:Connection (targetEnd must be 'self' or a reference)");
+        this.edit(IBD, "targetEnd: \"target\"\n        routing: \"manhattan\"", "targetEnd: \"kind\"\n        routing: \"manhattan\"");
+        this.assertFails(IBD + ":56 unknown feature 'kind' on sysarch:Connection (targetEnd must be 'self' or a reference)");
     }
 
     @Test
@@ -174,7 +190,7 @@ class VsmCompilerTest {
     @Test
     void conflictingViewpointDeclarationFails() throws IOException {
         this.edit(IBD, "  label: \"系统架构建模\"", "  label: \"另一个视点\"");
-        this.assertFails(IBD + ":3 viewpoint 'sysarch.core' conflicts with its declaration at " + CORE + ":3");
+        this.assertFails(IBD + ":3 viewpoint 'sysarch.core' conflicts with its declaration at " + LA + ":3"); // first file in name order
     }
 
     @Test
@@ -220,6 +236,104 @@ class VsmCompilerTest {
         assertEquals(before.replaceFirst("\\.borderColor\\(\"#1A2B4A\"\\)", ".borderColor(\"#1C3D2E\")"), after);
     }
 
+    // =========================================================== P1 T3: layer views, filters, defaults, templates
+
+    /** The SA view is the spec's [COPY] text byte for byte, and the template reproduces it (no "changed" on expansion). */
+    @Test
+    void theSaViewIsVerbatimAndEqualsItsTemplateExpansion() throws IOException {
+        assertEquals(SPEC_SA_SHA256, sha256File(REPO.resolve(SA)));
+        assertEquals(VsmCompiler.OK, this.compile(this.output("out")).exitCode(), "committed views equal their expansions");
+    }
+
+    /** LA and PA differ from SA only in parameters: layer, filter, colours and labels (spec P1 §3.1). */
+    @Test
+    void layerViewsShareOneStructure() throws IOException {
+        String sa = Files.readString(REPO.resolve(SA));
+        String la = Files.readString(REPO.resolve(LA));
+        assertEquals(sa.lines().count(), la.lines().count());
+        assertTrue(la.contains("expression: \"layer == 'LOGICAL'\""));
+        assertTrue(la.contains("          layer: \"LOGICAL\""));
+    }
+
+    @Test
+    void aLayerFilterIsGeneratedAsAlwaysOnAndOtherFiltersAreToggles() throws IOException {
+        assertEquals(VsmCompiler.OK, this.compile(this.output("out")).exitCode());
+        String la = Files.readString(this.output("out").resolve("LaArchitectureDiagramDescriptionProvider.java"));
+        String bdd = Files.readString(this.output("out").resolve("BddDiagramDescriptionProvider.java"));
+        assertTrue(la.contains(".addFilter(Filter.alwaysOn(\"onlyLogical\", \"仅逻辑层\", \"layer == 'LOGICAL'\"))"), la);
+        assertTrue(la.contains(".withDefault(\"layer\", \"LOGICAL\")"), la);
+        assertTrue(bdd.contains(".addFilter(new Filter(\"hideAbstract\", \"隐藏抽象块\", \"not isAbstract\"))"), bdd);
+    }
+
+    /** Spec P1 §3.5: an expression may only name layer, isAbstract and stereotypes. */
+    @Test
+    void filterExpressionsOutsideTheWhitelistFail() throws IOException {
+        this.edit(SA, "expression: \"layer == 'SYSTEM'\"", "expression: \"self.getOwner().getLayer() == 'SYSTEM'\"");
+        this.assertFails(SA + ":20 invalid filter expression");
+    }
+
+    @Test
+    void aFeatureThatIsNotWhitelistedFailsEvenIfItExists() throws IOException {
+        this.edit(CORE, "expression: \"not isAbstract\"", "expression: \"not name\"");
+        this.assertFails(CORE + ":25 invalid filter expression \"not name\": 'name' is not allowed");
+    }
+
+    @Test
+    void anUnknownLayerLiteralFails() throws IOException {
+        this.edit(SA, "expression: \"layer == 'SYSTEM'\"", "expression: \"layer == 'SYSTM'\"");
+        this.assertFails(SA + ":20 'SYSTM' is not a literal of Layer");
+    }
+
+    @Test
+    void stereotypesAreComparedNotUsedAsAFlag() throws IOException {
+        this.edit(CORE, "expression: \"not isAbstract\"", "expression: \"stereotypes\"");
+        this.assertFails(CORE + ":25 'stereotypes' is not boolean");
+    }
+
+    @Test
+    void aDefaultMustFitItsAttribute() throws IOException {
+        this.edit(SA, "          layer: \"SYSTEM\"", "          layer: \"SYS\"");
+        this.assertFails(SA + ":56 default 'SYS' does not fit layer : Layer");
+    }
+
+    @Test
+    void aDefaultOnAnUnknownFeatureFails() throws IOException {
+        this.edit(SA, "          layer: \"SYSTEM\"", "          layer: \"SYSTEM\"\n          colour: \"red\"");
+        this.assertFails(SA + ":57 unknown feature 'colour' on sysarch:Part in defaults");
+    }
+
+    /** T3 step 4: a layer view must not create elements its own layer filter hides. */
+    @Test
+    void aLayerViewToolMustCreateItsOwnLayer() throws IOException {
+        this.edit(SA, "          layer: \"SYSTEM\"", "          layer: \"PHYSICAL\"");
+        this.assertFails(SA + ":56 create-child tool 'createFunction' creates layer PHYSICAL, which this view's layer filter hides");
+    }
+
+    @Test
+    void aHandEditedGeneratedViewFails() throws IOException {
+        this.edit(LA, "borderColor: \"#2F5D4A\"", "borderColor: \"#000000\"");
+        this.assertFails(LA + ":1 differs from its template expansion (" + LA_PARAMS + ")");
+    }
+
+    @Test
+    void anUnknownTemplateParameterFails() throws IOException {
+        this.edit(TEMPLATE, "label: \"${createLabel}\"", "label: \"${createLable}\"");
+        this.assertFails(TEMPLATE + ":51 unknown parameter 'createLable'");
+    }
+
+    @Test
+    void anUnusedTemplateParameterFails() throws IOException {
+        this.edit(LA_PARAMS, "  connectLabel: \"建立逻辑交互\"", "  connectLabel: \"建立逻辑交互\"\n  arrowColor: \"#000000\"");
+        this.assertFails(LA_PARAMS + ":17 parameter 'arrowColor' is not used");
+    }
+
+    /** Templates substitute parameters and nothing else: no conditions (T3 step 1). */
+    @Test
+    void templateLogicFails() throws IOException {
+        this.edit(TEMPLATE, "        shape: \"rectangle\"", "        shape: \"${layer == 'SYSTEM' ? 'rectangle' : 'square'}\"");
+        this.assertFails(TEMPLATE + ":36 '${layer == 'SYSTEM' ? 'rectangle' : 'square'}' is not a parameter");
+    }
+
     private void assertFails(String expectedLinePrefix) throws IOException {
         Path out = this.output("rejected");
         Result result = this.compile(out);
@@ -254,6 +368,14 @@ class VsmCompilerTest {
     private static List<String> fileNames(Path dir) throws IOException {
         try (Stream<Path> files = Files.list(dir)) {
             return files.map(p -> p.getFileName().toString()).sorted().toList();
+        }
+    }
+
+    private static String sha256File(Path file) throws IOException {
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(file)));
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
         }
     }
 

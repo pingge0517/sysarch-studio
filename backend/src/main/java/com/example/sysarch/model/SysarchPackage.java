@@ -643,7 +643,7 @@ public interface SysarchPackage extends EPackage {
 	int CONNECTION__KIND = ARCH_ELEMENT_FEATURE_COUNT + 2;
 
 	/**
-	 * The feature id for the '<em><b>Interface Type</b></em>' attribute.
+	 * The feature id for the '<em><b>Interface Type</b></em>' reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -1676,15 +1676,15 @@ public interface SysarchPackage extends EPackage {
 	EAttribute getConnection_Kind();
 
 	/**
-	 * Returns the meta object for the attribute '{@link com.example.sysarch.model.Connection#getInterfaceType <em>Interface Type</em>}'.
+	 * Returns the meta object for the reference '{@link com.example.sysarch.model.Connection#getInterfaceType <em>Interface Type</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Interface Type</em>'.
+	 * @return the meta object for the reference '<em>Interface Type</em>'.
 	 * @see com.example.sysarch.model.Connection#getInterfaceType()
 	 * @see #getConnection()
 	 * @generated
 	 */
-	EAttribute getConnection_InterfaceType();
+	EReference getConnection_InterfaceType();
 
 	/**
 	 * Returns the meta object for class '{@link com.example.sysarch.model.ItemFlow <em>Item Flow</em>}'.
@@ -2286,12 +2286,12 @@ public interface SysarchPackage extends EPackage {
 		EAttribute CONNECTION__KIND = eINSTANCE.getConnection_Kind();
 
 		/**
-		 * The meta object literal for the '<em><b>Interface Type</b></em>' attribute feature.
+		 * The meta object literal for the '<em><b>Interface Type</b></em>' reference feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
 		 * @generated
 		 */
-		EAttribute CONNECTION__INTERFACE_TYPE = eINSTANCE.getConnection_InterfaceType();
+		EReference CONNECTION__INTERFACE_TYPE = eINSTANCE.getConnection_InterfaceType();
 
 		/**
 		 * The meta object literal for the '{@link com.example.sysarch.model.impl.ItemFlowImpl <em>Item Flow</em>}' class.

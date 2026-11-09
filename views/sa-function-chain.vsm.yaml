@@ -1,0 +1,61 @@
+vsm: "1.0"
+viewpoint:
+  id: "sysarch.core"
+  label: "系统架构建模"
+  metamodelUri: "http://example.com/sysarch/1.0"
+  priority: 10
+
+representations:
+  - id: "sa-function-chain"
+    label: "系统功能链（SA）"
+    kind: "diagram"
+    domainClass: "sysarch:PartDefinition"
+    synchronization: "auto"
+    refresh:
+      mode: "incremental"
+      budgetMs: 2000
+    filters:
+      - id: "onlySystem"
+        label: "仅系统层"
+        expression: "layer == 'SYSTEM'"
+    autoExpand:
+      - feature: "ownedParts"
+        maxDepth: 2
+      - feature: "ownedPorts"
+        maxDepth: 1
+    nodeStyles:
+      - id: "function"
+        appliesTo: "sysarch:PartDefinition"
+        shape: "rounded-rectangle"
+        color: "#FFFFFF"
+        borderColor: "#1C3D2E"
+        labelExpression: "{name}"
+        subLabelExpression: "{stereotypes}"
+      - id: "role"
+        appliesTo: "sysarch:PartDefinition"
+        shape: "rectangle"
+        color: "#F2F5F3"
+        borderColor: "#778B82"
+        labelExpression: "{name}"
+    edgeStyles:
+      - id: "exchange"
+        domainClass: "sysarch:Connection"
+        sourceEnd: "source"
+        targetEnd: "target"
+        routing: "spline"
+        color: "#1C3D2E"
+        arrow: "open"
+        labelExpression: "{interfaceType.name}"
+    tools:
+      - id: "createFunction"
+        label: "新建功能"
+        action: "create-child"
+        targetClass: "sysarch:Part"
+        containmentFeature: "ownedParts"
+        defaults:
+          layer: "SYSTEM"
+      - id: "connect"
+        label: "建立功能交互"
+        action: "create-edge"
+        targetClass: "sysarch:Connection"
+        validateOnDrop: true

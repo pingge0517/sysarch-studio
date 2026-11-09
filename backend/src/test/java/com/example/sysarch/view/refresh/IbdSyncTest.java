@@ -362,7 +362,7 @@ class IbdSyncTest {
         connection.setSource(source);
         connection.setTarget(target);
         connection.setKind(kind);
-        connection.setInterfaceType(source.getInterfaceType() == null ? null : source.getInterfaceType().getName());
+        connection.setInterfaceType(source.getInterfaceType());
         return connection;
     }
 

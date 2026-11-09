@@ -30,7 +30,7 @@ public class InterfaceMigrationReport {
         List<StoredDocument> documents();
     }
 
-    public static final String CSV_HEADER = "document_key,port_id,port_name,old_value,interface_def_id,status";
+    public static final String CSV_HEADER = "document_key,element_id,element_name,old_value,interface_def_id,status,element_class";
 
     private final DocumentSource documents;
 
@@ -65,18 +65,14 @@ public class InterfaceMigrationReport {
 
     /** True once a document has been saved by a version that ran this migration. */
     static boolean alreadyMigrated(JsonObject document) {
-        if (!document.has("migration") || !document.get("migration").isJsonObject()) {
-            return false;
-        }
-        var version = document.getAsJsonObject("migration").get("migrationVersion");
-        return version != null && version.isJsonPrimitive() && version.getAsString().compareTo(InterfaceEntityMigrationParticipant.VERSION) >= 0;
+        return InterfaceEntityConversion.migrationVersion(document).compareTo(InterfaceEntityMigrationParticipant.VERSION) >= 0;
     }
 
     public static String toCsv(List<Row> rows) {
         StringBuilder csv = new StringBuilder(CSV_HEADER).append('\n');
         for (Row row : rows) {
-            csv.append(String.join(",", cell(row.documentKey()), cell(row.portId()), cell(row.portName()), cell(row.oldValue()),
-                    cell(row.interfaceDefId()), row.status().name())).append('\n');
+            csv.append(String.join(",", cell(row.documentKey()), cell(row.elementId()), cell(row.elementName()), cell(row.oldValue()),
+                    cell(row.interfaceDefId()), row.status().name(), row.elementClass())).append('\n');
         }
         return csv.toString();
     }

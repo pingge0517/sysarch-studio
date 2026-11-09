@@ -479,8 +479,8 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 	 * @generated
 	 */
 	@Override
-	public EAttribute getConnection_InterfaceType() {
-		return (EAttribute)connectionEClass.getEStructuralFeatures().get(3);
+	public EReference getConnection_InterfaceType() {
+		return (EReference)connectionEClass.getEStructuralFeatures().get(3);
 	}
 
 	/**
@@ -864,7 +864,7 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 		createEReference(connectionEClass, CONNECTION__SOURCE);
 		createEReference(connectionEClass, CONNECTION__TARGET);
 		createEAttribute(connectionEClass, CONNECTION__KIND);
-		createEAttribute(connectionEClass, CONNECTION__INTERFACE_TYPE);
+		createEReference(connectionEClass, CONNECTION__INTERFACE_TYPE);
 
 		itemFlowEClass = createEClass(ITEM_FLOW);
 		createEReference(itemFlowEClass, ITEM_FLOW__CONNECTION);
@@ -977,7 +977,7 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 		initEReference(getConnection_Source(), this.getPort(), null, "source", null, 1, 1, Connection.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getConnection_Target(), this.getPort(), null, "target", null, 1, 1, Connection.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getConnection_Kind(), this.getConnectionKind(), "kind", "ASSEMBLY", 0, 1, Connection.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getConnection_InterfaceType(), ecorePackage.getEString(), "interfaceType", null, 0, 1, Connection.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getConnection_InterfaceType(), this.getInterfaceDef(), null, "interfaceType", null, 0, 1, Connection.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(itemFlowEClass, ItemFlow.class, "ItemFlow", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEReference(getItemFlow_Connection(), this.getConnection(), null, "connection", null, 0, 1, ItemFlow.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);

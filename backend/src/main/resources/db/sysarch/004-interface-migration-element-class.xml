@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- P1 T3: Connection.interfaceType becomes a reference too; the backup records which class each row is about. -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <changeSet id="sysarch-004-interface-migration-element-class" author="sysarch">
+        <comment>Port (T1 rows) or Connection. port_id and port_name hold the element's id and name for both.
+            Status LINKED: the element now refers to an InterfaceDef that was already in the document.</comment>
+        <addColumn tableName="interface_migration_backup">
+            <column name="element_class" type="VARCHAR(32)" defaultValue="Port"><constraints nullable="false"/></column>
+        </addColumn>
+    </changeSet>
+</databaseChangeLog>

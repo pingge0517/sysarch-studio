@@ -51,9 +51,12 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
  * otherwise the first. Switching style keeps the edge id.
  * An end element without a node of its own is drawn to the node of its {@code typedBy}, and the edge label is
  * then read from that end element. For example, a BDD composition runs from the owner block to the part's type
- * and is labelled with the part's name.</li>
+ * and is labelled with the part's name. (P1 T3) An end that has neither is drawn to the nearest container that has
+ * a node, a container's {@code typedBy} counting as above, and the label stays the edge element's: a layer view
+ * draws no ports, so a connection runs between the blocks that own its ports (a port on a part: the part's type).</li>
  * <li><b>Filters</b>: an active filter hides the root-type elements its expression rejects, together with their
- * border nodes and edges. The model is unchanged.</li>
+ * border nodes and edges. The model is unchanged. A filter marked {@code alwaysOn} (a layer view's
+ * {@code layer == 'X'}, P1 T3) is active whatever is switched on.</li>
  * </ol>
  */
 public final class DiagramProjector {
@@ -147,7 +150,7 @@ public final class DiagramProjector {
             Set<String> known = new HashSet<>();
             for (Filter filter : description.filters()) {
                 known.add(filter.id());
-                if (activeFilterIds.contains(filter.id())) {
+                if (filter.alwaysOn() || activeFilterIds.contains(filter.id())) {
                     this.activeFilters.add(FilterExpression.parse(filter.expression()));
                 }
             }
@@ -244,13 +247,19 @@ public final class DiagramProjector {
             DiagramSnapshot.Node sourceNode = this.nodes.get(source);
             DiagramSnapshot.Node targetNode = this.nodes.get(target);
             EObject labelElement = element;
-            if (sourceNode == null) {
+            if (sourceNode == null && this.nodes.get(single(source, TYPE_FEATURE)) != null) {
                 sourceNode = this.nodes.get(single(source, TYPE_FEATURE));
                 labelElement = source;
             }
-            if (targetNode == null) {
+            if (targetNode == null && this.nodes.get(single(target, TYPE_FEATURE)) != null) {
                 targetNode = this.nodes.get(single(target, TYPE_FEATURE));
                 labelElement = target;
+            }
+            if (sourceNode == null) {
+                sourceNode = this.containerNode(source);
+            }
+            if (targetNode == null) {
+                targetNode = this.containerNode(target);
             }
             if (sourceNode == null || targetNode == null) {
                 return Optional.empty();
@@ -260,6 +269,20 @@ public final class DiagramProjector {
             this.edgeEnds.putIfAbsent(id, new EdgeEnds(element, source, target));
             return Optional.of(new DiagramSnapshot.Edge(id, elementId(labelElement), style.id(), sourceNode.id(), targetNode.id(),
                     nullToEmpty(LabelTemplates.render(style.labelTemplate(), labelElement))));
+        }
+
+        /** The node of the nearest container of {@code end} (or of that container's {@code typedBy}); null if none. */
+        private DiagramSnapshot.Node containerNode(EObject end) {
+            for (EObject container = end.eContainer(); container != null; container = container.eContainer()) {
+                DiagramSnapshot.Node node = this.nodes.get(container);
+                if (node == null) {
+                    node = this.nodes.get(single(container, TYPE_FEATURE));
+                }
+                if (node != null) {
+                    return node;
+                }
+            }
+            return null;
         }
 
         private boolean hidden(EObject element) {

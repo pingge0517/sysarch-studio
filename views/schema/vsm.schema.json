@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.com/sysarch/vsm/1.0/vsm.schema.json",
   "title": "VSM DSL 1.0",
-  "description": "Declarative view definitions (spec §4.2). The field set is closed: it is exactly what §4.2-§4.4 use. New fields need review (spec §10.1).",
+  "description": "Declarative view definitions (spec §4.2). The field set is closed: it is exactly what P0 §4.2-§4.4 and P1 §3.2-§3.5 use. New fields need review (spec §10.1).",
   "type": "object",
   "additionalProperties": false,
   "required": ["vsm", "viewpoint", "representations"],
@@ -17,6 +17,11 @@
   },
   "$defs": {
     "id": { "type": "string", "pattern": "^[a-z][A-Za-z0-9]*$" },
+    "representationId": {
+      "description": "lowerCamel or kebab-case (P1: sa-function-chain); names the generated class, e.g. SaFunctionChainDiagramDescriptionProvider",
+      "type": "string",
+      "pattern": "^[a-z][A-Za-z0-9]*(-[a-z0-9][A-Za-z0-9]*)*$"
+    },
     "classRef": {
       "description": "<nsPrefix>:<EClass>, e.g. sysarch:PartDefinition",
       "type": "string",
@@ -45,7 +50,7 @@
       "additionalProperties": false,
       "required": ["id", "label", "kind", "synchronization"],
       "properties": {
-        "id": { "$ref": "#/$defs/id" },
+        "id": { "$ref": "#/$defs/representationId" },
         "label": { "type": "string" },
         "kind": { "enum": ["diagram", "table"] },
         "domainClass": { "$ref": "#/$defs/classRef" },
@@ -98,7 +103,7 @@
       "properties": {
         "id": { "$ref": "#/$defs/id" },
         "appliesTo": { "$ref": "#/$defs/classRef" },
-        "shape": { "enum": ["rectangle", "square"] },
+        "shape": { "enum": ["rectangle", "rounded-rectangle", "square"] },
         "color": { "$ref": "#/$defs/color" },
         "borderColor": { "$ref": "#/$defs/color" },
         "borderWidth": { "$ref": "#/$defs/positiveInt" },
@@ -137,8 +142,8 @@
         "domainClass": { "$ref": "#/$defs/classRef" },
         "sourceEnd": { "type": "string", "pattern": "^(self|[a-z][A-Za-z0-9_]*)$" },
         "targetEnd": { "type": "string", "pattern": "^(self|[a-z][A-Za-z0-9_]*)$" },
-        "routing": { "enum": ["straight", "manhattan"] },
-        "arrow": { "enum": ["hollow-triangle", "filled-diamond"] },
+        "routing": { "enum": ["straight", "manhattan", "spline"] },
+        "arrow": { "enum": ["hollow-triangle", "filled-diamond", "open"] },
         "lineStyle": { "enum": ["solid", "dashed"] },
         "color": { "$ref": "#/$defs/color" }
       }
@@ -154,7 +159,14 @@
         "targetClass": { "$ref": "#/$defs/classRef" },
         "containmentFeature": { "$ref": "#/$defs/featureName" },
         "linkType": { "enum": ["POLARION_WORKITEM"] },
-        "validateOnDrop": { "type": "boolean" }
+        "validateOnDrop": { "type": "boolean" },
+        "defaults": {
+          "description": "create-child: attribute values a new element gets (P1 §3.5), e.g. layer: SYSTEM",
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": { "$ref": "#/$defs/featureName" },
+          "additionalProperties": { "type": ["string", "boolean", "integer"] }
+        }
       },
       "allOf": [
         {

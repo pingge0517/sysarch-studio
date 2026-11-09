@@ -25,8 +25,12 @@ import org.springframework.stereotype.Component;
 @Component
 public class InterfaceEntityMigrationParticipant implements IMigrationParticipant {
 
-    /** Sirius' format ({@code <release>-<yyyyMMddHHmm>}), after every Sirius 2025.x participant. */
-    public static final String VERSION = "2026.11.0-202611080000";
+    /**
+     * Sirius' format ({@code <release>-<yyyyMMddHHmm>}), after every Sirius 2025.x participant. P1 T1 was
+     * {@link InterfaceEntityConversion#PORTS_VERSION} (ports only); this one also converts connections (P1 T3), so
+     * documents T1 already converted run once more and only their connections change.
+     */
+    public static final String VERSION = "2026.11.0-202611090000";
 
     private final Logger logger = LoggerFactory.getLogger(InterfaceEntityMigrationParticipant.class);
 
@@ -49,8 +53,9 @@ public class InterfaceEntityMigrationParticipant implements IMigrationParticipan
             return;
         }
         this.backup.record(rows);
-        long converted = rows.stream().filter(row -> row.status() == Status.CONVERTED).count();
-        this.logger.info("Interface migration of document {}: {} port(s) now refer to an InterfaceDef, {} without a value", documentKey, converted,
-                rows.size() - converted);
+        long empty = rows.stream().filter(row -> row.status() == Status.EMPTY).count();
+        long connections = rows.stream().filter(row -> row.status() != Status.EMPTY && row.elementClass().equals("Connection")).count();
+        this.logger.info("Interface migration of document {}: {} port(s) and {} connection(s) now refer to an InterfaceDef, {} port(s) without a value",
+                documentKey, rows.size() - empty - connections, connections, empty);
     }
 }

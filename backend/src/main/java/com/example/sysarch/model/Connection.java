@@ -94,25 +94,25 @@ public interface Connection extends ArchElement {
 	void setKind(ConnectionKind value);
 
 	/**
-	 * Returns the value of the '<em><b>Interface Type</b></em>' attribute.
+	 * Returns the value of the '<em><b>Interface Type</b></em>' reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Interface Type</em>' attribute.
-	 * @see #setInterfaceType(String)
+	 * @return the value of the '<em>Interface Type</em>' reference.
+	 * @see #setInterfaceType(InterfaceDef)
 	 * @see com.example.sysarch.model.SysarchPackage#getConnection_InterfaceType()
 	 * @model
 	 * @generated
 	 */
-	String getInterfaceType();
+	InterfaceDef getInterfaceType();
 
 	/**
-	 * Sets the value of the '{@link com.example.sysarch.model.Connection#getInterfaceType <em>Interface Type</em>}' attribute.
+	 * Sets the value of the '{@link com.example.sysarch.model.Connection#getInterfaceType <em>Interface Type</em>}' reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Interface Type</em>' attribute.
+	 * @param value the new value of the '<em>Interface Type</em>' reference.
 	 * @see #getInterfaceType()
 	 * @generated
 	 */
-	void setInterfaceType(String value);
+	void setInterfaceType(InterfaceDef value);
 
 } // Connection

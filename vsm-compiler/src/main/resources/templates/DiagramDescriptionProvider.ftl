@@ -26,7 +26,11 @@ public class ${d.className()} implements IDiagramDescriptionProvider {
             .autoExpand(${q(a.feature())}, ${a.maxDepth()})
 </#list>
 <#list d.filters() as f>
+<#if f.alwaysOn()>
+            .addFilter(Filter.alwaysOn(${q(f.id())}, ${q(f.label())}, ${q(f.expression())}))
+<#else>
             .addFilter(new Filter(${q(f.id())}, ${q(f.label())}, ${q(f.expression())}))
+</#if>
 </#list>
 <#list d.nodes() as n>
             .addNode(NodeStyle.builder(${q(n.id())})
@@ -96,7 +100,8 @@ public class ${d.className()} implements IDiagramDescriptionProvider {
 </#list>
 <#list d.tools() as t>
 <#if t.action() == "CREATE_CHILD">
-            .addTool(Tool.createChild(${q(t.id())}, ${q(t.label())}, ${q(t.targetClass())}, ${q(t.containmentFeature())}))
+            .addTool(Tool.createChild(${q(t.id())}, ${q(t.label())}, ${q(t.targetClass())}, ${q(t.containmentFeature())})<#list t.defaults() as v>
+                .withDefault(${q(v.feature())}, ${q(v.value())})</#list>)
 <#elseif t.action() == "CREATE_EDGE">
             .addTool(Tool.createEdge(${q(t.id())}, ${q(t.label())}, ${q(t.targetClass())}, ${t.validateOnDrop()?c}))
 <#else>

@@ -82,10 +82,10 @@ class DomainControllerDemoTest {
                 node PO-004 [portOnPart] on PT-002 "trajectory"
                 node PO-005 [portOnPart] on PT-003 "trajectory"
                 node PO-006 [portOnPart] on PT-003 "egoState"
-                edge PO-001 -> PO-003 [assembly] "ObjectList"
-                edge PO-004 -> PO-005 [assembly] "Trajectory"
-                edge PO-006 -> PO-002 [assembly] "VehicleState"
-                edge PO-006 -> PO-003 [assembly] "VehicleState"
+                edge PO-001 -> PO-003 [assembly] "CAN-FD"
+                edge PO-004 -> PO-005 [assembly] "CAN-FD"
+                edge PO-006 -> PO-002 [assembly] "CAN-FD"
+                edge PO-006 -> PO-003 [assembly] "CAN-FD"
                 """, DiagramProjector.project(new IbdDiagramDescriptionProvider().build(), system).describe());
     }
 

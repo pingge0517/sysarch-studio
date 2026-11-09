@@ -54,7 +54,7 @@ class IbdProjectionTest {
         connection.setId("CO-1");
         connection.setSource(external);
         connection.setTarget(ctrlPort);
-        connection.setInterfaceType("CAN");
+        connection.setInterfaceType(com.example.sysarch.TestInterfaces.named("CAN"));
         document.getContents().add(connection);
 
         DiagramSnapshot snapshot = DiagramProjector.project(this.ibd, vehicle);

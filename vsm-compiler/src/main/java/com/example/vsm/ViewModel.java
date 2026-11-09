@@ -28,7 +28,8 @@ public final class ViewModel {
     public record AutoExpand(String feature, int maxDepth) {
     }
 
-    public record Filter(String id, String label, String expression) {
+    /** @param alwaysOn a layer scope (the expression names {@code layer}): always applied, no toggle (P1 T3) */
+    public record Filter(String id, String label, String expression, boolean alwaysOn) {
     }
 
     /** @param affiliationFeature non-null exactly for border nodes */
@@ -44,8 +45,12 @@ public final class ViewModel {
             String color, String labelTemplate) {
     }
 
+    /** @param defaults create-child: attribute values a new element gets (P1 {@code defaults}), in YAML order */
     public record Tool(String id, String label, String action, String targetClass, String containmentFeature, String linkType,
-            boolean validateOnDrop) {
+            boolean validateOnDrop, List<Default> defaults) {
+    }
+
+    public record Default(String feature, String value) {
     }
 
     private final Map<String, Viewpoint> viewpoints = new LinkedHashMap<>();
@@ -76,9 +81,13 @@ public final class ViewModel {
         }
     }
 
-    /** {@code bdd} becomes {@code BddDiagramDescriptionProvider} (spec §4.5). */
+    /** {@code bdd} becomes {@code BddDiagramDescriptionProvider} (spec §4.5), {@code sa-function-chain} {@code SaFunctionChain...}. */
     static String className(String representationId) {
-        return Character.toUpperCase(representationId.charAt(0)) + representationId.substring(1) + "DiagramDescriptionProvider";
+        StringBuilder name = new StringBuilder();
+        for (String part : representationId.split("-")) {
+            name.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1));
+        }
+        return name.append("DiagramDescriptionProvider").toString();
     }
 
     private static Diagram diagram(String sourceFile, String className, YamlNode r) {
@@ -86,7 +95,7 @@ public final class ViewModel {
         return new Diagram(sourceFile, className, r.text("id"), r.text("label"), Metamodel.domainType(r.text("domainClass")),
                 constant(r.text("synchronization")), refresh == null ? null : refresh.integer("budgetMs"),
                 r.items("autoExpand").stream().map(a -> new AutoExpand(a.text("feature"), a.integer("maxDepth"))).toList(),
-                r.items("filters").stream().map(f -> new Filter(f.text("id"), f.text("label"), f.text("expression"))).toList(),
+                r.items("filters").stream().map(f -> new Filter(f.text("id"), f.text("label"), f.text("expression"), layerScope(f.text("expression")))).toList(),
                 r.items("nodeStyles").stream().map(ViewModel::node).toList(),
                 r.items("edgeStyles").stream().map(ViewModel::edge).toList(),
                 r.items("tools").stream().map(ViewModel::tool).toList());
@@ -109,7 +118,20 @@ public final class ViewModel {
     private static Tool tool(YamlNode t) {
         String targetClass = t.text("targetClass");
         return new Tool(t.text("id"), t.text("label"), constant(t.text("action")), targetClass == null ? null : Metamodel.domainType(targetClass),
-                t.text("containmentFeature"), t.text("linkType"), t.bool("validateOnDrop"));
+                t.text("containmentFeature"), t.text("linkType"), t.bool("validateOnDrop"), defaults(t.get("defaults")));
+    }
+
+    private static List<Default> defaults(YamlNode defaults) {
+        return defaults == null ? List.of() : defaults.keys().stream().map(key -> new Default(key, defaults.text(key))).toList();
+    }
+
+    /** Validated before the model is built, so the expression parses. */
+    private static boolean layerScope(String expression) {
+        try {
+            return SemanticValidator.isLayerScope(FilterSyntax.parse(expression));
+        } catch (FilterSyntax.FilterSyntaxException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private static String constant(String yamlValue) {

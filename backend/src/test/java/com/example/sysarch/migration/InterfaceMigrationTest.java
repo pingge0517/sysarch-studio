@@ -16,6 +16,7 @@ import com.example.sysarch.model.InterfaceDef;
 import com.example.sysarch.model.Port;
 import com.example.sysarch.model.SysarchPackage;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -100,12 +101,13 @@ class InterfaceMigrationTest {
                 new Row(KEY, id("po-3"), "eth0", "ETH", eth, Status.CONVERTED),
                 new Row(KEY, id("po-4"), "blank", "  ", null, Status.EMPTY),
                 new Row(KEY, id("po-5"), "none", null, null, Status.EMPTY),
-                new Row(KEY, id("po-6"), "eth1", "ETH", eth, Status.CONVERTED)), rows);
+                new Row(KEY, id("po-6"), "eth1", "ETH", eth, Status.CONVERTED),
+                new Row(KEY, id("co-1"), "bus", "CAN", can, Status.CONVERTED, "Connection")), rows);
         JsonArray content = document.getAsJsonArray("content");
         assertEquals(4, content.size(), "two new roots: one InterfaceDef per distinct value");
         assertEquals("{\"id\":\"" + can + "\",\"eClass\":\"sysarch:InterfaceDef\",\"data\":{\"name\":\"CAN\",\"layer\":\"LOGICAL\"}}", content.get(2).toString());
-        assertEquals("CAN", content.get(1).getAsJsonObject().getAsJsonObject("data").get("interfaceType").getAsString(),
-                "a Connection's interfaceType is still text in v1.1: untouched");
+        assertEquals(can, content.get(1).getAsJsonObject().getAsJsonObject("data").get("interfaceType").getAsString(),
+                "a connection refers to the same entity as the ports (P1 T3)");
     }
 
     /** Why the conversion runs before EMF reads the document: unconverted, the name is taken for an id and lost. */
@@ -122,7 +124,7 @@ class InterfaceMigrationTest {
         assertSame(can, port(resource, "can1").getInterfaceType(), "same value, same entity");
         assertEquals("ETH", port(resource, "eth1").getInterfaceType().getName());
         assertNull(port(resource, "blank").getInterfaceType());
-        assertEquals("CAN", ((Connection) resource.getContents().get(1)).getInterfaceType());
+        assertSame(can, ((Connection) resource.getContents().get(1)).getInterfaceType());
 
         Port raw = port(load(P0_DOCUMENT), "can0");
         assertTrue(raw.getInterfaceType() == null || raw.getInterfaceType().eIsProxy(), "unconverted, \"CAN\" does not resolve");
@@ -139,7 +141,7 @@ class InterfaceMigrationTest {
         new InterfaceEntityMigrationParticipant(this.backup).preDeserialization(jsonResource("doc-1"), parse(P0_DOCUMENT));
 
         assertEquals(sorted(dryRun), sorted(report.applied()));
-        assertEquals(6, dryRun.size());
+        assertEquals(7, dryRun.size());
     }
 
     /** "在演示数据上 dry-run 报告与实跑结果一致": the domain-controller demo, as P0 would have stored it. */
@@ -153,7 +155,9 @@ class InterfaceMigrationTest {
         new InterfaceEntityMigrationParticipant(this.backup).preDeserialization(jsonResource("doc-demo"), loaded);
 
         assertEquals(sorted(dryRun), sorted(report.applied()));
-        assertEquals(6, dryRun.stream().filter(row -> row.status() == Status.CONVERTED).count(), "the demo's 6 ports");
+        assertEquals(6, dryRun.stream().filter(row -> row.status() == Status.CONVERTED && row.elementClass().equals("Port")).count(), "the demo's 6 ports");
+        assertEquals(4, dryRun.stream().filter(row -> row.status() == Status.CONVERTED && row.elementClass().equals("Connection")).count(),
+                "and its 4 connections");
         assertEquals(List.of("CAN-FD"), dryRun.stream().map(Row::oldValue).distinct().toList());
         Resource resource = load(loaded.toString());
         assertEquals("CAN-FD", port(resource, "objects").getInterfaceType().getName());
@@ -170,7 +174,7 @@ class InterfaceMigrationTest {
         participant.preDeserialization(jsonResource("doc-1"), second);
 
         assertEquals(first, second);
-        assertEquals(6, this.backup.rows(KEY).size());
+        assertEquals(7, this.backup.rows(KEY).size());
     }
 
     /**
@@ -237,7 +241,78 @@ class InterfaceMigrationTest {
     void theReportIsCsv() {
         String csv = InterfaceMigrationReport.toCsv(List.of(new Row(KEY, "po-1", "can, 0", "CAN", "x", Status.CONVERTED)));
 
-        assertEquals(InterfaceMigrationReport.CSV_HEADER + "\n" + KEY + ",po-1,\"can, 0\",CAN,x,CONVERTED\n", csv);
+        assertEquals(InterfaceMigrationReport.CSV_HEADER + "\n" + KEY + ",po-1,\"can, 0\",CAN,x,CONVERTED,Port\n", csv);
+    }
+
+    // =========================================================== P1 T3: connections of documents T1 already converted
+
+    /**
+     * A document saved after T1: ports refer to entities, connections still hold the name. Only the connections change,
+     * and they refer to the entity T1 created (one entity per interface), not to a new one.
+     */
+    @Test
+    void connectionsOfAT1DocumentLinkToItsExistingInterfaces() {
+        JsonObject afterT1 = this.afterT1();
+        int roots = afterT1.getAsJsonArray("content").size();
+
+        List<Row> rows = InterfaceEntityConversion.convert(KEY, afterT1);
+
+        String can = InterfaceEntityConversion.entityId(KEY, "CAN");
+        assertEquals(List.of(new Row(KEY, id("co-1"), "bus", "CAN", can, Status.LINKED, "Connection")), rows,
+                "no second EMPTY row for ports T1 has already reported");
+        assertEquals(roots, afterT1.getAsJsonArray("content").size(), "no new entity");
+        assertEquals(can, afterT1.getAsJsonArray("content").get(1).getAsJsonObject().getAsJsonObject("data").get("interfaceType").getAsString());
+    }
+
+    /** Converting a converted document changes nothing: a value that is an entity's id is a reference already. */
+    @Test
+    void aReferenceIsNotConvertedAgain() {
+        JsonObject document = parse(P0_DOCUMENT);
+        InterfaceEntityConversion.convert(KEY, document);
+        JsonObject again = document.deepCopy();
+
+        List<Row> rows = InterfaceEntityConversion.convert(KEY, again);
+
+        assertEquals(document, again);
+        assertTrue(rows.stream().allMatch(row -> row.status() == Status.EMPTY), "only the ports without value are listed again: " + rows);
+    }
+
+    /** Rolling back a LINKED connection restores its string but keeps the entity, which T1's rows own. */
+    @Test
+    void revertingALinkedConnectionKeepsTheEntity() {
+        JsonObject document = this.afterT1();
+        String before = document.toString();
+        List<Row> rows = InterfaceEntityConversion.convert(KEY, document);
+
+        InterfaceEntityConversion.revert(document, rows);
+
+        assertEquals(parse(before), document);
+    }
+
+    /** A T1 document's connections are converted on its next load: the participant's version is newer than T1's. */
+    @Test
+    void theT3VersionIsNewerThanT1() {
+        assertTrue(InterfaceEntityMigrationParticipant.VERSION.compareTo(InterfaceEntityConversion.PORTS_VERSION) > 0);
+        assertFalse(InterfaceMigrationReport.alreadyMigrated(this.afterT1()));
+    }
+
+    /** {@link #P0_DOCUMENT} as T1 left it: ports converted, the connection's string untouched, stamped with T1's version. */
+    private JsonObject afterT1() {
+        JsonObject document = parse(P0_DOCUMENT);
+        JsonArray content = document.getAsJsonArray("content");
+        JsonElement connection = content.remove(1);
+        InterfaceEntityConversion.convert(KEY, document); // T1: ports only (the connection is out of the way)
+        JsonArray reordered = new JsonArray();
+        reordered.add(content.get(0));
+        reordered.add(connection); // back at index 1, the entities after it
+        for (int i = 1; i < content.size(); i++) {
+            reordered.add(content.get(i));
+        }
+        document.add("content", reordered);
+        JsonObject marker = new JsonObject();
+        marker.addProperty("migrationVersion", InterfaceEntityConversion.PORTS_VERSION);
+        document.add("migration", marker);
+        return document;
     }
 
     // =========================================================== helpers
@@ -272,7 +347,7 @@ class InterfaceMigrationTest {
 
     private static List<Row> sorted(List<Row> rows) {
         List<Row> copy = new ArrayList<>(rows);
-        copy.sort(Comparator.comparing(Row::documentKey).thenComparing(Row::portId));
+        copy.sort(Comparator.comparing(Row::documentKey).thenComparing(Row::elementId));
         return copy;
     }
 

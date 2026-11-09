@@ -1,0 +1,16 @@
+# Parameters of views/sa-function-chain.vsm.yaml (spec P1 §3.1/§3.2). The output equals the spec's [COPY] text.
+template: "layer-architecture.vsm.tpl.yaml"
+output: "sa-function-chain.vsm.yaml"
+params:
+  id: "sa-function-chain"
+  label: "系统功能链（SA）"
+  layer: "SYSTEM"
+  filterId: "onlySystem"
+  filterLabel: "仅系统层"
+  nodeColor: "#FFFFFF"
+  nodeBorderColor: "#1C3D2E"
+  abstractNodeColor: "#F2F5F3"
+  abstractNodeBorderColor: "#778B82"
+  edgeColor: "#1C3D2E"
+  createLabel: "新建功能"
+  connectLabel: "建立功能交互"

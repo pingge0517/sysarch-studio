@@ -4,6 +4,7 @@ package com.example.sysarch.model.impl;
 
 import com.example.sysarch.model.Connection;
 import com.example.sysarch.model.ConnectionKind;
+import com.example.sysarch.model.InterfaceDef;
 import com.example.sysarch.model.Port;
 import com.example.sysarch.model.SysarchPackage;
 
@@ -72,24 +73,14 @@ public class ConnectionImpl extends ArchElementImpl implements Connection {
 	protected ConnectionKind kind = KIND_EDEFAULT;
 
 	/**
-	 * The default value of the '{@link #getInterfaceType() <em>Interface Type</em>}' attribute.
+	 * The cached value of the '{@link #getInterfaceType() <em>Interface Type</em>}' reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #getInterfaceType()
 	 * @generated
 	 * @ordered
 	 */
-	protected static final String INTERFACE_TYPE_EDEFAULT = null;
-
-	/**
-	 * The cached value of the '{@link #getInterfaceType() <em>Interface Type</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getInterfaceType()
-	 * @generated
-	 * @ordered
-	 */
-	protected String interfaceType = INTERFACE_TYPE_EDEFAULT;
+	protected InterfaceDef interfaceType;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -219,7 +210,24 @@ public class ConnectionImpl extends ArchElementImpl implements Connection {
 	 * @generated
 	 */
 	@Override
-	public String getInterfaceType() {
+	public InterfaceDef getInterfaceType() {
+		if (interfaceType != null && interfaceType.eIsProxy()) {
+			InternalEObject oldInterfaceType = (InternalEObject)interfaceType;
+			interfaceType = (InterfaceDef)eResolveProxy(oldInterfaceType);
+			if (interfaceType != oldInterfaceType) {
+				if (eNotificationRequired())
+					eNotify(new ENotificationImpl(this, Notification.RESOLVE, SysarchPackage.CONNECTION__INTERFACE_TYPE, oldInterfaceType, interfaceType));
+			}
+		}
+		return interfaceType;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public InterfaceDef basicGetInterfaceType() {
 		return interfaceType;
 	}
 
@@ -229,8 +237,8 @@ public class ConnectionImpl extends ArchElementImpl implements Connection {
 	 * @generated
 	 */
 	@Override
-	public void setInterfaceType(String newInterfaceType) {
-		String oldInterfaceType = interfaceType;
+	public void setInterfaceType(InterfaceDef newInterfaceType) {
+		InterfaceDef oldInterfaceType = interfaceType;
 		interfaceType = newInterfaceType;
 		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, SysarchPackage.CONNECTION__INTERFACE_TYPE, oldInterfaceType, interfaceType));
@@ -253,7 +261,8 @@ public class ConnectionImpl extends ArchElementImpl implements Connection {
 			case SysarchPackage.CONNECTION__KIND:
 				return getKind();
 			case SysarchPackage.CONNECTION__INTERFACE_TYPE:
-				return getInterfaceType();
+				if (resolve) return getInterfaceType();
+				return basicGetInterfaceType();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -276,7 +285,7 @@ public class ConnectionImpl extends ArchElementImpl implements Connection {
 				setKind((ConnectionKind)newValue);
 				return;
 			case SysarchPackage.CONNECTION__INTERFACE_TYPE:
-				setInterfaceType((String)newValue);
+				setInterfaceType((InterfaceDef)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -300,7 +309,7 @@ public class ConnectionImpl extends ArchElementImpl implements Connection {
 				setKind(KIND_EDEFAULT);
 				return;
 			case SysarchPackage.CONNECTION__INTERFACE_TYPE:
-				setInterfaceType(INTERFACE_TYPE_EDEFAULT);
+				setInterfaceType((InterfaceDef)null);
 				return;
 		}
 		super.eUnset(featureID);
@@ -321,7 +330,7 @@ public class ConnectionImpl extends ArchElementImpl implements Connection {
 			case SysarchPackage.CONNECTION__KIND:
 				return kind != KIND_EDEFAULT;
 			case SysarchPackage.CONNECTION__INTERFACE_TYPE:
-				return INTERFACE_TYPE_EDEFAULT == null ? interfaceType != null : !INTERFACE_TYPE_EDEFAULT.equals(interfaceType);
+				return interfaceType != null;
 		}
 		return super.eIsSet(featureID);
 	}
@@ -338,8 +347,6 @@ public class ConnectionImpl extends ArchElementImpl implements Connection {
 		StringBuilder result = new StringBuilder(super.toString());
 		result.append(" (kind: ");
 		result.append(kind);
-		result.append(", interfaceType: ");
-		result.append(interfaceType);
 		result.append(')');
 		return result.toString();
 	}

@@ -70,10 +70,10 @@ public final class DomainControllerDemo {
         Port controlOut = port(control, "PO-006", "egoState", PortDirection.OUT, bus);
 
         List<EObject> roots = new java.util.ArrayList<>(List.of(system, fusionType, plannerType, controlType, soc, mcu, bus));
-        roots.add(connection("CO-001", "目标列表", fusionOut, plannerIn, "ObjectList"));
-        roots.add(connection("CO-002", "轨迹", plannerOut, controlIn, "Trajectory"));
-        roots.add(connection("CO-003", "自车状态（感知）", controlOut, fusionIn, "VehicleState"));
-        roots.add(connection("CO-004", "自车状态（规划）", controlOut, plannerIn, "VehicleState"));
+        roots.add(connection("CO-001", "目标列表", fusionOut, plannerIn));
+        roots.add(connection("CO-002", "轨迹", plannerOut, controlIn));
+        roots.add(connection("CO-003", "自车状态（感知）", controlOut, fusionIn));
+        roots.add(connection("CO-004", "自车状态（规划）", controlOut, plannerIn));
 
         roots.add(requirement("RQ-001", "DC-REQ-001", "目标列表周期", Layer.LOGICAL, VerifyMethod.TEST, 1,
                 "感知融合应每 50 ms 向决策规划发布一次目标列表。"));
@@ -116,13 +116,13 @@ public final class DomainControllerDemo {
         return port;
     }
 
-    private static Connection connection(String id, String name, Port source, Port target, String payload) {
+    private static Connection connection(String id, String name, Port source, Port target) {
         Connection connection = FACTORY.createConnection();
         init(connection, id, name, Layer.LOGICAL);
         connection.setKind(ConnectionKind.ASSEMBLY);
         connection.setSource(source);
         connection.setTarget(target);
-        connection.setInterfaceType(payload);
+        connection.setInterfaceType(source.getInterfaceType()); // as the connect tool does
         return connection;
     }
 

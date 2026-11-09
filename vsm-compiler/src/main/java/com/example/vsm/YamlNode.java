@@ -68,6 +68,14 @@ final class YamlNode {
         return this.tuple(key) != null;
     }
 
+    /** Keys of this mapping in document order; empty for anything else. */
+    List<String> keys() {
+        if (!(this.node instanceof MappingNode mapping)) {
+            return List.of();
+        }
+        return mapping.getValue().stream().map(t -> t.getKeyNode() instanceof ScalarNode key ? key.getValue() : "").toList();
+    }
+
     String text(String key) {
         YamlNode value = this.get(key);
         return value == null ? null : value.scalar();

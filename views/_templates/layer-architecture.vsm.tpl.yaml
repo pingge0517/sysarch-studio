@@ -1,0 +1,61 @@
+vsm: "1.0"
+viewpoint:
+  id: "sysarch.core"
+  label: "系统架构建模"
+  metamodelUri: "http://example.com/sysarch/1.0"
+  priority: 10
+
+representations:
+  - id: "${id}"
+    label: "${label}"
+    kind: "diagram"
+    domainClass: "sysarch:PartDefinition"
+    synchronization: "auto"
+    refresh:
+      mode: "incremental"
+      budgetMs: 2000
+    filters:
+      - id: "${filterId}"
+        label: "${filterLabel}"
+        expression: "layer == '${layer}'"
+    autoExpand:
+      - feature: "ownedParts"
+        maxDepth: 2
+      - feature: "ownedPorts"
+        maxDepth: 1
+    nodeStyles:
+      - id: "function"
+        appliesTo: "sysarch:PartDefinition"
+        shape: "rounded-rectangle"
+        color: "${nodeColor}"
+        borderColor: "${nodeBorderColor}"
+        labelExpression: "{name}"
+        subLabelExpression: "{stereotypes}"
+      - id: "role"
+        appliesTo: "sysarch:PartDefinition"
+        shape: "rectangle"
+        color: "${abstractNodeColor}"
+        borderColor: "${abstractNodeBorderColor}"
+        labelExpression: "{name}"
+    edgeStyles:
+      - id: "exchange"
+        domainClass: "sysarch:Connection"
+        sourceEnd: "source"
+        targetEnd: "target"
+        routing: "spline"
+        color: "${edgeColor}"
+        arrow: "open"
+        labelExpression: "{interfaceType.name}"
+    tools:
+      - id: "createFunction"
+        label: "${createLabel}"
+        action: "create-child"
+        targetClass: "sysarch:Part"
+        containmentFeature: "ownedParts"
+        defaults:
+          layer: "${layer}"
+      - id: "connect"
+        label: "${connectLabel}"
+        action: "create-edge"
+        targetClass: "sysarch:Connection"
+        validateOnDrop: true

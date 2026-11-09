@@ -7,6 +7,7 @@ import com.example.sysarch.view.api.LabelPosition;
 import com.example.sysarch.view.api.LineStyle;
 import com.example.sysarch.view.api.NodeStyle;
 import com.example.sysarch.view.api.Routing;
+import com.example.sysarch.view.api.Shape;
 import com.example.sysarch.view.api.SynchronizationKind;
 import com.example.sysarch.view.projection.DiagramProjector;
 import com.example.sysarch.view.projection.DiagramProjector.EdgeEnds;
@@ -84,6 +85,9 @@ public final class SiriusDiagramDescriptionFactory {
     static final String FRAME_STYLE_ID = "frame";
 
     private static final String DEFAULT_COLOR = "#FFFFFF";
+
+
+    static final int ROUNDED_RADIUS = 8;
 
     private static final String DEFAULT_BORDER_COLOR = "#1A2B4A";
 
@@ -170,8 +174,8 @@ public final class SiriusDiagramDescriptionFactory {
                 .targetObjectKindProvider(vm -> self(vm).map(this::kind).orElse(""))
                 .targetObjectLabelProvider(vm -> this.node(source, vm).map(DiagramSnapshot.Node::label).orElse(""))
                 .semanticElementsProvider(semanticElements)
-                .styleProvider(vm -> this.rejected(vm) ? rectangle(style.color(), DropRejections.REJECTED_BORDER_COLOR, 2)
-                        : rectangle(style.color(), style.borderColor(), style.borderWidth()))
+                .styleProvider(vm -> this.rejected(vm) ? rectangle(style.color(), DropRejections.REJECTED_BORDER_COLOR, 2, radius(style))
+                        : rectangle(style.color(), style.borderColor(), style.borderWidth(), radius(style)))
                 .borderNodeDescriptions(borders)
                 .deleteHandler(this::deleteElement)
                 .labelEditHandler(this::rename)
@@ -207,7 +211,7 @@ public final class SiriusDiagramDescriptionFactory {
                 .targetObjectKindProvider(vm -> self(vm).map(this::kind).orElse(""))
                 .targetObjectLabelProvider(vm -> self(vm).map(SiriusDiagramDescriptionFactory::name).orElse(""))
                 .semanticElementsProvider(vm -> diagramRoot(vm).map(List::of).orElse(List.of()))
-                .styleProvider(vm -> rectangle(DEFAULT_COLOR, DEFAULT_BORDER_COLOR, 2))
+                .styleProvider(vm -> rectangle(DEFAULT_COLOR, DEFAULT_BORDER_COLOR, 2, 0))
                 .insideLabelDescription(insideLabel(id + "/label", vm -> self(vm).map(SiriusDiagramDescriptionFactory::name).orElse(""),
                         labelStyle(true, false), true))
                 .childNodeDescriptions(children)
@@ -278,9 +282,11 @@ public final class SiriusDiagramDescriptionFactory {
                 .lineStyle(style.lineStyle() == LineStyle.DASHED ? org.eclipse.sirius.components.diagrams.LineStyle.Dash
                         : org.eclipse.sirius.components.diagrams.LineStyle.Solid)
                 .sourceArrow(style.arrow() == Arrow.FILLED_DIAMOND ? ArrowStyle.FillDiamond : ArrowStyle.None)
-                .targetArrow(style.arrow() == Arrow.HOLLOW_TRIANGLE ? ArrowStyle.InputClosedArrow : ArrowStyle.None)
+                .targetArrow(style.arrow() == Arrow.HOLLOW_TRIANGLE ? ArrowStyle.InputClosedArrow
+                        : style.arrow() == Arrow.OPEN ? ArrowStyle.InputArrow : ArrowStyle.None)
                 .color(Optional.ofNullable(style.color()).orElse(DEFAULT_BORDER_COLOR))
-                .edgeType(style.routing() == Routing.STRAIGHT ? EdgeType.Oblique : EdgeType.Manhattan)
+                // Sirius Web 2025.8 has no curved edges: SPLINE is drawn like STRAIGHT.
+                .edgeType(style.routing() == Routing.MANHATTAN ? EdgeType.Manhattan : EdgeType.Oblique)
                 .build();
         return EdgeDescription.newEdgeDescription(id)
                 .synchronizationPolicy(policy)
@@ -454,12 +460,17 @@ public final class SiriusDiagramDescriptionFactory {
         return "";
     }
 
-    private static RectangularNodeStyle rectangle(String color, String borderColor, Integer borderWidth) {
+    /** VSM {@code rounded-rectangle} (P1 layer views) is a rectangle with rounded corners. */
+    private static int radius(NodeStyle style) {
+        return style.shape() == Shape.ROUNDED_RECTANGLE ? ROUNDED_RADIUS : 0;
+    }
+
+    private static RectangularNodeStyle rectangle(String color, String borderColor, Integer borderWidth, int borderRadius) {
         return RectangularNodeStyle.newRectangularNodeStyle()
                 .background(Optional.ofNullable(color).orElse(DEFAULT_COLOR))
                 .borderColor(Optional.ofNullable(borderColor).orElse(DEFAULT_BORDER_COLOR))
                 .borderSize(Optional.ofNullable(borderWidth).orElse(1))
-                .borderRadius(0)
+                .borderRadius(borderRadius)
                 .borderStyle(org.eclipse.sirius.components.diagrams.LineStyle.Solid)
                 .childrenLayoutStrategy(new FreeFormLayoutStrategy())
                 .build();

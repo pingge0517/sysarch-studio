@@ -12,11 +12,13 @@ import com.example.sysarch.view.api.ToolAction;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
 import org.eclipse.emf.common.util.EList;
+import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EReference;
@@ -57,6 +59,9 @@ import org.eclipse.sirius.components.representations.VariableManager;
  * here; {@link SysarchPaletteProvider} then shows the subset that applies to the clicked element.
  */
 final class ToolFactory {
+    /** The reference a new element's type goes into (P1 T3 layer views). */
+    static final String TYPE_FEATURE = "typedBy";
+
 
     private final DiagramFilterState filters;
 
@@ -76,12 +81,13 @@ final class ToolFactory {
         for (Tool tool : source.tools()) {
             String id = diagramId + "/tool/" + tool.id();
             if (tool.action() == ToolAction.CREATE_CHILD) {
-                tools.add(this.createChildTool(id, tool, nodes, typeOf, rootType));
+                tools.add(this.createChildTool(id, source, tool, nodes, typeOf, rootType));
             } else if (tool.action() == ToolAction.CREATE_EDGE) {
                 this.createEdgeTool(id, source, tool, nodes, typeOf).ifPresent(tools::add);
             }
         }
-        for (Filter filter : source.filters()) {
+        // A layer scope (alwaysOn, P1 T3) is part of the view, not a choice: no toggle for it.
+        for (Filter filter : source.filters().stream().filter(f -> !f.alwaysOn()).toList()) {
             tools.add(SingleClickOnDiagramElementTool.newSingleClickOnDiagramElementTool(diagramId + "/tool/filter/" + filter.id())
                     .label(filter.label())
                     .iconURL(List.of())
@@ -93,8 +99,9 @@ final class ToolFactory {
         return Palette.newPalette(diagramId + "/palette").tools(tools).toolSections(List.of()).build();
     }
 
-    private SingleClickOnDiagramElementTool createChildTool(String id, Tool tool, List<NodeDescription> nodes, Function<NodeDescription, EClass> typeOf,
-            EClass rootType) {
+    private SingleClickOnDiagramElementTool createChildTool(String id, DiagramDescription source, Tool tool, List<NodeDescription> nodes,
+            Function<NodeDescription, EClass> typeOf, EClass rootType) {
+        boolean layerView = source.filters().stream().anyMatch(Filter::alwaysOn);
         List<IDiagramElementDescription> targets = nodes.stream()
                 .filter(node -> canContain(typeOf.apply(node), tool))
                 .<IDiagramElementDescription>map(node -> node)
@@ -104,11 +111,19 @@ final class ToolFactory {
                 .iconURL(List.of())
                 .targetDescriptions(targets)
                 .appliesToDiagramRoot(rootType != null && canContain(rootType, tool))
-                .handler(vm -> this.createChild(vm, tool))
+                .handler(vm -> this.createChild(vm, tool, layerView))
                 .build();
     }
 
-    private IStatus createChild(VariableManager vm, Tool tool) {
+    /**
+     * Creates the tool's element in the clicked element (or the diagram root), with the tool's {@code defaults}.
+     *
+     * @param layerView the diagram is a layer view (P1 T3): such views draw blocks only, so a new element whose
+     *        {@code typedBy} is required and empty (a Part) also gets a new type block with the same name and defaults,
+     *        at the top of the document. It is what shows up in the view, and the Part is not marked red for a missing
+     *        type (user's decision). In BDD and IBD a new part stays untyped, as in P0.
+     */
+    private IStatus createChild(VariableManager vm, Tool tool, boolean layerView) {
         Optional<EObject> container = vm.get(VariableManager.SELF, EObject.class);
         if (container.isEmpty()) {
             return new Failure("未找到要添加到的元素");
@@ -119,6 +134,7 @@ final class ToolFactory {
             return new Failure("「" + tool.label() + "」不能用于这个元素");
         }
         EObject child = EcoreUtil.create(childType);
+        applyDefaults(child, tool.defaults());
         if (feature.isMany()) {
             @SuppressWarnings("unchecked")
             EList<EObject> values = (EList<EObject>) container.get().eGet(feature);
@@ -128,7 +144,32 @@ final class ToolFactory {
             setName(child, defaultName(childType, 1));
             container.get().eSet(feature, child);
         }
+        if (layerView) {
+            createType(container.get(), child, tool.defaults());
+        }
         return SiriusDiagramDescriptionFactory.semanticChange();
+    }
+
+    /** Each default is an Ecore literal of a single-valued attribute (checked by vsm-compiler); others are skipped. */
+    static void applyDefaults(EObject element, Map<String, String> defaults) {
+        defaults.forEach((name, literal) -> {
+            if (element.eClass().getEStructuralFeature(name) instanceof EAttribute attribute && !attribute.isMany()) {
+                element.eSet(attribute, EcoreUtil.createFromString(attribute.getEAttributeType(), literal));
+            }
+        });
+    }
+
+    /** See {@link #createChild}: a required, empty {@code typedBy} gets a new type named like the element. */
+    private static void createType(EObject container, EObject element, Map<String, String> defaults) {
+        if (!(element.eClass().getEStructuralFeature(TYPE_FEATURE) instanceof EReference typedBy) || typedBy.isMany() || typedBy.getLowerBound() < 1
+                || typedBy.isContainment() || element.eGet(typedBy) != null || typedBy.getEReferenceType().isAbstract() || container.eResource() == null) {
+            return;
+        }
+        EObject type = EcoreUtil.create(typedBy.getEReferenceType());
+        applyDefaults(type, defaults);
+        setName(type, name(element));
+        container.eResource().getContents().add(type);
+        element.eSet(typedBy, type);
     }
 
     /**
@@ -251,11 +292,6 @@ final class ToolFactory {
         EStructuralFeature target = to.eClass().getEStructuralFeature(attribute);
         if (source != null && target != null && !source.isMany() && !target.isMany()) {
             Object value = from.eGet(source);
-            // A referenced element (a port's InterfaceDef, P1) goes into a text attribute (the connection's interfaceType) as its name.
-            if (value instanceof EObject element && target.getEType().getInstanceClass() == String.class) {
-                EStructuralFeature name = element.eClass().getEStructuralFeature("name");
-                value = name == null ? null : element.eGet(name);
-            }
             if (value == null || target.getEType().isInstance(value)) {
                 to.eSet(target, value);
             }

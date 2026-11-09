@@ -1,0 +1,16 @@
+# Parameters of views/la-architecture.vsm.yaml (spec P1 §3.1): same template as SA, only filter and colours differ.
+template: "layer-architecture.vsm.tpl.yaml"
+output: "la-architecture.vsm.yaml"
+params:
+  id: "la-architecture"
+  label: "逻辑架构（LA）"
+  layer: "LOGICAL"
+  filterId: "onlyLogical"
+  filterLabel: "仅逻辑层"
+  nodeColor: "#FFFFFF"
+  nodeBorderColor: "#2F5D4A"
+  abstractNodeColor: "#EEF4F1"
+  abstractNodeBorderColor: "#83998F"
+  edgeColor: "#2F5D4A"
+  createLabel: "新建逻辑组件"
+  connectLabel: "建立逻辑交互"

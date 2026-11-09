@@ -135,8 +135,8 @@ public class ConnectionItemProvider extends ArchElementItemProvider {
 				 SysarchPackage.Literals.CONNECTION__INTERFACE_TYPE,
 				 true,
 				 false,
-				 false,
-				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 true,
+				 null,
 				 null,
 				 null));
 	}
@@ -190,7 +190,6 @@ public class ConnectionItemProvider extends ArchElementItemProvider {
 
 		switch (notification.getFeatureID(Connection.class)) {
 			case SysarchPackage.CONNECTION__KIND:
-			case SysarchPackage.CONNECTION__INTERFACE_TYPE:
 				fireNotifyChanged(new ViewerNotification(notification, notification.getNotifier(), false, true));
 				return;
 		}

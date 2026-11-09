@@ -65,7 +65,7 @@
       <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sysarch.ecore#//Connection/source"/>
       <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sysarch.ecore#//Connection/target"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//Connection/kind"/>
-      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//Connection/interfaceType"/>
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sysarch.ecore#//Connection/interfaceType"/>
     </genClasses>
     <genClasses ecoreClass="sysarch.ecore#//ItemFlow">
       <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sysarch.ecore#//ItemFlow/connection"/>
