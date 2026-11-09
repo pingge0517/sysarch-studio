@@ -3,6 +3,7 @@ import { fetchMatrix, fetchProjects, fetchTables, runAction } from './matrix/api
 import type { Cell, Matrix, Project, TableInfo, ValidationError } from './matrix/api';
 import type { CellOption } from './matrix/layout';
 import { MatrixView } from './matrix/MatrixView';
+import { BaselinePage } from './baseline/BaselinePage';
 
 // TODO: mount the Sirius Web frontend components and register the BDD/IBD views. Until then the diagrams are
 // edited in Sirius Web's own UI (backend :8080); this shell hosts the P1 matrix pages.
@@ -19,12 +20,16 @@ function setParams(values: Record<string, string>) {
   window.history.replaceState(null, '', `${window.location.pathname}?${search}`);
 }
 
-/** The matrix page (P1 T4): pick a Sirius project and a VSM table; ?project=…&table=… keeps the choice in the URL. */
+/**
+ * The shell (P1 T4, T7): pick a Sirius project, then the matrix of a VSM table or the baselines and their diffs;
+ * ?project=…&view=…&table=… keeps the choice in the URL.
+ */
 export function App() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [tables, setTables] = useState<TableInfo[]>([]);
   const [project, setProject] = useState(param('project'));
   const [table, setTable] = useState(param('table') || 'allocation-matrix');
+  const [view, setView] = useState(param('view') === 'baselines' ? 'baselines' : 'matrix');
   const [matrix, setMatrix] = useState<Matrix | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [refusal, setRefusal] = useState<ValidationError[]>([]);
@@ -38,7 +43,7 @@ export function App() {
 
   const load = useCallback(
     async (measure: boolean) => {
-      if (!project || !table) {
+      if (!project || !table || view !== 'matrix') {
         return;
       }
       if (measure) {
@@ -53,11 +58,11 @@ export function App() {
         setMatrix(null);
       }
     },
-    [project, table],
+    [project, table, view],
   );
 
   useEffect(() => {
-    setParams({ project, table });
+    setParams({ project, table, view: view === 'matrix' ? '' : view });
     setMatrix(null);
     void load(true);
   }, [project, table, load]);
@@ -113,6 +118,13 @@ export function App() {
           </select>
         </label>
         <label>
+          视图
+          <select value={view} onChange={(e) => setView(e.target.value)}>
+            <option value="matrix">矩阵</option>
+            <option value="baselines">基线与差异</option>
+          </select>
+        </label>
+        {view === 'matrix' && <label>
           表格
           <select value={table} onChange={(e) => setTable(e.target.value)}>
             {tables.map((t) => (
@@ -121,9 +133,9 @@ export function App() {
               </option>
             ))}
           </select>
-        </label>
+        </label>}
         <span className="spacer" />
-        {firstRender !== null && <span className="timing">首屏 {firstRender} ms</span>}
+        {view === 'matrix' && firstRender !== null && <span className="timing">首屏 {firstRender} ms</span>}
       </header>
 
       {error && (
@@ -142,9 +154,10 @@ export function App() {
       )}
 
       <main className="content">
-        {!project && <p className="hint">选择一个 Sirius 项目，查看它的分配矩阵。</p>}
-        {project && matrix && <MatrixView matrix={matrix} onAction={onAction} />}
-        {project && !matrix && !error && <p className="hint">加载中…</p>}
+        {!project && <p className="hint">选择一个 Sirius 项目。</p>}
+        {project && view === 'baselines' && <BaselinePage project={project} />}
+        {project && view === 'matrix' && matrix && <MatrixView matrix={matrix} onAction={onAction} />}
+        {project && view === 'matrix' && !matrix && !error && <p className="hint">加载中…</p>}
       </main>
     </div>
   );

@@ -263,3 +263,84 @@ body,
 .menu .cancel {
   color: var(--ink-soft);
 }
+
+/* ---- baselines (P1 T7) ---- */
+
+.baselines {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 960px;
+}
+
+.panel {
+  border: 1px solid var(--line);
+  padding: 12px 16px;
+}
+
+.panel h2 {
+  font-size: 15px;
+  margin: 0 0 8px;
+  color: var(--ink);
+}
+
+.panel .row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.panel label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.panel input,
+.panel select,
+.panel button {
+  font: inherit;
+  font-size: 13px;
+  padding: 4px 8px;
+}
+
+.panel input {
+  min-width: 260px;
+}
+
+.diff {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+}
+
+.diff th,
+.diff td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.diff tr.added td:first-child {
+  color: #1c6b3a;
+}
+
+.diff tr.removed td:first-child {
+  color: var(--warn);
+}
+
+.diff tr.modified td:first-child {
+  color: #8a5a00;
+}
+
+.link {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--ink);
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}

@@ -24,7 +24,8 @@ import org.springframework.web.server.ResponseStatusException;
  * with the HTML app page. Found in the live smoke test; unit tests call the controllers directly and cannot see it.
  */
 @RestControllerAdvice(basePackageClasses = { SyncController.class, LinksController.class, com.example.sysarch.view.table.TableController.class,
-        com.example.sysarch.trace.TraceController.class })
+        com.example.sysarch.trace.TraceController.class, com.example.sysarch.baseline.BaselineController.class,
+        com.example.sysarch.project.ElementLocationController.class })
 public class ApiErrorHandler {
 
     @ExceptionHandler(ResponseStatusException.class)

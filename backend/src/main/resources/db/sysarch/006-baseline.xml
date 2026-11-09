@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- P1 T7: baselines. On PostgreSQL the DDL is the spec's [COPY] V2__baseline.sql (P1 §4.2), verbatim in
+     006-baseline.sql (Liquibase instead of Flyway, the user's decision). H2, which only the tests use, knows neither
+     timestamptz nor jsonb: it gets the same tables in its own types. -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <changeSet id="sysarch-006-baseline" author="sysarch" dbms="postgresql">
+        <sqlFile path="006-baseline.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
+    <changeSet id="sysarch-006-baseline-h2" author="sysarch" dbms="h2">
+        <comment>The same tables as 006-baseline.sql for the tests' H2 (timestamptz → TIMESTAMP WITH TIME ZONE, jsonb → TEXT).</comment>
+        <createTable tableName="baseline">
+            <column name="id" type="VARCHAR(64)"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="project_id" type="VARCHAR(64)"><constraints nullable="false"/></column>
+            <column name="label" type="VARCHAR(200)"><constraints nullable="false"/></column>
+            <column name="description" type="TEXT"/>
+            <column name="model_rev" type="INTEGER"><constraints nullable="false"/></column>
+            <column name="element_count" type="INTEGER" defaultValueNumeric="0"><constraints nullable="false"/></column>
+            <column name="created_by" type="VARCHAR(128)"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+        </createTable>
+        <createIndex tableName="baseline" indexName="idx_baseline_project">
+            <column name="project_id"/>
+            <column name="created_at" descending="true"/>
+        </createIndex>
+        <createTable tableName="baseline_element">
+            <column name="baseline_id" type="VARCHAR(64)">
+                <constraints primaryKey="true" nullable="false" foreignKeyName="fk_baseline_element_baseline" references="baseline(id)" deleteCascade="true"/>
+            </column>
+            <column name="element_id" type="VARCHAR(64)"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="element_type" type="VARCHAR(64)"><constraints nullable="false"/></column>
+            <column name="name" type="VARCHAR(500)"/>
+            <column name="layer" type="VARCHAR(32)"/>
+            <column name="attributes" type="TEXT" defaultValue="{}"><constraints nullable="false"/></column>
+        </createTable>
+    </changeSet>
+</databaseChangeLog>
