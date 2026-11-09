@@ -11,6 +11,10 @@ val openApiOutput = layout.buildDirectory.dir("generated/openapi")
 
 openApiGenerate {
     generatorName.set("spring")
+    // P2 §4.5's [COPY] block is merged verbatim but is not valid OpenAPI (three operations without responses,
+    // /branches/{branchId}/merge without a branchId parameter). Validation is off so the text stays verbatim; those
+    // endpoints are hand-written controllers, so nothing depends on what the generator makes of them.
+    skipValidateSpec.set(true)
     inputSpec.set(openApiSpec.asFile.path)
     outputDir.set(openApiOutput.get().asFile.path)
     apiPackage.set("com.example.sysarch.sync.api")

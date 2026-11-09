@@ -42,6 +42,9 @@ sirius:
     cors:
       allowedOriginPatterns: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
       allowedCredentials: true
+      # Sirius sets no methods, so Spring allows only GET/HEAD/POST cross-origin. Browsers send an Origin header on
+      # PUT/DELETE even through the :3000 proxy: the lock heartbeat and release (P2 T1) need these.
+      allowedMethods: GET,HEAD,POST,PUT,DELETE
 
 # Our own settings. sysarch.view is not read by any code yet.
 sysarch:

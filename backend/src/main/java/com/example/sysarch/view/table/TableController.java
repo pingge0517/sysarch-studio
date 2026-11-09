@@ -24,7 +24,8 @@ import org.springframework.web.server.ResponseStatusException;
  * <li>{@code GET /api/v1/projects/{project}/tables/{table}}: the {@link Matrix} of a Sirius project (id or name).</li>
  * <li>{@code POST /api/v1/projects/{project}/tables/{table}/actions} with {@code {actionId, rowId, columnId}}: 200 and
  * the new matrix, or 422 with {@code errors}; {@code remove: true} undoes a link action (P1 T5) ({@code {code, elementId, message, anchors}}, spec §3.2's shape) and the
- * unchanged matrix when the constraints refuse it.</li>
+ * unchanged matrix when the constraints refuse it; 423 with {@code LOCKED} errors (the holder in the message) when
+ * the action would change an element someone else holds (P2 T1).</li>
  * </ul>
  */
 @RestController
@@ -62,18 +63,22 @@ public class TableController {
     }
 
     @PostMapping("/projects/{project}/tables/{table}/actions")
-    public ResponseEntity<ActionResponse> act(@PathVariable String project, @PathVariable String table, @RequestBody ActionRequest request) {
+    public ResponseEntity<ActionResponse> act(@PathVariable String project, @PathVariable String table, @RequestBody ActionRequest request,
+            jakarta.servlet.http.HttpServletRequest http) {
         if (request == null || blank(request.actionId()) || blank(request.rowId()) || blank(request.columnId())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "actionId, rowId and columnId are required");
         }
         TableService.ActionResult result;
         try {
-            result = this.tables.act(project, table, request.actionId(), request.rowId(), request.columnId(), Boolean.TRUE.equals(request.remove()));
+            result = this.tables.act(project, table, request.actionId(), request.rowId(), request.columnId(), Boolean.TRUE.equals(request.remove()),
+                    com.example.sysarch.identity.CurrentUser.of(http).map(com.example.sysarch.identity.Editors.Editor::new)
+                            .orElse(com.example.sysarch.identity.Editors.Editor.ANONYMOUS));
         } catch (TableService.NotFoundException | ProjectModels.UnknownProjectException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
         }
         ActionResponse body = new ActionResponse(result.outcome().changed(), result.outcome().errors(), result.matrix());
-        return ResponseEntity.status(result.outcome().errors().isEmpty() ? HttpStatus.OK : HttpStatus.UNPROCESSABLE_ENTITY).body(body);
+        HttpStatus status = result.locked() ? HttpStatus.LOCKED : result.outcome().errors().isEmpty() ? HttpStatus.OK : HttpStatus.UNPROCESSABLE_ENTITY;
+        return ResponseEntity.status(status).body(body);
     }
 
     private static boolean blank(String value) {

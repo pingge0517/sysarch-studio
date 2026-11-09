@@ -1,5 +1,9 @@
 package com.example.sysarch.project;
 
+import com.example.sysarch.identity.Editors;
+import com.example.sysarch.identity.Editors.Editor;
+import com.example.sysarch.lock.LockEnforcement;
+import com.example.sysarch.lock.LockService;
 import com.example.sysarch.model.SysarchPackage;
 import com.example.sysarch.sync.SyncProperties;
 
@@ -9,6 +13,7 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Function;
 
+import org.eclipse.emf.ecore.change.util.ChangeRecorder;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.sirius.components.collaborative.api.ChangeDescription;
 import org.eclipse.sirius.components.collaborative.api.ChangeKind;
@@ -32,6 +37,11 @@ import reactor.core.publisher.Sinks;
  *
  * <p>A project is named by a Polarion project id mapped in {@code sysarch.polarion.projects} (the OpenAPI's
  * {@code projectId}), or else by a Sirius project id or unique name.
+ *
+ * <p>A write on behalf of a user ({@link #write(String, Editor, Function)}, P2 T1) is checked against the element locks
+ * inside the task: when it changed an element someone else holds, it is undone there and fails with
+ * {@link LockService.LockedException}, so the caller can answer 423 (a veto after the task would come too late, the
+ * answer would already be out). Writes without an editor are system writes; locks do not apply to them.
  */
 @Service
 public class ProjectModels {
@@ -60,12 +70,15 @@ public class ProjectModels {
 
     private final JdbcClient jdbc;
 
+    private final Editors editors;
+
     public ProjectModels(IEditingContextEventProcessorRegistry editingContexts, IProjectEditingContextService projectEditingContexts,
-            SyncProperties properties, JdbcClient jdbc) {
+            SyncProperties properties, JdbcClient jdbc, Editors editors) {
         this.editingContexts = Objects.requireNonNull(editingContexts);
         this.projectEditingContexts = Objects.requireNonNull(projectEditingContexts);
         this.properties = Objects.requireNonNull(properties);
         this.jdbc = Objects.requireNonNull(jdbc);
+        this.editors = Objects.requireNonNull(editors);
     }
 
     /** Reads the project's sysarch resources; changes nothing. */
@@ -73,12 +86,26 @@ public class ProjectModels {
         return this.write(project, resources -> new Outcome<>(task.apply(resources), false));
     }
 
-    /** Runs a task that may change the model. Exceptions thrown by the task are rethrown here. */
-    @SuppressWarnings("unchecked")
+    /** Runs a task that may change the model, as the system (no lock applies). Exceptions thrown by the task are rethrown here. */
     public <T> T write(String project, Function<List<Resource>, Outcome<T>> task) {
-        String editingContextId = this.projectEditingContexts.getEditingContextId(this.siriusProjectId(project))
+        return this.write(project, null, task);
+    }
+
+    /**
+     * Runs a task that may change the model on behalf of {@code editor} (null: the system).
+     *
+     * @throws LockService.LockedException when the task changed elements someone else holds; the model is unchanged
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T write(String project, Editor editor, Function<List<Resource>, Outcome<T>> task) {
+        String projectId = this.siriusProjectId(project);
+        String editingContextId = this.projectEditingContexts.getEditingContextId(projectId)
                 .orElseThrow(() -> new UnknownProjectException("project '" + project + "' has no model"));
-        IPayload payload = this.editingContexts.dispatchEvent(editingContextId, new TaskInput(UUID.randomUUID(), task)).block(TIMEOUT);
+        TaskInput input = new TaskInput(UUID.randomUUID(), task, projectId, editor);
+        if (editor != null) {
+            this.editors.record(input.id().toString(), editor); // the lease after a successful write (ConstraintEnforcement.Guard)
+        }
+        IPayload payload = this.editingContexts.dispatchEvent(editingContextId, input).block(TIMEOUT);
         if (payload instanceof TaskPayload result) {
             if (result.failure() != null) {
                 throw result.failure();
@@ -109,7 +136,7 @@ public class ProjectModels {
         return this.jdbc.sql("SELECT name FROM project WHERE CAST(id AS VARCHAR) = :id").param("id", id).query(String.class).optional().orElse(id);
     }
 
-    record TaskInput(UUID id, Function<List<Resource>, ? extends Outcome<?>> task) implements IInput {
+    record TaskInput(UUID id, Function<List<Resource>, ? extends Outcome<?>> task, String projectId, Editor editor) implements IInput {
     }
 
     /** {@code failure} is set when the task threw. */
@@ -119,6 +146,12 @@ public class ProjectModels {
     /** Runs the tasks on the editing context thread. */
     @Service
     public static class Handler implements IEditingContextEventHandler {
+
+        private final LockEnforcement locks;
+
+        public Handler(LockEnforcement locks) {
+            this.locks = Objects.requireNonNull(locks);
+        }
 
         @Override
         public boolean canHandle(IEditingContext editingContext, IInput input) {
@@ -130,12 +163,26 @@ public class ProjectModels {
                 IInput input) {
             TaskInput task = (TaskInput) input;
             boolean changed = false;
+            var resourceSet = ((IEMFEditingContext) editingContext).getDomain().getResourceSet();
+            ChangeRecorder recorder = task.editor() == null ? null : new ChangeRecorder(resourceSet);
             try {
                 Outcome<?> outcome = task.task().apply(sysarchResources((IEMFEditingContext) editingContext));
+                if (recorder != null) {
+                    var change = recorder.endRecording();
+                    List<LockService.Conflict> held = this.locks.conflicts(task.projectId(), task.editor(), change);
+                    if (!held.isEmpty()) {
+                        change.applyAndReverse();
+                        throw new LockService.LockedException(held);
+                    }
+                }
                 changed = outcome.changed();
                 payloadSink.tryEmitValue(new TaskPayload(input.id(), outcome.value(), null));
             } catch (RuntimeException e) {
                 payloadSink.tryEmitValue(new TaskPayload(input.id(), null, e));
+            } finally {
+                if (recorder != null) {
+                    recorder.dispose();
+                }
             }
             changeDescriptionSink.tryEmitNext(new ChangeDescription(changed ? ChangeKind.SEMANTIC_CHANGE : ChangeKind.NOTHING, editingContext.getId(), input));
         }

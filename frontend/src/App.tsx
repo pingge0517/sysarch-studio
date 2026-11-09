@@ -4,6 +4,8 @@ import type { Cell, Matrix, Project, TableInfo, ValidationError } from './matrix
 import type { CellOption } from './matrix/layout';
 import { MatrixView } from './matrix/MatrixView';
 import { BaselinePage } from './baseline/BaselinePage';
+import { LocksPage } from './locks/LocksPage';
+import { currentUser, setCurrentUser } from './identity/user';
 
 // TODO: mount the Sirius Web frontend components and register the BDD/IBD views. Until then the diagrams are
 // edited in Sirius Web's own UI (backend :8080); this shell hosts the P1 matrix pages.
@@ -21,15 +23,17 @@ function setParams(values: Record<string, string>) {
 }
 
 /**
- * The shell (P1 T4, T7): pick a Sirius project, then the matrix of a VSM table or the baselines and their diffs;
- * ?project=…&view=…&table=… keeps the choice in the URL.
+ * The shell (P1 T4, T7, P2 T1): pick a Sirius project, then the matrix of a VSM table, the baselines and their diffs,
+ * or the edit locks; ?project=…&view=…&table=… keeps the choice in the URL. The user name (top right) is the temporary
+ * identity until T8: a cookie that Sirius Web on :8080 receives too, so the backend knows who edits there.
  */
 export function App() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [tables, setTables] = useState<TableInfo[]>([]);
   const [project, setProject] = useState(param('project'));
   const [table, setTable] = useState(param('table') || 'allocation-matrix');
-  const [view, setView] = useState(param('view') === 'baselines' ? 'baselines' : 'matrix');
+  const [view, setView] = useState(['baselines', 'locks'].includes(param('view')) ? param('view') : 'matrix');
+  const [user, setUser] = useState(currentUser());
   const [matrix, setMatrix] = useState<Matrix | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [refusal, setRefusal] = useState<ValidationError[]>([]);
@@ -122,6 +126,7 @@ export function App() {
           <select value={view} onChange={(e) => setView(e.target.value)}>
             <option value="matrix">矩阵</option>
             <option value="baselines">基线与差异</option>
+            <option value="locks">编辑锁</option>
           </select>
         </label>
         {view === 'matrix' && <label>
@@ -136,6 +141,19 @@ export function App() {
         </label>}
         <span className="spacer" />
         {view === 'matrix' && firstRender !== null && <span className="timing">首屏 {firstRender} ms</span>}
+        <label title="临时身份：T8 换成 Polarion 登录">
+          我是
+          <input
+            className="user"
+            defaultValue={user}
+            placeholder="你的名字"
+            onBlur={(e) => {
+              setCurrentUser(e.target.value);
+              setUser(currentUser());
+            }}
+            onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+          />
+        </label>
       </header>
 
       {error && (
@@ -145,7 +163,7 @@ export function App() {
       )}
       {refusal.length > 0 && (
         <div className="notice refusal" role="alert">
-          <strong>未建立：</strong>
+          <strong>未执行：</strong>
           {refusal.map((r) => r.message).join('；')}
           <button type="button" onClick={() => setRefusal([])}>
             知道了
@@ -156,6 +174,7 @@ export function App() {
       <main className="content">
         {!project && <p className="hint">选择一个 Sirius 项目。</p>}
         {project && view === 'baselines' && <BaselinePage project={project} />}
+        {project && view === 'locks' && <LocksPage project={project} user={user} />}
         {project && view === 'matrix' && matrix && <MatrixView matrix={matrix} onAction={onAction} />}
         {project && view === 'matrix' && !matrix && !error && <p className="hint">加载中…</p>}
       </main>

@@ -66,7 +66,8 @@ export interface Project {
 }
 
 async function json<T>(response: Response): Promise<T> {
-  if (!response.ok && response.status !== 422) {
+  // 422: refused by a constraint; 423: an element is locked by someone else (P2 T1). Both carry the matrix.
+  if (!response.ok && response.status !== 422 && response.status !== 423) {
     let detail = `${response.status} ${response.statusText}`;
     try {
       const problem = await response.json();

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- P2 T1: audit_log (spec P2 §7.2: who, when, which element, what; append-only). The spec gives no DDL. T1 writes
+     forced lock releases; T8 adds merges, baseline deletion and report generation, retention and partitioning. -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <changeSet id="sysarch-008-audit-log" author="sysarch">
+        <createTable tableName="audit_log">
+            <column name="id" type="BIGINT" autoIncrement="true"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="project_id" type="VARCHAR(64)"/>
+            <column name="actor" type="VARCHAR(128)"><constraints nullable="false"/></column>
+            <column name="action" type="VARCHAR(64)"><constraints nullable="false"/></column>
+            <column name="element_id" type="VARCHAR(64)"/>
+            <column name="detail" type="TEXT"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+        </createTable>
+        <createIndex tableName="audit_log" indexName="idx_audit_project_time">
+            <column name="project_id"/>
+            <column name="created_at"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>

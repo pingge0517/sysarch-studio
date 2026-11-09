@@ -244,6 +244,97 @@ paths:
         "200":
           description: 需求到元素的追溯关系
 
+  /locks:
+    post:
+      summary: 申请元素锁
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [projectId, elementIds, ownerUser]
+              properties:
+                projectId: { type: string }
+                elementIds:
+                  type: array
+                  items: { type: string }
+                  maxItems: 50
+                ownerUser: { type: string }
+                leaseSeconds: { type: integer, default: 90, minimum: 30, maximum: 300 }
+      responses:
+        "201": { description: 全部获取成功 }
+        "423": { description: 存在被他人持有的元素，响应体列出冲突 elementId 与持锁人 }
+    delete:
+      summary: 释放锁
+      parameters:
+        - name: elementId
+          in: query
+          required: true
+          schema: { type: string }
+        - name: force
+          in: query
+          schema: { type: boolean, default: false }
+
+  /branches:
+    post:
+      summary: 从基线创建分支
+      responses:
+        "201": { description: 分支已创建 }
+    get:
+      summary: 列出项目分支
+
+  /branches/{branchId}/merge:
+    post:
+      summary: 合并到主干（先返回预演结果）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                mode: { type: string, enum: [PREVIEW, APPLY] }
+                strategy: { type: string, enum: [MODEL_WINS, POLARION_WINS] }
+      responses:
+        "200":
+          description: 预演结果或应用结果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  merged: { type: integer }
+                  conflicts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        elementId: { type: string }
+                        field: { type: string }
+                        base: { type: string }
+                        theirs: { type: string }
+                        ours: { type: string }
+
+  /reports:
+    post:
+      summary: 提交报告生成任务
+      responses:
+        "202":
+          description: jobId
+    get:
+      summary: 查询任务状态与下载地址
+
+  /imports/sysmlv2:
+    post:
+      summary: 导入 SysML v2 文本或 SysON 模型
+      requestBody:
+        content:
+          text/plain:
+            schema: { type: string }
+      responses:
+        "202": { description: 导入任务已入队，返回 jobId }
+
 components:
   schemas:
     Link:

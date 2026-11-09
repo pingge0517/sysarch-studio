@@ -1,5 +1,8 @@
 package com.example.sysarch.config;
 
+import com.example.sysarch.identity.Editors;
+import com.example.sysarch.lock.LockEnforcement;
+import com.example.sysarch.lock.LockService;
 import com.example.sysarch.model.SysarchPackage;
 import com.example.sysarch.validation.ChangeGuard;
 import com.example.sysarch.validation.ConstraintValidator;
@@ -45,6 +48,9 @@ import reactor.core.publisher.Sinks;
  * pre-processors run before the handler, and every consumer's {@code preAccept} runs before any {@code accept}
  * (refresh) or {@code postAccept} (save, {@code EditingContextSaver}). The handler's change is recorded with an EMF
  * {@link ChangeRecorder} from pre-processing to {@code preAccept}.</li>
+ * <li>{@link Guard} also applies the element locks (P2 T1): an edit sent by a user (Sirius GraphQL, recorded by
+ * {@code GraphQLEditorFilter}) that changes an element someone else holds is rolled back the same way, with the holder
+ * in the notice; an edit that goes through gives its user a lease on what it changed ({@link LockEnforcement}).</li>
  * </ul>
  *
  * <p>Limitation: by {@code preAccept} the handler has already answered the client, so a vetoed edit cannot show a
@@ -77,9 +83,15 @@ public final class ConstraintEnforcement {
         /** One recorder per editing context; Sirius processes an editing context's inputs one at a time. */
         private final Map<String, ChangeRecorder> recorders = new ConcurrentHashMap<>();
 
-        public Guard(ConstraintValidator constraints, VetoNotices notices) {
+        private final Editors editors;
+
+        private final LockEnforcement locks;
+
+        public Guard(ConstraintValidator constraints, VetoNotices notices, Editors editors, LockEnforcement locks) {
             this.guard = new ChangeGuard(Objects.requireNonNull(constraints));
             this.notices = Objects.requireNonNull(notices);
+            this.editors = Objects.requireNonNull(editors);
+            this.locks = Objects.requireNonNull(locks);
         }
 
         @Override
@@ -102,7 +114,29 @@ public final class ConstraintEnforcement {
             var change = recorder.endRecording();
             recorder.dispose();
             var edited = ChangeGuard.edited(change); // before check: a rollback reverses the change description
+            var editor = this.editors.of(changeDescription.getInput().id());
+            var project = this.locks.projectOf(editingContext.getId());
+            if (editor.isPresent() && project.isPresent()) {
+                List<LockService.Conflict> held = this.locks.conflicts(project.get(), editor.get(), change);
+                if (!held.isEmpty()) {
+                    change.applyAndReverse();
+                    List<ValidationError> reasons = held.stream()
+                            .map(c -> new ValidationError("LOCKED", c.elementId(), LockService.describe(c), List.of(c.elementId()))).toList();
+                    this.notices.record(resourceSet.get(), edited, reasons);
+                    this.logger.warn("Rejected edit {} by {} in editing context {}: {}", changeDescription.getInput().getClass().getSimpleName(),
+                            editor.get().label(), editingContext.getId(), reasons.stream().map(ValidationError::message).collect(Collectors.joining("; ")));
+                    this.startRecording(editingContext.getId(), resourceSet.get());
+                    return;
+                }
+            }
             List<ValidationError> introduced = this.guard.check(resourceSet.get(), change);
+            if (introduced.isEmpty() && project.isPresent()) {
+                if (editor.isPresent()) {
+                    this.locks.committed(project.get(), editor.get(), change);
+                } else {
+                    this.locks.deletedBySystem(project.get(), change);
+                }
+            }
             // The client already has its answer, so the reason goes onto the edited fields until the next edit.
             this.notices.record(resourceSet.get(), edited, introduced);
             if (!introduced.isEmpty()) {

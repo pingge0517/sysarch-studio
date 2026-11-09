@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- P2 T1: edit locks and edit sessions. On PostgreSQL the DDL is the spec's [COPY] V3__collab.sql (P2 §2.4),
+     verbatim in 007-collab.sql (Liquibase instead of Flyway). H2, which only the tests use, does not know timestamptz:
+     it gets the same tables in its own types. The "every minute" sweep is lock.LockSweeper. -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <changeSet id="sysarch-007-collab" author="sysarch" dbms="postgresql">
+        <sqlFile path="007-collab.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
+    <changeSet id="sysarch-007-collab-h2" author="sysarch" dbms="h2">
+        <comment>The same tables as 007-collab.sql for the tests' H2 (timestamptz → TIMESTAMP WITH TIME ZONE).</comment>
+        <createTable tableName="edit_lock">
+            <column name="id" type="VARCHAR(64)"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="project_id" type="VARCHAR(64)"><constraints nullable="false"/></column>
+            <column name="element_id" type="VARCHAR(64)"><constraints nullable="false"/></column>
+            <column name="owner_user" type="VARCHAR(128)"><constraints nullable="false"/></column>
+            <column name="lease_seconds" type="INTEGER" defaultValueNumeric="90"><constraints nullable="false"/></column>
+            <column name="acquired_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+            <column name="expires_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+        </createTable>
+        <addUniqueConstraint tableName="edit_lock" columnNames="project_id, element_id"/>
+        <createIndex tableName="edit_lock" indexName="idx_lock_expire"><column name="expires_at"/></createIndex>
+        <createTable tableName="edit_session">
+            <column name="id" type="VARCHAR(64)"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="project_id" type="VARCHAR(64)"><constraints nullable="false"/></column>
+            <column name="user_id" type="VARCHAR(128)"><constraints nullable="false"/></column>
+            <column name="opened_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+            <column name="closed_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="client_info" type="VARCHAR(200)"/>
+        </createTable>
+    </changeSet>
+</databaseChangeLog>

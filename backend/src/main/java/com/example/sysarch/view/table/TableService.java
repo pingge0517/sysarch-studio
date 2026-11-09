@@ -2,6 +2,7 @@ package com.example.sysarch.view.table;
 
 import com.example.sysarch.project.ProjectModels;
 import com.example.sysarch.validation.ConstraintValidator;
+import com.example.sysarch.validation.ValidationError;
 import com.example.sysarch.view.api.TableDescription;
 import com.example.sysarch.view.generated.ViewpointRegistry;
 
@@ -39,7 +40,12 @@ public class TableService {
         }
     }
 
-    public record ActionResult(TableActions.Outcome outcome, Matrix matrix) {
+    /** @param locked refused because an element is locked by someone else (423 at the API, P2 T1) */
+    public record ActionResult(TableActions.Outcome outcome, Matrix matrix, boolean locked) {
+
+        public ActionResult(TableActions.Outcome outcome, Matrix matrix) {
+            this(outcome, matrix, false);
+        }
     }
 
     public List<TableDescription> tables() {
@@ -55,16 +61,22 @@ public class TableService {
      * Runs the action; the result carries the refusal reasons, or the matrix after the change.
      *
      * @param remove for a link action: remove the relation instead of adding it
+     * @param editor who clicks (P2 T1): an action that changes an element someone else holds is refused, model unchanged
      */
-    public ActionResult act(String project, String tableId, String actionId, String rowId, String columnId, boolean remove) {
+    public ActionResult act(String project, String tableId, String actionId, String rowId, String columnId, boolean remove,
+            com.example.sysarch.identity.Editors.Editor editor) {
         TableDescription table = this.table(tableId);
         try {
-            return this.models.write(project, resources -> {
+            return this.models.write(project, editor, resources -> {
                 TableActions.Outcome outcome = TableActions.apply(table, resources, actionId, rowId, columnId, remove, this.constraints);
                 return new ProjectModels.Outcome<>(new ActionResult(outcome, MatrixProjector.project(table, resources)), outcome.changed());
             });
         } catch (IllegalArgumentException e) {
             throw new NotFoundException(e.getMessage());
+        } catch (com.example.sysarch.lock.LockService.LockedException e) {
+            List<ValidationError> errors = e.conflicts().stream().map(c -> new ValidationError("LOCKED", c.elementId(),
+                    com.example.sysarch.lock.LockService.describe(c), List.of(c.elementId()))).toList();
+            return new ActionResult(new TableActions.Outcome(false, errors), this.matrix(project, tableId), true);
         }
     }
 
