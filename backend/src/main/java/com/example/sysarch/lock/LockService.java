@@ -126,7 +126,8 @@ public class LockService {
         this(jdbc, transaction, audit, Clock.systemUTC());
     }
 
-    LockService(JdbcClient jdbc, TransactionTemplate transaction, AuditLog audit, Clock clock) {
+    /** With a given clock (tests). */
+    public LockService(JdbcClient jdbc, TransactionTemplate transaction, AuditLog audit, Clock clock) {
         this.jdbc = Objects.requireNonNull(jdbc);
         this.transaction = Objects.requireNonNull(transaction);
         this.audit = Objects.requireNonNull(audit);
@@ -311,7 +312,7 @@ public class LockService {
 
     public static String describe(Conflict conflict) {
         return conflict.elementId() + " 已被 " + conflict.ownerUser() + " 锁定（至 "
-                + conflict.expiresAt().atZoneSameInstant(java.time.ZoneId.systemDefault()).toLocalTime().withNano(0) + "）";
+                + conflict.expiresAt().atZoneSameInstant(java.time.ZoneId.systemDefault()).format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss")) + "）";
     }
 
     private Optional<Lock> held(String lockId) {

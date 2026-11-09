@@ -25,7 +25,8 @@ import org.springframework.web.server.ResponseStatusException;
  * <li>{@code POST /api/v1/projects/{project}/tables/{table}/actions} with {@code {actionId, rowId, columnId}}: 200 and
  * the new matrix, or 422 with {@code errors}; {@code remove: true} undoes a link action (P1 T5) ({@code {code, elementId, message, anchors}}, spec §3.2's shape) and the
  * unchanged matrix when the constraints refuse it; 423 with {@code LOCKED} errors (the holder in the message) when
- * the action would change an element someone else holds (P2 T1).</li>
+ * the action would change an element someone else holds (P2 T1); 429 with {@code SESSIONS_FULL} when the project
+ * has its maximum of editors (P2 T2).</li>
  * </ul>
  */
 @RestController
@@ -77,7 +78,9 @@ public class TableController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
         }
         ActionResponse body = new ActionResponse(result.outcome().changed(), result.outcome().errors(), result.matrix());
-        HttpStatus status = result.locked() ? HttpStatus.LOCKED : result.outcome().errors().isEmpty() ? HttpStatus.OK : HttpStatus.UNPROCESSABLE_ENTITY;
+        HttpStatus status = com.example.sysarch.lock.EditAdmission.LOCKED.equals(result.admission()) ? HttpStatus.LOCKED
+                : com.example.sysarch.lock.EditAdmission.SESSIONS_FULL.equals(result.admission()) ? HttpStatus.TOO_MANY_REQUESTS
+                        : result.outcome().errors().isEmpty() ? HttpStatus.OK : HttpStatus.UNPROCESSABLE_ENTITY;
         return ResponseEntity.status(status).body(body);
     }
 

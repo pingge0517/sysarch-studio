@@ -2,8 +2,9 @@ package com.example.sysarch.project;
 
 import com.example.sysarch.identity.Editors;
 import com.example.sysarch.identity.Editors.Editor;
-import com.example.sysarch.lock.LockEnforcement;
+import com.example.sysarch.lock.EditAdmission;
 import com.example.sysarch.lock.LockService;
+import com.example.sysarch.session.SessionService;
 import com.example.sysarch.model.SysarchPackage;
 import com.example.sysarch.sync.SyncProperties;
 
@@ -40,7 +41,8 @@ import reactor.core.publisher.Sinks;
  *
  * <p>A write on behalf of a user ({@link #write(String, Editor, Function)}, P2 T1) is checked against the element locks
  * inside the task: when it changed an element someone else holds, it is undone there and fails with
- * {@link LockService.LockedException}, so the caller can answer 423 (a veto after the task would come too late, the
+ * {@link LockService.LockedException} (or {@link SessionService.FullException} when the project has its maximum of
+ * editors, P2 T2), so the caller can answer 423 / 429 (a veto after the task would come too late, the
  * answer would already be out). Writes without an editor are system writes; locks do not apply to them.
  */
 @Service
@@ -147,10 +149,10 @@ public class ProjectModels {
     @Service
     public static class Handler implements IEditingContextEventHandler {
 
-        private final LockEnforcement locks;
+        private final EditAdmission admission;
 
-        public Handler(LockEnforcement locks) {
-            this.locks = Objects.requireNonNull(locks);
+        public Handler(EditAdmission admission) {
+            this.admission = Objects.requireNonNull(admission);
         }
 
         @Override
@@ -169,10 +171,11 @@ public class ProjectModels {
                 Outcome<?> outcome = task.task().apply(sysarchResources((IEMFEditingContext) editingContext));
                 if (recorder != null) {
                     var change = recorder.endRecording();
-                    List<LockService.Conflict> held = this.locks.conflicts(task.projectId(), task.editor(), change);
-                    if (!held.isEmpty()) {
+                    try {
+                        this.admission.check(task.projectId(), task.editor(), change, "SysArch API");
+                    } catch (RuntimeException refusal) {
                         change.applyAndReverse();
-                        throw new LockService.LockedException(held);
+                        throw refusal;
                     }
                 }
                 changed = outcome.changed();

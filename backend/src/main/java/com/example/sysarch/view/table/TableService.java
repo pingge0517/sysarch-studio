@@ -40,11 +40,14 @@ public class TableService {
         }
     }
 
-    /** @param locked refused because an element is locked by someone else (423 at the API, P2 T1) */
-    public record ActionResult(TableActions.Outcome outcome, Matrix matrix, boolean locked) {
+    /**
+     * @param admission null, or why the user may not edit now: {@code LOCKED} (an element is someone else's, 423 at the
+     *        API, P2 T1) or {@code SESSIONS_FULL} (the project has its maximum of editors, 429, P2 T2)
+     */
+    public record ActionResult(TableActions.Outcome outcome, Matrix matrix, String admission) {
 
         public ActionResult(TableActions.Outcome outcome, Matrix matrix) {
-            this(outcome, matrix, false);
+            this(outcome, matrix, null);
         }
     }
 
@@ -73,10 +76,9 @@ public class TableService {
             });
         } catch (IllegalArgumentException e) {
             throw new NotFoundException(e.getMessage());
-        } catch (com.example.sysarch.lock.LockService.LockedException e) {
-            List<ValidationError> errors = e.conflicts().stream().map(c -> new ValidationError("LOCKED", c.elementId(),
-                    com.example.sysarch.lock.LockService.describe(c), List.of(c.elementId()))).toList();
-            return new ActionResult(new TableActions.Outcome(false, errors), this.matrix(project, tableId), true);
+        } catch (com.example.sysarch.lock.LockService.LockedException | com.example.sysarch.session.SessionService.FullException refusal) {
+            List<ValidationError> errors = com.example.sysarch.lock.EditAdmission.reasons(refusal);
+            return new ActionResult(new TableActions.Outcome(false, errors), this.matrix(project, tableId), errors.get(0).code());
         }
     }
 

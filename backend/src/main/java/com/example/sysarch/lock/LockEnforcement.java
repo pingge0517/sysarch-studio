@@ -23,8 +23,9 @@ import org.springframework.stereotype.Component;
  * that changes an element someone else holds is rolled back (by the caller) with the holder named; an edit that goes
  * through gives its user a server-managed lease on what it changed.
  *
- * <p>The protected elements of an edit are the existing elements whose own features it changed (so adding a part to
- * a block changes the block) and the elements it deleted. Elements it created are new, nobody can hold them.
+ * <p>The protected elements of an edit are the existing elements whose own features it changed and the elements it
+ * deleted. Adding or removing a child only changes the container's containment list, which does not count (see
+ * {@link #protectedElements}). Elements it created are new, nobody can hold them.
  */
 @Component
 public class LockEnforcement {
@@ -77,11 +78,23 @@ public class LockEnforcement {
         return project;
     }
 
-    /** Existing elements the edit changed, and elements it deleted, by element id. */
+    /**
+     * Existing elements the edit changed, and elements it deleted, by element id. A change of a containment list only
+     * (a part added to or removed from a block) does not count as changing the container: otherwise whoever adds a
+     * part to the system block would hold it for 90 s and nobody else could add one (found by the P2 T2 load test,
+     * where every user creates under the same root). Deleting a child still needs the child's lock.
+     */
     static Set<String> protectedElements(ChangeDescription change) {
         Set<EObject> created = Set.copyOf(change.getObjectsToDetach());
         Set<String> ids = new LinkedHashSet<>();
-        change.getObjectChanges().keySet().stream().filter(e -> !created.contains(e)).forEach(e -> id(e).ifPresent(ids::add));
+        change.getObjectChanges().forEach(entry -> {
+            EObject element = entry.getKey();
+            boolean ownContent = entry.getValue().stream()
+                    .anyMatch(f -> !(f.getFeature() instanceof org.eclipse.emf.ecore.EReference reference && reference.isContainment()));
+            if (!created.contains(element) && ownContent) {
+                id(element).ifPresent(ids::add);
+            }
+        });
         ids.addAll(deletedElements(change));
         return ids;
     }

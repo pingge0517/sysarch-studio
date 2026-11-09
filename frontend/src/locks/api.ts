@@ -69,3 +69,17 @@ export async function releaseLock(id: string, force = false): Promise<void> {
     await failure(response);
   }
 }
+
+export interface Session {
+  id: string;
+  userId: string;
+  openedAt: string;
+  lastActiveAt: string;
+  clientInfo: string | null;
+}
+
+/** Who is editing the project (P2 T2): open sessions and the limit. */
+export async function listSessions(project: string): Promise<{ limit: number; sessions: Session[] }> {
+  const response = await fetch(`/api/v1/sessions?projectId=${encodeURIComponent(project)}`);
+  return response.ok ? response.json() : failure(response);
+}

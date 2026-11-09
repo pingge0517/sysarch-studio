@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- P2 T2: a session closes after 30 minutes without an edit (spec P2 T2 step 1), which needs the time of its last
+     edit; the spec's edit_session (007, verbatim) has none. Additive: one column and an index for counting the open
+     sessions of a project. -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <changeSet id="sysarch-009-edit-session-activity" author="sysarch">
+        <addColumn tableName="edit_session">
+            <column name="last_active_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <createIndex tableName="edit_session" indexName="idx_session_open">
+            <column name="project_id"/>
+            <column name="closed_at"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>

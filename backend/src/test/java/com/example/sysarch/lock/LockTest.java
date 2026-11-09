@@ -265,17 +265,41 @@ class LockTest {
         assertEquals(this.clock.instant().plusSeconds(300), this.locks.list(PROJECT).get(0).expiresAt().toInstant());
     }
 
-    /** Adding a part changes its block; the new part itself is new and protected by nobody. */
+    /**
+     * Adding a part only changes its block's containment list: that neither needs nor takes the block's lock, so
+     * several people can add parts to the same system block (found by the T2 load test). The block's own features stay
+     * protected.
+     */
     @Test
-    void creatingUnderABlockChangesTheBlockOnly() {
+    void addingAPartToABlockDoesNotNeedTheBlocksLock() {
         Fixture model = new Fixture();
+        this.locks.acquire(PROJECT, List.of("PD-001"), "alice", null);
         ChangeDescription add = model.record(() -> {
             Part part = SysarchFactory.eINSTANCE.createPart();
             part.setId("PT-NEW");
             part.setName("新部件");
             model.block("PD-001").getOwnedParts().add(part);
         });
-        assertEquals(java.util.Set.of("PD-001"), LockEnforcement.protectedElements(add));
+
+        assertEquals(java.util.Set.of(), LockEnforcement.protectedElements(add));
+        assertEquals(List.of(), this.enforcement.conflicts(PROJECT, new Editor("bob"), add));
+        this.enforcement.committed(PROJECT, new Editor("bob"), add);
+        assertEquals(List.of("PD-001:alice"), this.locks.list(PROJECT).stream().map(l -> l.elementId() + ":" + l.ownerUser()).toList(), "bob took no lease");
+
+        ChangeDescription rename = model.record(() -> model.block("PD-001").setName("域控制器 v2"));
+        assertEquals(1, this.enforcement.conflicts(PROJECT, new Editor("bob"), rename).size(), "the block's own features are alice's");
+    }
+
+    /** Removing a part needs the part's lock, not its block's. */
+    @Test
+    void removingAPartNeedsThePartsLock() {
+        Fixture model = new Fixture();
+        this.locks.acquire(PROJECT, List.of("PD-001"), "alice", null);
+        Part fusion = model.block("PD-001").getOwnedParts().get(0);
+        ChangeDescription remove = model.record(() -> EcoreUtil.delete(fusion, true));
+        assertTrue(LockEnforcement.protectedElements(remove).contains(fusion.getId()));
+        assertTrue(LockEnforcement.protectedElements(remove).stream().noneMatch("PD-001"::equals));
+        assertEquals(List.of(), this.enforcement.conflicts(PROJECT, new Editor("bob"), remove));
     }
 
     /** A deleted element is protected by its lock, and its lock ends with it (P2 §2.3). */

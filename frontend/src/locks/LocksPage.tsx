@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Conflict, Lock } from './api';
-import { LockedError, acquireLocks, listLocks, releaseLock, renewLock } from './api';
+import type { Conflict, Lock, Session } from './api';
+import { LockedError, acquireLocks, listLocks, listSessions, releaseLock, renewLock } from './api';
 import type { Held } from './leaseKeeper';
 import { LeaseKeeper } from './leaseKeeper';
 
@@ -14,13 +14,15 @@ function time(iso: string): string {
  * Edit locks (P2 T1 step 4): take locks on elements before a longer edit, keep them with the 45 s heartbeat while
  * this page is open, see who holds what. A lock this page lost (expired, or released by an administrator) turns the
  * element read-only here with the reason. Editing in Sirius Web takes and renews a 90 s lease by itself; this page
- * is for holding elements longer and for seeing the holders.
+ * is for holding elements longer and for seeing the holders. It also lists who is editing the project (open edit
+ * sessions, P2 T2) against the limit.
  */
 export function LocksPage({ project, user }: { project: string; user: string }) {
   const [input, setInput] = useState('');
   const [lease, setLease] = useState(90);
   const [held, setHeld] = useState<Held[]>([]);
   const [all, setAll] = useState<Lock[]>([]);
+  const [editors, setEditors] = useState<{ limit: number; sessions: Session[] } | null>(null);
   const [conflicts, setConflicts] = useState<Conflict[]>([]);
   const [error, setError] = useState<string | null>(null);
   const keeper = useRef<LeaseKeeper | null>(null);
@@ -33,6 +35,7 @@ export function LocksPage({ project, user }: { project: string; user: string }) 
   const refresh = useCallback(async () => {
     try {
       setAll(await listLocks(project));
+      setEditors(await listSessions(project));
     } catch (e) {
       setError((e as Error).message);
     }
@@ -73,66 +76,91 @@ export function LocksPage({ project, user }: { project: string; user: string }) 
 
   const others = all.filter((l) => l.ownerUser !== user);
 
-  if (!user) {
-    return <p className="hint">先在右上角填写你的名字：锁记在名字下面（T8 换成 Polarion 登录）。</p>;
-  }
-
   return (
     <div className="locks">
-      <section>
-        <h2>申请锁</h2>
-        <p className="hint">元素 id，用空格或逗号分隔，一次最多 50 个；全部拿到或全部不拿。页面开着就每 45 秒续租一次。</p>
-        <div className="row">
-          <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="PD-001 PD-002" aria-label="元素 id" />
-          <label>
-            租期
-            <select value={lease} onChange={(e) => setLease(Number(e.target.value))}>
-              {[30, 90, 180, 300].map((s) => (
-                <option key={s} value={s}>
-                  {s} 秒
-                </option>
-              ))}
-            </select>
-          </label>
-          <button type="button" onClick={() => void acquire()} disabled={!input.trim()}>
-            申请
-          </button>
-        </div>
-        {conflicts.length > 0 && (
-          <div className="notice refusal" role="alert">
-            <strong>未拿到锁（一个也没拿）：</strong>
-            {conflicts.map((c) => `${c.elementId} 已被 ${c.ownerUser} 锁定（至 ${time(c.expiresAt)}）`).join('；')}
-          </div>
-        )}
-        {error && (
-          <div className="notice error" role="alert">
-            {error}
-          </div>
-        )}
-      </section>
+      {user ? (
+        <>
+          <section>
+            <h2>申请锁</h2>
+            <p className="hint">元素 id，用空格或逗号分隔，一次最多 50 个；全部拿到或全部不拿。页面开着就每 45 秒续租一次。</p>
+            <div className="row">
+              <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="PD-001 PD-002" aria-label="元素 id" />
+              <label>
+                租期
+                <select value={lease} onChange={(e) => setLease(Number(e.target.value))}>
+                  {[30, 90, 180, 300].map((s) => (
+                    <option key={s} value={s}>
+                      {s} 秒
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button type="button" onClick={() => void acquire()} disabled={!input.trim()}>
+                申请
+              </button>
+            </div>
+            {conflicts.length > 0 && (
+              <div className="notice refusal" role="alert">
+                <strong>未拿到锁（一个也没拿）：</strong>
+                {conflicts.map((c) => `${c.elementId} 已被 ${c.ownerUser} 锁定（至 ${time(c.expiresAt)}）`).join('；')}
+              </div>
+            )}
+            {error && (
+              <div className="notice error" role="alert">
+                {error}
+              </div>
+            )}
+          </section>
+    
+          <section>
+            <h2>我的锁（{user}）</h2>
+            {held.length === 0 && <p className="hint">本页没有持有的锁。</p>}
+            <table className="list">
+              <tbody>
+                {held.map((h) => (
+                  <tr key={h.lock.elementId} className={h.status === 'lost' ? 'lost' : undefined}>
+                    <td>{h.lock.elementId}</td>
+                    <td>
+                      {h.status === 'held' ? `持有，至 ${time(h.lock.expiresAt)}` : `已失去，只读：${h.reason ?? ''}`}
+                    </td>
+                    <td>
+                      {h.status === 'held' ? (
+                        <button type="button" onClick={() => void release(h.lock)}>
+                          释放
+                        </button>
+                      ) : (
+                        <button type="button" onClick={() => keeper.current?.forget(h.lock.elementId)}>
+                          移除
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        </>
+      ) : (
+        <p className="hint">填写右上角的名字后才能申请锁（锁记在名字下面；T8 换成 Polarion 登录）。下面是当前在编辑的人和他们持有的锁。</p>
+      )}
 
       <section>
-        <h2>我的锁（{user}）</h2>
-        {held.length === 0 && <p className="hint">本页没有持有的锁。</p>}
+        <h2>
+          正在编辑的人{editors ? `（${editors.sessions.length}/${editors.limit}）` : ''}
+        </h2>
+        {editors && editors.sessions.length === 0 && <p className="hint">没有人在编辑。</p>}
+        {editors && editors.sessions.length >= editors.limit && (
+          <div className="notice refusal">当前项目编辑人数已满，新加入的人暂时不能修改模型（30 分钟无修改的会话会自动关闭）。</div>
+        )}
         <table className="list">
           <tbody>
-            {held.map((h) => (
-              <tr key={h.lock.elementId} className={h.status === 'lost' ? 'lost' : undefined}>
-                <td>{h.lock.elementId}</td>
+            {editors?.sessions.map((s) => (
+              <tr key={s.id}>
+                <td>{s.userId}</td>
                 <td>
-                  {h.status === 'held' ? `持有，至 ${time(h.lock.expiresAt)}` : `已失去，只读：${h.reason ?? ''}`}
+                  {time(s.openedAt)} 开始，最近修改 {time(s.lastActiveAt)}
                 </td>
-                <td>
-                  {h.status === 'held' ? (
-                    <button type="button" onClick={() => void release(h.lock)}>
-                      释放
-                    </button>
-                  ) : (
-                    <button type="button" onClick={() => keeper.current?.forget(h.lock.elementId)}>
-                      移除
-                    </button>
-                  )}
-                </td>
+                <td>{s.clientInfo ?? ''}</td>
               </tr>
             ))}
           </tbody>
