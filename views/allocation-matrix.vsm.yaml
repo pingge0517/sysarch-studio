@@ -1,0 +1,35 @@
+vsm: "1.0"
+viewpoint:
+  id: "sysarch.core"
+  label: "系统架构建模"
+  metamodelUri: "http://example.com/sysarch/1.0"
+  priority: 10
+
+representations:
+  - id: "allocation-matrix"
+    label: "分配矩阵（系统→逻辑→物理）"
+    kind: "table"
+    domainClass: "sysarch:Allocate"
+    rows:
+      class: "sysarch:ArchElement"
+      filter: "layer == 'SYSTEM' or layer == 'LOGICAL'"
+      labelExpression: "{name}"
+      groupBy: "layer"
+    columns:
+      class: "sysarch:ArchElement"
+      filter: "layer == 'LOGICAL' or layer == 'PHYSICAL'"
+      labelExpression: "{name}"
+      groupBy: "layer"
+    cells:
+      existsExpression: "from == row and to == column"
+      markSymbol: "●"
+      color: "#1C3D2E"
+    actions:
+      - id: "createAllocate"
+        label: "建立分配"
+        action: "create-link"
+        targetClass: "sysarch:Allocate"
+        validateOnCreate: true
+      - id: "deleteAllocate"
+        label: "取消分配"
+        action: "delete-link"

@@ -99,7 +99,7 @@ class ValidationMatrixTest {
         List<ValidationError> errors = validator.validate(allocate);
 
         assertEquals(List.of("LayerAdjacentOnly"), codes(errors));
-        assertEquals("跨层跳过：LA → EPBS", errors.get(0).message());
+        assertEquals("跨层跳过：LA → EPBS（跳过 PA）", errors.get(0).message());
         assertEquals(List.of(allocate.getFrom().getId(), allocate.getTo().getId()), errors.get(0).anchors());
     }
 

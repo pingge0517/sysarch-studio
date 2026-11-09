@@ -38,15 +38,18 @@ final class JavaGenerator {
         this.freemarker.setFallbackOnNullLoopVariable(false);
     }
 
-    /** File name to content, in a stable order: one provider per diagram, then the registry. */
+    /** File name to content, in a stable order: one provider per diagram, one per table, then the registry. */
     Map<String, String> generate(ViewModel model) throws IOException, TemplateException {
         Map<String, String> files = new LinkedHashMap<>();
         for (ViewModel.Diagram diagram : model.diagrams()) {
             files.put(diagram.className() + ".java", this.render("DiagramDescriptionProvider.ftl", Map.of("package", PACKAGE, "d", diagram)));
         }
+        for (ViewModel.Table table : model.tables()) {
+            files.put(table.className() + ".java", this.render("TableDescriptionProvider.ftl", Map.of("package", PACKAGE, "t", table)));
+        }
         List<ViewModel.Diagram> diagrams = model.diagrams();
         files.put("ViewpointRegistry.java", this.render("ViewpointRegistry.ftl",
-                Map.of("package", PACKAGE, "viewpoints", model.viewpoints(), "diagrams", diagrams)));
+                Map.of("package", PACKAGE, "viewpoints", model.viewpoints(), "diagrams", diagrams, "tables", model.tables())));
         return files;
     }
 

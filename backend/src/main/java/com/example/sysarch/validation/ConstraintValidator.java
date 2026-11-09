@@ -204,12 +204,18 @@ public final class ConstraintValidator implements AutoCloseable {
         Layer to = allocate.getTo() == null ? null : allocate.getTo().getLayer();
         return switch (code) {
             case "LayerAdjacentOnly" -> from != null && to != null && to.getValue() > from.getValue() + 1
-                    ? "跨层跳过：" + abbreviation(from) + " → " + abbreviation(to)
+                    ? "跨层跳过：" + abbreviation(from) + " → " + abbreviation(to) + "（跳过 " + skipped(from, to) + "）"
                     : "分配只能指向相邻的下一层：" + abbreviation(from) + " → " + abbreviation(to);
             case "NoSelfAllocate" -> "不能把元素分配给它自己";
             case "NameNotEmpty" -> "名称不能为空";
             default -> "违反约束 " + code;
         };
+    }
+
+    /** The layers strictly between {@code from} and {@code to}, e.g. "LA" or "SA、LA" (P1-AC-2: "跳过 LA"). */
+    static String skipped(Layer from, Layer to) {
+        return java.util.Arrays.stream(Layer.values()).filter(l -> l.getValue() > from.getValue() && l.getValue() < to.getValue())
+                .map(ConstraintValidator::abbreviation).collect(java.util.stream.Collectors.joining("、"));
     }
 
     /** Arcadia layer abbreviations used in messages. */

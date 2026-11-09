@@ -1,0 +1,32 @@
+vsm: "1.0"
+viewpoint:
+  id: "sysarch.core"
+  label: "系统架构建模"
+  metamodelUri: "http://example.com/sysarch/1.0"
+  priority: 10
+
+representations:
+  - id: "requirement-trace"
+    label: "需求追溯矩阵"
+    kind: "table"
+    domainClass: "sysarch:Requirement"
+    rows:
+      class: "sysarch:Requirement"
+      labelExpression: "{reqId} {name}"
+    columns:
+      class: "sysarch:PartDefinition"
+      filter: "layer == 'SYSTEM' or layer == 'LOGICAL' or layer == 'PHYSICAL'"
+      labelExpression: "{name}"
+    cells:
+      existsExpression: "self.satisfiedBy->includes(column) or self.verifiedBy->includes(column)"
+      markSymbol: "○"
+      color: "#758092"
+    actions:
+      - id: "satisfy"
+        label: "建立满足关系"
+        action: "link"
+        feature: "satisfiedBy"
+      - id: "verify"
+        label: "建立验证关系"
+        action: "link"
+        feature: "verifiedBy"

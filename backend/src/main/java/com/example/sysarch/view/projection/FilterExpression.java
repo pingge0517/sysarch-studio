@@ -28,7 +28,7 @@ import org.eclipse.emf.ecore.EStructuralFeature;
  * and anything else by its text; on a many-valued feature ({@code stereotypes}) it is true when one of the values
  * matches. An element that does not have the feature counts as false (and as not equal).
  */
-final class FilterExpression implements Predicate<EObject> {
+public final class FilterExpression implements Predicate<EObject> {
 
     private static final Pattern TOKEN = Pattern.compile("\\s*(\\(|\\)|==|!=|'[^']*'|[A-Za-z_][A-Za-z0-9_]*)");
 
@@ -46,7 +46,7 @@ final class FilterExpression implements Predicate<EObject> {
         }
     }
 
-    static FilterExpression parse(String expression) {
+    public static FilterExpression parse(String expression) {
         return new FilterExpression(expression);
     }
 

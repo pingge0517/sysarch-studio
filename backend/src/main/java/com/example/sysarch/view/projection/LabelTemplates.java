@@ -16,14 +16,14 @@ import org.eclipse.emf.ecore.EStructuralFeature;
  * <p>Values: missing or null gives an empty string, enums give their literal, referenced elements give their
  * {@code name}, and many-valued features are joined with {@code ", "}.
  */
-final class LabelTemplates {
+public final class LabelTemplates {
 
     private static final Pattern PLACEHOLDER = Pattern.compile("\\{([^{}]*)}");
 
     private LabelTemplates() {
     }
 
-    static String render(String template, EObject element) {
+    public static String render(String template, EObject element) {
         if (template == null) {
             return null;
         }

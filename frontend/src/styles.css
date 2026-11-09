@@ -1,0 +1,265 @@
+:root {
+  --ink: #1c3d2e;
+  --ink-soft: #778b82;
+  --paper: #ffffff;
+  --wash: #f2f5f3;
+  --line: #d9e1dd;
+  --text: #1f2a26;
+  --warn-bg: #fdecea;
+  --warn: #b3261e;
+  font-family: system-ui, -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  color: var(--text);
+  background: var(--paper);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.bar h1 {
+  font-size: 16px;
+  margin: 0 8px 0 0;
+}
+
+.bar label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.bar select {
+  font: inherit;
+  padding: 2px 4px;
+  max-width: 280px;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.timing {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+}
+
+.notice.error,
+.notice.refusal {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+
+.notice button {
+  margin-left: auto;
+  font: inherit;
+}
+
+.content {
+  flex: 1;
+  min-height: 0;
+  padding: 12px 16px 16px;
+}
+
+.hint {
+  color: var(--ink-soft);
+}
+
+/* ---- the matrix ---- */
+
+.matrix {
+  display: grid;
+  height: 100%;
+  border: 1px solid var(--line);
+  position: relative;
+  font-size: 13px;
+}
+
+.corner {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 4px;
+  padding: 8px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: var(--wash);
+}
+
+.corner .counts {
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.column-headers,
+.row-headers {
+  overflow: hidden;
+  position: relative;
+  background: var(--wash);
+}
+
+.column-headers {
+  border-bottom: 1px solid var(--line);
+}
+
+.row-headers {
+  border-right: 1px solid var(--line);
+}
+
+.strip {
+  position: relative;
+}
+
+.group,
+.header {
+  position: absolute;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  background: #e6ede9;
+}
+
+/* Horizontal and wrapping: a one-row group is only 32 px high, too short for a vertical label. */
+.row-group {
+  left: 0;
+  padding: 0 6px;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.column-group {
+  top: 0;
+}
+
+.header {
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.row-header {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+}
+
+.column-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 6px 0;
+}
+
+.column-header span {
+  writing-mode: vertical-rl;
+  max-height: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header.crosshair {
+  background: #dfe9e4;
+}
+
+.header.flash {
+  background: var(--warn-bg);
+  color: var(--warn);
+  font-weight: 600;
+}
+
+.body {
+  overflow: auto;
+  position: relative;
+}
+
+.cell {
+  position: absolute;
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.cell.crosshair {
+  background: #f4f8f6;
+}
+
+.cell:hover {
+  outline: 2px solid var(--ink-soft);
+  outline-offset: -2px;
+}
+
+.cell.busy {
+  opacity: 0.4;
+  cursor: progress;
+}
+
+.menu {
+  position: fixed;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.menu button {
+  font: inherit;
+  text-align: left;
+  padding: 8px 12px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.menu button:hover {
+  background: var(--wash);
+}
+
+.menu .cancel {
+  color: var(--ink-soft);
+}

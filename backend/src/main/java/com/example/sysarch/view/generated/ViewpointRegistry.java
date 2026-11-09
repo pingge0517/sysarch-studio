@@ -4,6 +4,8 @@ package com.example.sysarch.view.generated;
 
 import com.example.sysarch.view.api.DiagramDescription;
 import com.example.sysarch.view.api.IDiagramDescriptionProvider;
+import com.example.sysarch.view.api.ITableDescriptionProvider;
+import com.example.sysarch.view.api.TableDescription;
 import com.example.sysarch.view.api.Viewpoint;
 import com.example.sysarch.view.api.Viewpoint.Representation;
 import com.example.sysarch.view.api.Viewpoint.RepresentationKind;
@@ -17,14 +19,14 @@ import java.util.Optional;
 import org.springframework.stereotype.Component;
 
 /**
- * All viewpoints declared in views/*.vsm.yaml, and the diagram provider of each representation.
- * Table representations are placeholders in P0: they are listed but have no provider (spec §4.2).
+ * All viewpoints declared in views/*.vsm.yaml, and the provider of each representation (diagram or table, P1).
  */
 @Component
 public class ViewpointRegistry {
 
     public static final List<Viewpoint> VIEWPOINTS = List.of(
         new Viewpoint("sysarch.core", "系统架构建模", "http://example.com/sysarch/1.0", 10, List.of(
+            new Representation("allocation-matrix", "分配矩阵（系统→逻辑→物理）", RepresentationKind.TABLE),
             new Representation("la-architecture", "逻辑架构（LA）", RepresentationKind.DIAGRAM),
             new Representation("pa-architecture", "物理架构（PA）", RepresentationKind.DIAGRAM),
             new Representation("sa-function-chain", "系统功能链（SA）", RepresentationKind.DIAGRAM),
@@ -35,7 +37,9 @@ public class ViewpointRegistry {
 
     private final Map<String, IDiagramDescriptionProvider> providers;
 
-    public ViewpointRegistry(LaArchitectureDiagramDescriptionProvider laArchitectureProvider, PaArchitectureDiagramDescriptionProvider paArchitectureProvider, SaFunctionChainDiagramDescriptionProvider saFunctionChainProvider, BddDiagramDescriptionProvider bddProvider, IbdDiagramDescriptionProvider ibdProvider) {
+    private final Map<String, ITableDescriptionProvider> tableProviders;
+
+    public ViewpointRegistry(LaArchitectureDiagramDescriptionProvider laArchitectureProvider, PaArchitectureDiagramDescriptionProvider paArchitectureProvider, SaFunctionChainDiagramDescriptionProvider saFunctionChainProvider, BddDiagramDescriptionProvider bddProvider, IbdDiagramDescriptionProvider ibdProvider, AllocationMatrixTableDescriptionProvider allocationMatrixTableProvider) {
         Map<String, IDiagramDescriptionProvider> byId = new LinkedHashMap<>();
         byId.put("la-architecture", laArchitectureProvider);
         byId.put("pa-architecture", paArchitectureProvider);
@@ -43,6 +47,9 @@ public class ViewpointRegistry {
         byId.put("bdd", bddProvider);
         byId.put("ibd", ibdProvider);
         this.providers = Collections.unmodifiableMap(byId);
+        Map<String, ITableDescriptionProvider> tablesById = new LinkedHashMap<>();
+        tablesById.put("allocation-matrix", allocationMatrixTableProvider);
+        this.tableProviders = Collections.unmodifiableMap(tablesById);
     }
 
     public List<Viewpoint> viewpoints() {
@@ -56,5 +63,14 @@ public class ViewpointRegistry {
 
     public Optional<DiagramDescription> diagramDescription(String representationId) {
         return Optional.ofNullable(this.providers.get(representationId)).map(IDiagramDescriptionProvider::build);
+    }
+
+    /** Table descriptions in declaration order (P1). */
+    public List<TableDescription> tableDescriptions() {
+        return this.tableProviders.values().stream().map(ITableDescriptionProvider::build).toList();
+    }
+
+    public Optional<TableDescription> tableDescription(String representationId) {
+        return Optional.ofNullable(this.tableProviders.get(representationId)).map(ITableDescriptionProvider::build);
     }
 }

@@ -48,7 +48,7 @@
     "representation": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "label", "kind", "synchronization"],
+      "required": ["id", "label", "kind"],
       "properties": {
         "id": { "$ref": "#/$defs/representationId" },
         "label": { "type": "string" },
@@ -91,10 +91,70 @@
         },
         "nodeStyles": { "type": "array", "items": { "$ref": "#/$defs/nodeStyle" } },
         "edgeStyles": { "type": "array", "items": { "$ref": "#/$defs/edgeStyle" } },
-        "tools": { "type": "array", "items": { "$ref": "#/$defs/tool" } }
+        "tools": { "type": "array", "items": { "$ref": "#/$defs/tool" } },
+        "rows": { "$ref": "#/$defs/axis" },
+        "columns": { "$ref": "#/$defs/axis" },
+        "cells": { "$ref": "#/$defs/cells" },
+        "actions": { "type": "array", "items": { "$ref": "#/$defs/tableAction" } }
       },
       "if": { "properties": { "kind": { "const": "diagram" } } },
-      "then": { "required": ["domainClass", "nodeStyles"] }
+      "then": {
+        "required": ["domainClass", "nodeStyles", "synchronization"],
+        "properties": { "rows": false, "columns": false, "cells": false, "actions": false }
+      },
+      "else": {
+        "required": ["domainClass", "rows", "columns", "cells"],
+        "properties": { "synchronization": false, "refresh": false, "autoExpand": false, "filters": false, "nodeStyles": false, "edgeStyles": false, "tools": false }
+      }
+    },
+    "axis": {
+      "description": "P1 table rows or columns: every element of class (in the model) that passes filter, labelled, optionally grouped",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["class", "labelExpression"],
+      "properties": {
+        "class": { "$ref": "#/$defs/classRef" },
+        "filter": { "type": "string", "minLength": 1 },
+        "labelExpression": { "$ref": "#/$defs/template" },
+        "groupBy": { "$ref": "#/$defs/featureName" }
+      }
+    },
+    "cells": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["existsExpression", "markSymbol"],
+      "properties": {
+        "existsExpression": { "type": "string", "minLength": 1 },
+        "markSymbol": { "type": "string", "minLength": 1 },
+        "color": { "$ref": "#/$defs/color" }
+      }
+    },
+    "tableAction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "action"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "label": { "type": "string" },
+        "action": { "enum": ["create-link", "delete-link", "link"] },
+        "targetClass": { "$ref": "#/$defs/classRef" },
+        "validateOnCreate": { "type": "boolean" },
+        "feature": { "$ref": "#/$defs/featureName" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "action": { "const": "create-link" } } },
+          "then": { "required": ["targetClass", "validateOnCreate"], "properties": { "feature": false } }
+        },
+        {
+          "if": { "properties": { "action": { "const": "delete-link" } } },
+          "then": { "properties": { "targetClass": false, "validateOnCreate": false, "feature": false } }
+        },
+        {
+          "if": { "properties": { "action": { "const": "link" } } },
+          "then": { "required": ["feature"], "properties": { "targetClass": false, "validateOnCreate": false } }
+        }
+      ]
     },
     "nodeStyle": {
       "type": "object",

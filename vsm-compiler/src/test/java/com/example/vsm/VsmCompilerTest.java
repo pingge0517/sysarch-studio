@@ -50,6 +50,13 @@ class VsmCompilerTest {
 
     private static final String LA_PARAMS = "views/_templates/la-architecture.params.yaml";
 
+    private static final String MATRIX = "views/allocation-matrix.vsm.yaml";
+
+    private static final String TRACE = "views/requirement-trace.vsm.yaml";
+
+    /** sha256 of the spec's [COPY] block P1 §3.3. */
+    private static final String SPEC_MATRIX_SHA256 = "4dc13a4c3388265e47ddf99f3f1a986af6748dc2930f6f850f214a656a43f8d6";
+
     /** sha256 of the spec's [COPY] block P1 §3.2: the SA view must stay verbatim although a template now produces it. */
     private static final String SPEC_SA_SHA256 = "810dba23575cea7c942a8d2b098f2b108781ca51d638295ffeaca2a379134e80";
 
@@ -76,7 +83,8 @@ class VsmCompilerTest {
     void repositoryViewsCompileToProvidersAndRegistry() throws IOException {
         Result result = this.compile(this.output("out"));
         assertEquals(VsmCompiler.OK, result.exitCode(), result.err());
-        assertEquals(List.of("BddDiagramDescriptionProvider.java", "IbdDiagramDescriptionProvider.java", "LaArchitectureDiagramDescriptionProvider.java",
+        assertEquals(List.of("AllocationMatrixTableDescriptionProvider.java", "BddDiagramDescriptionProvider.java", "IbdDiagramDescriptionProvider.java",
+                "LaArchitectureDiagramDescriptionProvider.java",
                 "PaArchitectureDiagramDescriptionProvider.java", "SaFunctionChainDiagramDescriptionProvider.java", "ViewpointRegistry.java"),
                 fileNames(this.output("out")));
         String bdd = Files.readString(this.output("out").resolve("BddDiagramDescriptionProvider.java"));
@@ -190,7 +198,7 @@ class VsmCompilerTest {
     @Test
     void conflictingViewpointDeclarationFails() throws IOException {
         this.edit(IBD, "  label: \"系统架构建模\"", "  label: \"另一个视点\"");
-        this.assertFails(IBD + ":3 viewpoint 'sysarch.core' conflicts with its declaration at " + LA + ":3"); // first file in name order
+        this.assertFails(IBD + ":3 viewpoint 'sysarch.core' conflicts with its declaration at views/"); // whichever file declares it first
     }
 
     @Test
@@ -332,6 +340,76 @@ class VsmCompilerTest {
     void templateLogicFails() throws IOException {
         this.edit(TEMPLATE, "        shape: \"rectangle\"", "        shape: \"${layer == 'SYSTEM' ? 'rectangle' : 'square'}\"");
         this.assertFails(TEMPLATE + ":36 '${layer == 'SYSTEM' ? 'rectangle' : 'square'}' is not a parameter");
+    }
+
+    // =========================================================== P1 T4: tables
+
+    @Test
+    void theAllocationMatrixIsVerbatimAndCompilesToATableProvider() throws IOException {
+        assertEquals(SPEC_MATRIX_SHA256, sha256File(REPO.resolve(MATRIX)));
+        assertEquals(VsmCompiler.OK, this.compile(this.output("out")).exitCode());
+        String table = Files.readString(this.output("out").resolve("AllocationMatrixTableDescriptionProvider.java"));
+        assertTrue(table.contains(".cells(CellCondition.and(CellCondition.equalTo(\"from\", CellCondition.Side.ROW), "
+                + "CellCondition.equalTo(\"to\", CellCondition.Side.COLUMN)),"), table);
+        assertTrue(table.contains(".rows(Axis.of(\"sysarch::ArchElement\", \"{name}\").filter(\"layer == 'SYSTEM' or layer == 'LOGICAL'\").groupBy(\"layer\"))"), table);
+        assertTrue(table.contains(".addAction(TableAction.createLink(\"createAllocate\", \"建立分配\", \"sysarch::Allocate\", true))"), table);
+        String registry = Files.readString(this.output("out").resolve("ViewpointRegistry.java"));
+        assertTrue(registry.contains("tablesById.put(\"allocation-matrix\", allocationMatrixTableProvider);"), registry);
+    }
+
+    /** T5's [COPY] view uses the other half of the cell grammar (self, ->includes, link actions); it must compile as is. */
+    @Test
+    void theRequirementTraceFromTheSpecCompiles() throws IOException {
+        Files.copy(REPO.resolve("vsm-compiler/src/test/resources/requirement-trace.spec.vsm.yaml"), this.workspace.resolve(TRACE));
+        Result result = this.compile(this.output("out"));
+        assertEquals(VsmCompiler.OK, result.exitCode(), result.err());
+        String trace = Files.readString(this.output("out").resolve("RequirementTraceTableDescriptionProvider.java"));
+        assertTrue(trace.contains("CellCondition.or(CellCondition.includes(\"satisfiedBy\", CellCondition.Side.COLUMN), "
+                + "CellCondition.includes(\"verifiedBy\", CellCondition.Side.COLUMN))"), trace);
+        assertTrue(trace.contains(".addAction(TableAction.link(\"satisfy\", \"建立满足关系\", \"satisfiedBy\"))"), trace);
+    }
+
+    @Test
+    void anUnknownFeatureInACellExpressionFails() throws IOException {
+        this.edit(MATRIX, "from == row and to == column", "form == row and to == column");
+        this.assertFails(MATRIX + ":24 unknown feature 'form' on sysarch:Allocate");
+    }
+
+    @Test
+    void aMalformedCellExpressionFails() throws IOException {
+        this.edit(MATRIX, "from == row and to == column", "from = row");
+        this.assertFails(MATRIX + ":24 invalid existsExpression");
+    }
+
+    /** Spec P1 §3.3: the table must go through the constraints like the canvas. */
+    @Test
+    void createLinkWithoutValidationFails() throws IOException {
+        this.edit(MATRIX, "        validateOnCreate: true", "        validateOnCreate: false");
+        this.assertFails(MATRIX + ":32 create-link 'createAllocate' must set validateOnCreate: true");
+    }
+
+    @Test
+    void createLinkNeedsAnExpressionItCanSatisfy() throws IOException {
+        this.edit(MATRIX, "from == row and to == column", "from == row or to == column");
+        this.assertFails(MATRIX + ":30 create-link 'createAllocate' can only create what existsExpression describes");
+    }
+
+    @Test
+    void groupingByAnythingButLayerFails() throws IOException {
+        this.edit(MATRIX, "      groupBy: \"layer\"\n    columns:", "      groupBy: \"name\"\n    columns:");
+        this.assertFails(MATRIX + ":17 groupBy 'name' is not supported");
+    }
+
+    @Test
+    void axisFiltersUseTheWhitelist() throws IOException {
+        this.edit(MATRIX, "filter: \"layer == 'SYSTEM' or layer == 'LOGICAL'\"", "filter: \"name == 'x'\"");
+        this.assertFails(MATRIX + ":15 invalid filter expression \"name == 'x'\": 'name' is not allowed");
+    }
+
+    @Test
+    void diagramFieldsAreNotAllowedOnTables() throws IOException {
+        this.edit(MATRIX, "    kind: \"table\"\n", "    kind: \"table\"\n    synchronization: \"auto\"\n");
+        this.assertFails(MATRIX + ":12 schema");
     }
 
     private void assertFails(String expectedLinePrefix) throws IOException {

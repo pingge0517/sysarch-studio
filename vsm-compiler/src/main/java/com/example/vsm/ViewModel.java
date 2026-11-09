@@ -16,7 +16,7 @@ public final class ViewModel {
     public record Viewpoint(String id, String label, String metamodelUri, int priority, List<RepresentationRef> representations) {
     }
 
-    /** @param className generated provider class; null for a table placeholder */
+    /** @param className generated provider class (diagram or table) */
     public record RepresentationRef(String id, String label, String kind, String className) {
     }
 
@@ -26,6 +26,18 @@ public final class ViewModel {
     }
 
     public record AutoExpand(String feature, int maxDepth) {
+    }
+
+    /** P1 table: rows, columns, cell condition (as the Java that builds it) and actions. */
+    public record Table(String sourceFile, String className, String id, String label, String domainType, Axis rows, Axis columns,
+            String cellExpression, String cellConditionJava, String markSymbol, String markColor, List<TableAction> actions) {
+    }
+
+    public record Axis(String type, String filter, String labelTemplate, String groupBy) {
+    }
+
+    /** @param action CREATE_LINK, DELETE_LINK or LINK */
+    public record TableAction(String id, String label, String action, String targetClass, boolean validateOnCreate, String feature) {
     }
 
     /** @param alwaysOn a layer scope (the expression names {@code layer}): always applied, no toggle (P1 T3) */
@@ -57,12 +69,18 @@ public final class ViewModel {
 
     private final List<Diagram> diagrams = new ArrayList<>();
 
+    private final List<Table> tables = new ArrayList<>();
+
     List<Viewpoint> viewpoints() {
         return List.copyOf(this.viewpoints.values());
     }
 
     List<Diagram> diagrams() {
         return List.copyOf(this.diagrams);
+    }
+
+    List<Table> tables() {
+        return List.copyOf(this.tables);
     }
 
     /** Adds one validated file. Files and representations keep their order, so output is deterministic. */
@@ -73,21 +91,51 @@ public final class ViewModel {
         for (YamlNode representation : document.items("representations")) {
             String id = representation.text("id");
             boolean diagram = "diagram".equals(representation.text("kind"));
-            String className = diagram ? className(id) : null;
+            String className = diagram ? className(id) : tableClassName(id);
             viewpoint.representations().add(new RepresentationRef(id, representation.text("label"), diagram ? "DIAGRAM" : "TABLE", className));
             if (diagram) {
                 this.diagrams.add(diagram(sourceFile, className, representation));
+            } else {
+                this.tables.add(table(sourceFile, className, representation));
             }
         }
     }
 
     /** {@code bdd} becomes {@code BddDiagramDescriptionProvider} (spec §4.5), {@code sa-function-chain} {@code SaFunctionChain...}. */
     static String className(String representationId) {
+        return camel(representationId) + "DiagramDescriptionProvider";
+    }
+
+    /** {@code allocation-matrix} becomes {@code AllocationMatrixTableDescriptionProvider}. */
+    static String tableClassName(String representationId) {
+        return camel(representationId) + "TableDescriptionProvider";
+    }
+
+    private static String camel(String representationId) {
         StringBuilder name = new StringBuilder();
         for (String part : representationId.split("-")) {
             name.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1));
         }
-        return name.append("DiagramDescriptionProvider").toString();
+        return name.toString();
+    }
+
+    private static Table table(String sourceFile, String className, YamlNode t) {
+        YamlNode cells = t.get("cells");
+        String expression = cells.text("existsExpression");
+        String java;
+        try {
+            java = CellSyntax.java(CellSyntax.parse(expression));
+        } catch (CellSyntax.CellSyntaxException e) {
+            throw new IllegalStateException(e); // validated before the model is built
+        }
+        return new Table(sourceFile, className, t.text("id"), t.text("label"), Metamodel.domainType(t.text("domainClass")), axis(t.get("rows")),
+                axis(t.get("columns")), expression, java, cells.text("markSymbol"), cells.text("color"),
+                t.items("actions").stream().map(a -> new TableAction(a.text("id"), a.text("label"), constant(a.text("action")),
+                        a.text("targetClass") == null ? null : Metamodel.domainType(a.text("targetClass")), a.bool("validateOnCreate"), a.text("feature"))).toList());
+    }
+
+    private static Axis axis(YamlNode a) {
+        return new Axis(Metamodel.domainType(a.text("class")), a.text("filter"), a.text("labelExpression"), a.text("groupBy"));
     }
 
     private static Diagram diagram(String sourceFile, String className, YamlNode r) {

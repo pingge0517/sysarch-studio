@@ -3,7 +3,7 @@
 本文对应 spec T9 第 1 步，内容包括：
 
 - 元模型及各类元素的字段（含 P1 的元模型 v1.1：接口实体、需求追溯引用）；
-- BDD、IBD 以及 P1 的 SA / LA / PA 分层视图如何从模型映射出来；
+- BDD、IBD 以及 P1 的 SA / LA / PA 分层视图、分配矩阵如何从模型映射出来；
 - 新增一张视图的完整步骤。
 
 文中的规则以代码为准，引用的文件都在仓库里：
@@ -253,12 +253,14 @@ classDiagram
 | nodeStyle | `id`、`appliesTo`、`shape`（rectangle / rounded-rectangle / square）、`color`、`borderColor`、`borderWidth`、`headerBold`、`italic`、`width`、`height`、`isBorderNode`、`affiliationFeature`、`labelPosition`、`labelExpression`、`subLabelExpression`、`compartments[{feature,label,itemExpression}]` |
 | edgeStyle | `id`、`label`、`labelExpression`、`domainClass`、`sourceEnd`、`targetEnd`、`routing`（straight / manhattan / spline，Sirius 不支持曲线，spline 画成直线）、`arrow`（hollow-triangle / filled-diamond / open）、`lineStyle`、`color` |
 | tool | `id`、`label`、`action`（create-child / create-edge / external-link）、`targetClass`、`containmentFeature`、`linkType`、`validateOnDrop`、`defaults`（create-child 新建时预填的属性，P1） |
+| 表格（`kind: table`，P1） | `rows` / `columns`：`{class, filter, labelExpression, groupBy}`；`cells`：`{existsExpression, markSymbol, color}`；`actions[{id, label, action（create-link / delete-link / link）, targetClass, validateOnCreate, feature}]`。表格不能写图的字段（`nodeStyles`、`synchronization` 等），图也不能写表格字段 |
 
 几种表达式的写法：
 
 - **标签**：`{feature}` 或 `{a.b}`，按路径读取属性。
 - **过滤**（P1 §3.5）：支持 `not`、`and`、`or`、括号、布尔属性和 `字段 == '值'` / `!=`，例如 `not isAbstract`、`layer == 'LOGICAL'`、`stereotypes == 'ecu'`（含有这个构造型）。**只允许 `layer`、`isAbstract`、`stereotypes` 三个字段**，其他标识符一律报错，即使模型里有这个属性。
 - **图层范围**：表达式里用到 `layer` 的过滤器是这张视图的图层范围，始终生效，不出现在过滤开关里；其他过滤器（如 `hideAbstract`）照旧可以开关。
+- **单元格**（`cells.existsExpression`）：`and`、`or`、`not`、括号，加上 `属性 == row|column`（单值引用指向行或列元素）和 `属性->includes(row|column)`（多值引用包含它），属性前可写 `self.`。编译器把它翻译成 Java 条件树，运行时不解析。
 - **类名**：写成 `sysarch:<EClass>`。
 
 生成器会拒绝以下情况，打印 `views/<文件>:<行> <原因>` 并以退出码 1 结束：
@@ -272,7 +274,8 @@ classDiagram
 - 过滤表达式语法错误、用了白名单以外的字段、`layer` 的取值不是枚举值；
 - `defaults` 写了不存在或不能预填的属性，或者值与属性类型不符；
 - 有图层范围的视图里，`create-child` 新建的元素不在本层（`defaults.layer` 必须是本层）；
-- 由模板生成的 YAML 被手工改过（与模板展开结果不一致）。
+- 由模板生成的 YAML 被手工改过（与模板展开结果不一致）；
+- 表格：单元格表达式语法错误或属性不对（不存在、单值/多值用错、类型和行列对不上）；`create-link` 没有设置 `validateOnCreate: true`，或者单元格表达式不是能直接建出来的 `a == row and b == column` 形式；`groupBy` 不是 `layer`。
 
 ### 3.2 所有视图共用的投影规则（`DiagramProjector`）
 
@@ -344,6 +347,16 @@ edge PD-001 -> PD-002 [composition] "感知融合"
 - **显示**：本层的所有块（规则 2），`function` 样式为圆角矩形，抽象块用 `role` 样式。连接（`exchange`）画在端口所属部件的类型块之间，带开放箭头，标签 `{interfaceType.name}`。其他层的块始终隐藏，打开视图时选的根元素如果不在本层，也会被隐藏。
 - **新建**：在块上或画布空白处用"新建功能 / 新建逻辑组件 / 新建物理组件"，会在该块下建一个 Part，并同时建一个同名、同层的块作为它的类型，这个块会出现在本层视图里，在其他层看不到。
 - **连线**：分层视图不画端口，所以不能在这里建连接；连接在 IBD 里建，分层视图负责展示。
+
+### 3.6 分配矩阵（`views/allocation-matrix.vsm.yaml`，`allocation-matrix`，P1）
+
+表格视图不在 Sirius 里显示，在我们自己的前端页面里：`http://localhost:3000/?project=<Sirius 项目 id 或名称>&table=allocation-matrix`（后端接口 `GET /api/v1/projects/{项目}/tables/{表}`、`POST …/actions`）。
+
+- **行**：SYSTEM 和 LOGICAL 层的块和部件；**列**：LOGICAL 和 PHYSICAL 层的块和部件。YAML 里写的是 `ArchElement`，按约定只取结构元素（`PartDefinition`、`Part`），端口、连接、需求、接口和分配本身都不算。行列按层分组（表头分组），组内按文档顺序。
+- **单元格**：存在 `from == 行`、`to == 列` 的 Allocate 时显示 YAML 里的 `●`（颜色同样取自 YAML）。
+- **点一下**：空格子建立分配（从行分配到列，名称为"行 → 列"），有 ● 的格子取消分配。建立前先对新分配跑全部约束，被拒时什么都不写入，页面顶部显示原因并高亮相关行列，例如"跨层跳过：SA → PA（跳过 LA）"、"分配只能指向相邻的下一层：LA → LA"。写入经过 Sirius 的 EditingContext，保存、刷新和保存时的否决与画布编辑完全一样。
+- **刷新**：每 10 秒以及页面重新获得焦点时重新读取；只渲染可见区域，50×50 的首屏在浏览器里实测约 20 ms。
+- **追溯矩阵**（T5）用同一套表格机制，单元格表达式在需求自身上求值（行就是需求），动作是 `link`（把列加进 `satisfiedBy` / `verifiedBy`）。
 
 ---
 
@@ -447,7 +460,7 @@ representations:
 
 | 门禁 | 任务 | 判定 |
 |---|---|---|
-| 1. 测试 | `./gradlew test` | 全部模块的测试通过 |
+| 1. 测试 | `./gradlew test`；前端 job 另跑 `npm test` 和 `npm run build` | 全部模块的测试通过 |
 | 2. 生成确定性 | `:vsm-compiler:verifyDeterministicGeneration` | 两次生成的结果与已提交的 `view/generated` 三者 sha256 相同；哈希写入 `vsm-compiler/build/vsm-generation.sha256` |
 | 3. 性能阈值 | `:backend:checkPerfThreshold` | `IbdSyncTest` 写出的 `backend/build/perf-refresh.json`：500 个元素、20 次插入，中位数 < 800 ms，P95 < 2000 ms；阈值写死在构建脚本里，不从报告读取 |
 

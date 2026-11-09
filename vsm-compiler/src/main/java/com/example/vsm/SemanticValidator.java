@@ -86,6 +86,10 @@ final class SemanticValidator {
         if (domainClass == null) {
             return; // everything below is relative to the root type
         }
+        if ("table".equals(representation.text("kind"))) {
+            this.checkTable(domainClass, representation);
+            return;
+        }
 
         for (YamlNode autoExpand : representation.items("autoExpand")) {
             this.checkAutoExpand(domainClass, autoExpand.get("feature"));
@@ -286,6 +290,126 @@ final class SemanticValidator {
             // Spec §4.4: without validation on drop, AC-5 cannot reject an edge before it is stored.
             this.error(tool.keyLine("validateOnDrop"), "create-edge tool '" + tool.text("id") + "' must set validateOnDrop: true");
         }
+    }
+
+    // ---- tables (P1 T4/T5) ----
+
+    /**
+     * Rows and columns (class, filter, label, groupBy), the cell expression against the domain class, and every action
+     * against what the expression can create or change. "Self mode" (rows are the domain class, e.g. requirement trace)
+     * evaluates the expression on the row itself; otherwise on each element of the domain class (allocation matrix).
+     */
+    private void checkTable(EClass domainClass, YamlNode table) {
+        EClass rowClass = this.checkAxis(table.get("rows"));
+        EClass columnClass = this.checkAxis(table.get("columns"));
+        YamlNode cells = table.get("cells");
+        YamlNode expressionNode = cells.get("existsExpression");
+        CellSyntax.Expr expr;
+        try {
+            expr = CellSyntax.parse(expressionNode.scalar());
+        } catch (CellSyntax.CellSyntaxException e) {
+            this.error(expressionNode.line(), "invalid existsExpression \"" + expressionNode.scalar() + "\": " + e.getMessage());
+            return;
+        }
+        if (rowClass == null || columnClass == null) {
+            return;
+        }
+        boolean selfMode = domainClass.isSuperTypeOf(rowClass);
+        boolean ok = true;
+        for (CellSyntax.Expr atom : CellSyntax.atoms(expr)) {
+            String feature = atom instanceof CellSyntax.Equals equals ? equals.feature() : ((CellSyntax.Includes) atom).feature();
+            CellSyntax.Side side = atom instanceof CellSyntax.Equals equals ? equals.side() : ((CellSyntax.Includes) atom).side();
+            boolean many = atom instanceof CellSyntax.Includes;
+            EReference reference = Metamodel.reference(domainClass, feature);
+            EClass sideClass = side == CellSyntax.Side.ROW ? rowClass : columnClass;
+            String where = " in existsExpression \"" + expressionNode.scalar() + "\"";
+            if (reference == null) {
+                this.unknownFeature(expressionNode.line(), feature, domainClass, " (a reference is needed)" + where);
+                ok = false;
+            } else if (reference.isMany() != many) {
+                this.error(expressionNode.line(), "'" + feature + "' on " + this.metamodel.ref(domainClass) + " is " + (many ? "single-valued; use ==" : "many-valued; use ->includes(...)") + where);
+                ok = false;
+            } else if (!compatible(reference.getEReferenceType(), sideClass)) {
+                this.error(expressionNode.line(), "'" + feature + "' holds " + this.metamodel.ref(reference.getEReferenceType()) + ", which can never be a "
+                        + side.name().toLowerCase(java.util.Locale.ROOT) + " (" + this.metamodel.ref(sideClass) + ")" + where);
+                ok = false;
+            }
+        }
+        if (!ok) {
+            return;
+        }
+        this.checkUniqueIds(table.items("actions"), "action");
+        List<CellSyntax.Equals> settable = CellSyntax.conjunctionOfEquals(expr);
+        for (YamlNode action : table.items("actions")) {
+            String kind = action.text("action");
+            int line = action.get("action").line();
+            String id = action.text("id");
+            switch (kind) {
+                case "create-link" -> {
+                    EClass target = this.resolveClass(action.get("targetClass"));
+                    if (selfMode) {
+                        this.error(line, "create-link '" + id + "' needs elements separate from the rows; here every row is the " + this.metamodel.ref(domainClass)
+                                + " itself (use link)");
+                    } else if (settable == null || settable.stream().map(CellSyntax.Equals::side).distinct().count() < 2) {
+                        this.error(line, "create-link '" + id + "' can only create what existsExpression describes as 'a == row and b == column'");
+                    } else if (target != null && !domainClass.isSuperTypeOf(target)) {
+                        this.error(action.get("targetClass").line(), "create-link '" + id + "' creates " + this.metamodel.ref(target) + ", but the cells are "
+                                + this.metamodel.ref(domainClass));
+                    } else if (target != null && target.isAbstract()) {
+                        this.error(action.get("targetClass").line(), "create-link '" + id + "' cannot create the abstract " + this.metamodel.ref(target));
+                    }
+                    if (!action.bool("validateOnCreate")) {
+                        // Spec P1 §3.3: a click in the table must not bypass the constraints (LayerAdjacentOnly).
+                        this.error(action.keyLine("validateOnCreate"), "create-link '" + id + "' must set validateOnCreate: true");
+                    }
+                }
+                case "delete-link" -> {
+                    if (selfMode) {
+                        this.error(line, "delete-link '" + id + "' would delete the row itself; here every row is the " + this.metamodel.ref(domainClass));
+                    }
+                }
+                case "link" -> {
+                    YamlNode featureNode = action.get("feature");
+                    EReference reference = Metamodel.reference(rowClass, featureNode.scalar());
+                    if (!selfMode) {
+                        this.error(line, "link '" + id + "' adds the column to a feature of the row, so the rows must be the " + this.metamodel.ref(domainClass));
+                    } else if (reference == null) {
+                        this.unknownFeature(featureNode.line(), featureNode.scalar(), rowClass, " (link needs a many-valued reference)");
+                    } else if (!reference.isMany() || reference.isContainment() || !compatible(reference.getEReferenceType(), columnClass)) {
+                        this.error(featureNode.line(), "link '" + id + "': '" + featureNode.scalar() + "' must be a many-valued, non-containment reference that can hold a "
+                                + this.metamodel.ref(columnClass));
+                    }
+                }
+                default -> {
+                }
+            }
+        }
+    }
+
+    /** Class, filter (same grammar and whitelist as diagram filters), label and groupBy of rows or columns. */
+    private EClass checkAxis(YamlNode axis) {
+        EClass eClass = this.resolveClass(axis.get("class"));
+        if (eClass == null) {
+            return null;
+        }
+        if (axis.has("filter")) {
+            this.checkFilter(eClass, axis.get("filter"));
+        }
+        this.checkTemplate(eClass, axis.get("labelExpression"));
+        YamlNode groupBy = axis.get("groupBy");
+        if (groupBy != null) {
+            if (!"layer".equals(groupBy.scalar())) {
+                this.error(groupBy.line(), "groupBy '" + groupBy.scalar() + "' is not supported; P1 groups by layer only (spec P1 §3.5)");
+            } else if (Metamodel.feature(eClass, "layer") == null) {
+                this.unknownFeature(groupBy.line(), "layer", eClass, " (groupBy)");
+            }
+        }
+        return eClass;
+    }
+
+    /** A value of type {@code a} can be an element of class {@code b}, or the other way round. */
+    private static boolean compatible(EClass a, EClass b) {
+        return a.isSuperTypeOf(b) || b.isSuperTypeOf(a);
     }
 
     /** Each default names a single-valued attribute of the created class and fits its type. */

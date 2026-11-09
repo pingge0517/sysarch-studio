@@ -87,7 +87,7 @@ class SaveTimeValidationTest {
         List<ValidationError> rejected = this.edit(m -> this.allocate.setTo(product));
 
         assertEquals(List.of("LayerAdjacentOnly"), codes(rejected));
-        assertEquals("跨层跳过：LA → EPBS", rejected.get(0).message());
+        assertEquals("跨层跳过：LA → EPBS（跳过 PA）", rejected.get(0).message());
         assertEquals(this.physical, this.allocate.getTo(), "the edit was rolled back");
     }
 
@@ -238,7 +238,7 @@ class SaveTimeValidationTest {
 
         assertEquals(List.of("LayerAdjacentOnly"), codes(rejected));
         assertEquals(Layer.PHYSICAL, this.physical.getLayer(), "rolled back");
-        Diagnostic notice = this.child(this.diagnostician().validate(this.physical), "修改未保存：跨层跳过：LA → EPBS");
+        Diagnostic notice = this.child(this.diagnostician().validate(this.physical), "修改未保存：跨层跳过：LA → EPBS（跳过 PA）");
         assertEquals(Diagnostic.ERROR, notice.getSeverity());
         assertEquals(List.of(this.physical, SysarchPackage.eINSTANCE.getArchElement_Layer()), notice.getData());
         assertEquals(Diagnostic.OK, this.diagnostician().validate(this.logical).getSeverity(), "only the edited element carries the notice");

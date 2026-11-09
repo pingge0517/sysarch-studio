@@ -23,7 +23,7 @@ import org.springframework.web.server.ResponseStatusException;
  * frontend's single-page-app route (GET only) answers instead. A POST error then became a 405 and a GET error a 200
  * with the HTML app page. Found in the live smoke test; unit tests call the controllers directly and cannot see it.
  */
-@RestControllerAdvice(basePackageClasses = { SyncController.class, LinksController.class })
+@RestControllerAdvice(basePackageClasses = { SyncController.class, LinksController.class, com.example.sysarch.view.table.TableController.class })
 public class ApiErrorHandler {
 
     @ExceptionHandler(ResponseStatusException.class)
