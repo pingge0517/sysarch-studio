@@ -15,6 +15,8 @@ export interface Group {
 export interface Cell {
   rowId: string;
   columnId: string;
+  /** On a marked cell: the link actions whose relation it holds (e.g. "satisfy"). */
+  links?: string[];
 }
 
 export interface MatrixAction {
@@ -23,6 +25,8 @@ export interface MatrixAction {
   kind: 'CREATE_LINK' | 'DELETE_LINK' | 'LINK';
   /** Applies to a marked cell (delete-link) rather than an empty one. */
   onMarked: boolean;
+  /** For a link action: the label of removing its relation, e.g. 取消满足关系. */
+  undoLabel: string | null;
 }
 
 export interface Matrix {
@@ -94,11 +98,11 @@ export async function fetchMatrix(project: string, table: string): Promise<Matri
   return json(await fetch(`/api/v1/projects/${encodeURIComponent(project)}/tables/${encodeURIComponent(table)}`));
 }
 
-export async function runAction(project: string, table: string, actionId: string, cell: Cell): Promise<ActionResponse> {
+export async function runAction(project: string, table: string, actionId: string, cell: Cell, remove = false): Promise<ActionResponse> {
   const response = await fetch(`/api/v1/projects/${encodeURIComponent(project)}/tables/${encodeURIComponent(table)}/actions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ actionId, rowId: cell.rowId, columnId: cell.columnId }),
+    body: JSON.stringify({ actionId, rowId: cell.rowId, columnId: cell.columnId, remove }),
   });
   return json(response);
 }

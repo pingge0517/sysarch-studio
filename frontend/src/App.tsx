@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { fetchMatrix, fetchProjects, fetchTables, runAction } from './matrix/api';
-import type { Cell, Matrix, MatrixAction, Project, TableInfo, ValidationError } from './matrix/api';
+import type { Cell, Matrix, Project, TableInfo, ValidationError } from './matrix/api';
+import type { CellOption } from './matrix/layout';
 import { MatrixView } from './matrix/MatrixView';
 
 // TODO: mount the Sirius Web frontend components and register the BDD/IBD views. Until then the diagrams are
@@ -82,9 +83,9 @@ export function App() {
   }, [matrix]);
 
   const onAction = useCallback(
-    async (action: MatrixAction, cell: Cell) => {
+    async (option: CellOption, cell: Cell) => {
       try {
-        const response = await runAction(project, table, action.id, cell);
+        const response = await runAction(project, table, option.action.id, cell, option.remove);
         setMatrix(response.matrix);
         setRefusal(response.errors);
         return response.errors;

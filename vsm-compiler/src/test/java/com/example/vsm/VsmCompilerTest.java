@@ -57,6 +57,9 @@ class VsmCompilerTest {
     /** sha256 of the spec's [COPY] block P1 §3.3. */
     private static final String SPEC_MATRIX_SHA256 = "4dc13a4c3388265e47ddf99f3f1a986af6748dc2930f6f850f214a656a43f8d6";
 
+    /** sha256 of the spec's [COPY] block P1 §3.4. */
+    private static final String SPEC_TRACE_SHA256 = "ab5ef534998b9b442f4e643e1b90647b0aabe32e89ab7d3ce5ca5c9f5e615b55";
+
     /** sha256 of the spec's [COPY] block P1 §3.2: the SA view must stay verbatim although a template now produces it. */
     private static final String SPEC_SA_SHA256 = "810dba23575cea7c942a8d2b098f2b108781ca51d638295ffeaca2a379134e80";
 
@@ -85,7 +88,8 @@ class VsmCompilerTest {
         assertEquals(VsmCompiler.OK, result.exitCode(), result.err());
         assertEquals(List.of("AllocationMatrixTableDescriptionProvider.java", "BddDiagramDescriptionProvider.java", "IbdDiagramDescriptionProvider.java",
                 "LaArchitectureDiagramDescriptionProvider.java",
-                "PaArchitectureDiagramDescriptionProvider.java", "SaFunctionChainDiagramDescriptionProvider.java", "ViewpointRegistry.java"),
+                "PaArchitectureDiagramDescriptionProvider.java", "RequirementTraceTableDescriptionProvider.java", "SaFunctionChainDiagramDescriptionProvider.java",
+                "ViewpointRegistry.java"),
                 fileNames(this.output("out")));
         String bdd = Files.readString(this.output("out").resolve("BddDiagramDescriptionProvider.java"));
         assertTrue(bdd.contains(".domainType(\"sysarch::PartDefinition\")"));
@@ -357,10 +361,10 @@ class VsmCompilerTest {
         assertTrue(registry.contains("tablesById.put(\"allocation-matrix\", allocationMatrixTableProvider);"), registry);
     }
 
-    /** T5's [COPY] view uses the other half of the cell grammar (self, ->includes, link actions); it must compile as is. */
+    /** T5's [COPY] view uses the other half of the cell grammar (self, ->includes, link actions) and compiles as is. */
     @Test
-    void theRequirementTraceFromTheSpecCompiles() throws IOException {
-        Files.copy(REPO.resolve("vsm-compiler/src/test/resources/requirement-trace.spec.vsm.yaml"), this.workspace.resolve(TRACE));
+    void theRequirementTraceIsVerbatimAndCompiles() throws IOException {
+        assertEquals(SPEC_TRACE_SHA256, sha256File(REPO.resolve(TRACE)));
         Result result = this.compile(this.output("out"));
         assertEquals(VsmCompiler.OK, result.exitCode(), result.err());
         String trace = Files.readString(this.output("out").resolve("RequirementTraceTableDescriptionProvider.java"));

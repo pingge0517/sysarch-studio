@@ -21,8 +21,10 @@ public final class ElementSnapshots {
         String source = element instanceof Connection connection && connection.getSource() != null ? ElementIds.of(connection.getSource()) : null;
         String target = element instanceof Connection connection && connection.getTarget() != null ? ElementIds.of(connection.getTarget()) : null;
         String text = element instanceof Requirement requirement ? requirement.getText() : null;
+        java.util.List<String> satisfiedBy = element instanceof Requirement requirement
+                ? requirement.getSatisfiedBy().stream().map(ElementIds::of).toList() : java.util.List.of();
         return new ElementSnapshot(ElementIds.of(element), element.eClass().getName(), element.getName(), element.getLayer().getLiteral(),
-                element.getStereotypes(), source, target, text, element.getRev(), errors(element, constraints));
+                element.getStereotypes(), source, target, text, element.getRev(), errors(element, constraints), satisfiedBy);
     }
 
     /**

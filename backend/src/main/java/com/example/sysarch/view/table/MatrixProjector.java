@@ -56,7 +56,7 @@ public final class MatrixProjector {
         for (EObject row : model.rows) {
             for (EObject column : model.columns) {
                 if (model.marked(row, column) && marked.add(ElementIds.of(row) + "\u0000" + ElementIds.of(column))) {
-                    cells.add(new Matrix.Cell(ElementIds.of(row), ElementIds.of(column)));
+                    cells.add(new Matrix.Cell(ElementIds.of(row), ElementIds.of(column), model.links(row, column)));
                 }
             }
         }
@@ -65,8 +65,18 @@ public final class MatrixProjector {
         columns.forEach(h -> groupKeys.add(h.group()));
         List<Matrix.Group> groups = groupKeys.stream().filter(k -> k != null).map(k -> new Matrix.Group(k, groupLabel(k))).toList();
         List<Matrix.Action> actions = table.actions().stream()
-                .map(a -> new Matrix.Action(a.id(), a.label(), a.kind().name(), a.kind() == TableActionKind.DELETE_LINK)).toList();
+                .map(a -> new Matrix.Action(a.id(), a.label(), a.kind().name(), a.kind() == TableActionKind.DELETE_LINK,
+                        a.kind() == TableActionKind.LINK ? undoLabel(a.label()) : null))
+                .toList();
         return new Matrix(table.id(), table.label(), table.markSymbol(), table.markColor(), groups, rows, columns, cells, actions);
+    }
+
+    /** 建立满足关系 → 取消满足关系; any other label gets 取消 in front. */
+    static String undoLabel(String label) {
+        if (label == null) {
+            return "取消";
+        }
+        return label.startsWith("建立") ? "取消" + label.substring(2) : "取消" + label;
     }
 
     /** {@code LOGICAL} → {@code LA 逻辑架构}; other values unchanged. */
@@ -152,6 +162,15 @@ public final class MatrixProjector {
             return this.domainElements.stream().filter(e -> holds(this.table.cellCondition(), e, row, column)).toList();
         }
 
+        /** The link actions whose relation the row holds to the column (self mode only). */
+        List<String> links(EObject row, EObject column) {
+            if (!this.selfMode) {
+                return List.of();
+            }
+            return this.table.actions().stream().filter(a -> a.kind() == TableActionKind.LINK && holdsLink(row, a.feature(), column))
+                    .map(TableAction::id).toList();
+        }
+
         TableAction action(String id) {
             return this.table.actions().stream().filter(a -> a.id().equals(id)).findFirst().orElse(null);
         }
@@ -187,6 +206,10 @@ public final class MatrixProjector {
             case CellCondition.Includes includes -> value(self, includes.feature()) instanceof Collection<?> values
                     && values.contains(side(includes.side(), row, column));
         };
+    }
+
+    static boolean holdsLink(EObject row, String feature, EObject column) {
+        return value(row, feature) instanceof Collection<?> values && values.contains(column);
     }
 
     private static Object value(EObject self, String featureName) {

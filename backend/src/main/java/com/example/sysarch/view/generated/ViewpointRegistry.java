@@ -29,6 +29,7 @@ public class ViewpointRegistry {
             new Representation("allocation-matrix", "分配矩阵（系统→逻辑→物理）", RepresentationKind.TABLE),
             new Representation("la-architecture", "逻辑架构（LA）", RepresentationKind.DIAGRAM),
             new Representation("pa-architecture", "物理架构（PA）", RepresentationKind.DIAGRAM),
+            new Representation("requirement-trace", "需求追溯矩阵", RepresentationKind.TABLE),
             new Representation("sa-function-chain", "系统功能链（SA）", RepresentationKind.DIAGRAM),
             new Representation("bdd", "块定义图（BDD）", RepresentationKind.DIAGRAM),
             new Representation("ibd", "内部块图（IBD）", RepresentationKind.DIAGRAM)
@@ -39,7 +40,7 @@ public class ViewpointRegistry {
 
     private final Map<String, ITableDescriptionProvider> tableProviders;
 
-    public ViewpointRegistry(LaArchitectureDiagramDescriptionProvider laArchitectureProvider, PaArchitectureDiagramDescriptionProvider paArchitectureProvider, SaFunctionChainDiagramDescriptionProvider saFunctionChainProvider, BddDiagramDescriptionProvider bddProvider, IbdDiagramDescriptionProvider ibdProvider, AllocationMatrixTableDescriptionProvider allocationMatrixTableProvider) {
+    public ViewpointRegistry(LaArchitectureDiagramDescriptionProvider laArchitectureProvider, PaArchitectureDiagramDescriptionProvider paArchitectureProvider, SaFunctionChainDiagramDescriptionProvider saFunctionChainProvider, BddDiagramDescriptionProvider bddProvider, IbdDiagramDescriptionProvider ibdProvider, AllocationMatrixTableDescriptionProvider allocationMatrixTableProvider, RequirementTraceTableDescriptionProvider requirementTraceTableProvider) {
         Map<String, IDiagramDescriptionProvider> byId = new LinkedHashMap<>();
         byId.put("la-architecture", laArchitectureProvider);
         byId.put("pa-architecture", paArchitectureProvider);
@@ -49,6 +50,7 @@ public class ViewpointRegistry {
         this.providers = Collections.unmodifiableMap(byId);
         Map<String, ITableDescriptionProvider> tablesById = new LinkedHashMap<>();
         tablesById.put("allocation-matrix", allocationMatrixTableProvider);
+        tablesById.put("requirement-trace", requirementTraceTableProvider);
         this.tableProviders = Collections.unmodifiableMap(tablesById);
     }
 

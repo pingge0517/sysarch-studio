@@ -236,7 +236,7 @@ class AllocationMatrixTest {
         assertEquals(List.of(this.controller), requirement.getSatisfiedBy());
         Matrix matrix = MatrixProjector.project(trace, List.of(this.model));
         assertEquals(List.of("R-1 制动距离"), matrix.rows().stream().map(Matrix.Header::label).toList());
-        assertEquals(List.of(new Matrix.Cell("RQ-1", "PD-LA1")), matrix.cells());
+        assertEquals(List.of(new Matrix.Cell("RQ-1", "PD-LA1", List.of("satisfy"))), matrix.cells());
     }
 
     // =========================================================== performance (T4 step 4)

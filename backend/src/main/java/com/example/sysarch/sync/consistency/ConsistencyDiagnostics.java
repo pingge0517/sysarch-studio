@@ -32,7 +32,7 @@ import org.springframework.stereotype.Service;
  * warnings (yellow).
  *
  * <p>It runs on the editing context thread and has no user token, so it judges from what is recorded: R1 (from pulls
- * and webhooks), R2 on the canvas side, R3, R5. Checks that ask Polarion live need {@code /consistency/report} with a
+ * and webhooks), R2 on the canvas side, R3, R5, R6. Checks that ask Polarion live need {@code /consistency/report} with a
  * token. R4 is left out here because the OCL {@code LayerAdjacentOnly} error is already listed for the same Allocate.
  */
 @Service

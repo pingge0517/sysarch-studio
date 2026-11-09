@@ -29,6 +29,9 @@ import java.util.Optional;
  * counted, so the R3 repair (mark the others CONFLICT) resolves it.</li>
  * <li><b>R4 layer violation</b> (BLOCKER, never repairable): an Allocate failing the OCL {@code LayerAdjacentOnly}.</li>
  * <li><b>R5 unbound element</b> (MINOR): an element of a synchronized type with no binding.</li>
+ * <li><b>R6 unsatisfied requirement</b> (MINOR, never repairable, P1 T5): a Requirement with no {@code satisfiedBy}.
+ * The spec words it as "every SYSTEM-layer function has a satisfiedBy", which no element but a requirement has; it is
+ * counted per requirement, as its acceptance test does (user's decision). Fixed by modelling, in the trace matrix.</li>
  * </ul>
  *
  * <p>Issue ids are stable ({@code R1:<elementId>}, {@code R3:<workItemId>}...), so a repair can name the issues of an
@@ -45,6 +48,8 @@ public final class ConsistencyRules {
     private static final String CONNECTION = "Connection";
 
     private static final String ALLOCATE = "Allocate";
+
+    private static final String REQUIREMENT = "Requirement";
 
     private final SyncProperties properties;
 
@@ -104,6 +109,12 @@ public final class ConsistencyRules {
                 String state = former == null ? "未绑定 Work Item" : "待认领（原绑定 " + former + " 已删除）";
                 issues.add(new Issue("R5:" + element.id(), "R5", MINOR, element.id(), former, "未绑定元素：" + label(element) + " " + state
                         + "；修复：创建 Work Item 并绑定，或忽略", true, null, List.of()));
+            }
+        }
+        for (ElementSnapshot element : facts.elements().values()) {
+            if (REQUIREMENT.equals(element.type()) && element.satisfiedBy().isEmpty()) {
+                issues.add(new Issue("R6:" + element.id(), "R6", MINOR, element.id(), null, "需求未被满足：" + label(element)
+                        + " 没有任何满足它的元素（satisfiedBy 为空）；修复：在需求追溯矩阵中建立满足关系", false, null, List.of()));
             }
         }
         issues.sort(Comparator.comparing(Issue::rule).thenComparing(Issue::id));

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Matrix } from './api';
-import { actionsFor, cellKey, groupSpans, markedCells, visibleRange } from './layout';
+import { cellKey, groupSpans, markedCells, optionsFor, visibleRange } from './layout';
 
 describe('visibleRange', () => {
   it('covers the viewport plus overscan', () => {
@@ -61,14 +61,31 @@ describe('cell actions', () => {
     columns: [],
     cells: [{ rowId: 'r', columnId: 'c' }],
     actions: [
-      { id: 'createAllocate', label: '建立分配', kind: 'CREATE_LINK', onMarked: false },
-      { id: 'deleteAllocate', label: '取消分配', kind: 'DELETE_LINK', onMarked: true },
+      { id: 'createAllocate', label: '建立分配', kind: 'CREATE_LINK', onMarked: false, undoLabel: null },
+      { id: 'deleteAllocate', label: '取消分配', kind: 'DELETE_LINK', onMarked: true, undoLabel: null },
     ],
   };
 
   it('offers create on an empty cell and delete on a marked one', () => {
-    expect(actionsFor(matrix, false).map((a) => a.id)).toEqual(['createAllocate']);
-    expect(actionsFor(matrix, true).map((a) => a.id)).toEqual(['deleteAllocate']);
+    expect(optionsFor(matrix, undefined).map((o) => o.label)).toEqual(['建立分配']);
+    expect(optionsFor(matrix, matrix.cells[0]).map((o) => o.label)).toEqual(['取消分配']);
+  });
+
+  /** P1 T5 (user's decision): a link the cell holds is offered for removal, the others for adding. */
+  it('offers to remove the links a trace cell holds and to add the others', () => {
+    const trace: Matrix = {
+      ...matrix,
+      cells: [{ rowId: 'RQ-1', columnId: 'PD-1', links: ['satisfy'] }],
+      actions: [
+        { id: 'satisfy', label: '建立满足关系', kind: 'LINK', onMarked: false, undoLabel: '取消满足关系' },
+        { id: 'verify', label: '建立验证关系', kind: 'LINK', onMarked: false, undoLabel: '取消验证关系' },
+      ],
+    };
+    expect(optionsFor(trace, trace.cells[0]).map((o) => [o.label, o.remove])).toEqual([
+      ['取消满足关系', true],
+      ['建立验证关系', false],
+    ]);
+    expect(optionsFor(trace, undefined).map((o) => o.label)).toEqual(['建立满足关系', '建立验证关系']);
   });
 
   it('knows which cells are marked', () => {

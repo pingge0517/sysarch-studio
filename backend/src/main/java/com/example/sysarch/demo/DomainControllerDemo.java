@@ -75,12 +75,19 @@ public final class DomainControllerDemo {
         roots.add(connection("CO-003", "自车状态（感知）", controlOut, fusionIn));
         roots.add(connection("CO-004", "自车状态（规划）", controlOut, plannerIn));
 
-        roots.add(requirement("RQ-001", "DC-REQ-001", "目标列表周期", Layer.LOGICAL, VerifyMethod.TEST, 1,
-                "感知融合应每 50 ms 向决策规划发布一次目标列表。"));
-        roots.add(requirement("RQ-002", "DC-REQ-002", "轨迹时延", Layer.LOGICAL, VerifyMethod.TEST, 1,
-                "决策规划自收到目标列表起 100 ms 内输出轨迹。"));
-        roots.add(requirement("RQ-003", "DC-REQ-003", "状态反馈", Layer.LOGICAL, VerifyMethod.ANALYSIS, 2,
-                "执行控制应向感知融合与决策规划反馈自车状态。"));
+        Requirement objectCycle = requirement("RQ-001", "DC-REQ-001", "目标列表周期", Layer.LOGICAL, VerifyMethod.TEST, 1,
+                "感知融合应每 50 ms 向决策规划发布一次目标列表。");
+        Requirement trajectoryLatency = requirement("RQ-002", "DC-REQ-002", "轨迹时延", Layer.LOGICAL, VerifyMethod.TEST, 1,
+                "决策规划自收到目标列表起 100 ms 内输出轨迹。");
+        Requirement stateFeedback = requirement("RQ-003", "DC-REQ-003", "状态反馈", Layer.LOGICAL, VerifyMethod.ANALYSIS, 2,
+                "执行控制应向感知融合与决策规划反馈自车状态。");
+        // Trace (P1 T5): the three LA requirements are satisfied by the blocks they are about; the two PA ones are left
+        // unsatisfied on purpose, so the consistency report shows them as R6 (acceptance: "5 条需求中 2 条故意不满足").
+        objectCycle.getSatisfiedBy().add(fusionType);
+        objectCycle.getVerifiedBy().add(fusionType);
+        trajectoryLatency.getSatisfiedBy().add(plannerType);
+        stateFeedback.getSatisfiedBy().add(controlType);
+        roots.addAll(List.of(objectCycle, trajectoryLatency, stateFeedback));
         roots.add(requirement("RQ-004", "DC-REQ-004", "算力余量", Layer.PHYSICAL, VerifyMethod.ANALYSIS, 2,
                 "域控 SoC 在满负载下应保留不少于 30% 的算力余量。"));
         roots.add(requirement("RQ-005", "DC-REQ-005", "功能安全", Layer.PHYSICAL, VerifyMethod.INSPECTION, 1,

@@ -156,6 +156,94 @@ paths:
       responses:
         "202": { description: 已入队 }
 
+  /baselines:
+    post:
+      summary: 创建基线（对当前模型打快照）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [projectId, label]
+              properties:
+                projectId: { type: string }
+                label: { type: string }
+                description: { type: string }
+      responses:
+        "201":
+          description: 基线已创建
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Baseline" }
+    get:
+      summary: 列出基线
+      parameters:
+        - name: projectId
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: 基线列表
+
+  /baselines/{baselineId}/diff:
+    get:
+      summary: 基线与当前模型（或另一基线）的差异
+      parameters:
+        - name: baselineId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: against
+          in: query
+          schema: { type: string, enum: [CURRENT, BASELINE] }
+        - name: otherBaselineId
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: 差异清单
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ModelDiff" }
+
+  /export/sysmlv2:
+    post:
+      summary: 导出 SysML v2 文本
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [projectId]
+              properties:
+                projectId: { type: string }
+                scope: { type: string, enum: [PROJECT, LAYER, ELEMENT] }
+                layer: { type: string }
+                elementIds:
+                  type: array
+                  items: { type: string }
+      responses:
+        "200":
+          description: 文本流
+          content:
+            text/plain:
+              schema: { type: string }
+
+  /trace/matrix:
+    get:
+      summary: 追溯矩阵数据（前端渲染用）
+      parameters:
+        - name: projectId
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: 需求到元素的追溯关系
+
 components:
   schemas:
     Link:
@@ -220,9 +308,34 @@ components:
             type: object
             properties:
               id: { type: string }
-              rule: { type: string, enum: [R1, R2, R3, R4, R5] }
+              rule: { type: string, enum: [R1, R2, R3, R4, R5, R6] }
               severity: { type: string, enum: [BLOCKER, MAJOR, MINOR] }
               elementId: { type: string }
               workItemId: { type: string }
               message: { type: string }
               repairable: { type: boolean }
+    Baseline:
+      type: object
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        label: { type: string }
+        createdAt: { type: string, format: date-time }
+        elementCount: { type: integer }
+        modelRev: { type: integer }
+    ModelDiff:
+      type: object
+      properties:
+        added:
+          type: array
+          items: { type: string }
+        removed:
+          type: array
+          items: { type: string }
+        modified:
+          type: array
+          items:
+            type: object
+            properties:
+              elementId: { type: string }
+              fields: { type: array, items: { type: string } }

@@ -1,5 +1,6 @@
 package com.example.sysarch.view.table;
 
+import com.example.sysarch.project.ProjectModels;
 import com.example.sysarch.validation.ValidationError;
 
 import java.util.List;
@@ -22,7 +23,7 @@ import org.springframework.web.server.ResponseStatusException;
  * <li>{@code GET /api/v1/tables}: the VSM tables ({@code id}, {@code label}).</li>
  * <li>{@code GET /api/v1/projects/{project}/tables/{table}}: the {@link Matrix} of a Sirius project (id or name).</li>
  * <li>{@code POST /api/v1/projects/{project}/tables/{table}/actions} with {@code {actionId, rowId, columnId}}: 200 and
- * the new matrix, or 422 with {@code errors} ({@code {code, elementId, message, anchors}}, spec §3.2's shape) and the
+ * the new matrix, or 422 with {@code errors}; {@code remove: true} undoes a link action (P1 T5) ({@code {code, elementId, message, anchors}}, spec §3.2's shape) and the
  * unchanged matrix when the constraints refuse it.</li>
  * </ul>
  */
@@ -33,7 +34,8 @@ public class TableController {
     public record TableInfo(String id, String label) {
     }
 
-    public record ActionRequest(String actionId, String rowId, String columnId) {
+    /** @param remove for a link action: remove the relation (P1 T5) */
+    public record ActionRequest(String actionId, String rowId, String columnId, Boolean remove) {
     }
 
     public record ActionResponse(boolean changed, List<ValidationError> errors, Matrix matrix) {
@@ -54,7 +56,7 @@ public class TableController {
     public Matrix matrix(@PathVariable String project, @PathVariable String table) {
         try {
             return this.tables.matrix(project, table);
-        } catch (TableService.NotFoundException e) {
+        } catch (TableService.NotFoundException | ProjectModels.UnknownProjectException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
         }
     }
@@ -66,8 +68,8 @@ public class TableController {
         }
         TableService.ActionResult result;
         try {
-            result = this.tables.act(project, table, request.actionId(), request.rowId(), request.columnId());
-        } catch (TableService.NotFoundException e) {
+            result = this.tables.act(project, table, request.actionId(), request.rowId(), request.columnId(), Boolean.TRUE.equals(request.remove()));
+        } catch (TableService.NotFoundException | ProjectModels.UnknownProjectException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
         }
         ActionResponse body = new ActionResponse(result.outcome().changed(), result.outcome().errors(), result.matrix());

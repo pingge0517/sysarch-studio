@@ -1,25 +1,26 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { Cell, Matrix, MatrixAction, ValidationError } from './api';
-import { actionsFor, cellKey, groupSpans, markedCells, visibleRange } from './layout';
+import type { Cell, Matrix, ValidationError } from './api';
+import type { CellOption } from './layout';
+import { cellKey, groupSpans, markedCells, optionsFor, visibleRange } from './layout';
 
 const ROW_HEIGHT = 32;
 const COLUMN_WIDTH = 40;
-const ROW_GROUP_WIDTH = 92;
+const GROUP_WIDTH = 92;
 const ROW_HEADER_WIDTH = 220;
-const COLUMN_GROUP_HEIGHT = 30;
+const GROUP_HEIGHT = 30;
 const COLUMN_HEADER_HEIGHT = 150;
 
 interface Props {
   matrix: Matrix;
   /** Runs an action on a cell; resolves to the refusal reasons (empty when it was applied). */
-  onAction: (action: MatrixAction, cell: Cell) => Promise<ValidationError[]>;
+  onAction: (option: CellOption, cell: Cell) => Promise<ValidationError[]>;
 }
 
 interface Menu {
   x: number;
   y: number;
   cell: Cell;
-  actions: MatrixAction[];
+  options: CellOption[];
 }
 
 /**
@@ -51,26 +52,28 @@ export function MatrixView({ matrix, onAction }: Props) {
   const columnSpans = useMemo(() => groupSpans(matrix.columns, groupLabels), [matrix.columns, groupLabels]);
   const marked = useMemo(() => markedCells(matrix), [matrix]);
 
+  // Ungrouped axes (requirement trace) get no group band.
+  const ROW_GROUP_WIDTH = matrix.rows.some((h) => h.group !== null) ? GROUP_WIDTH : 0;
+  const COLUMN_GROUP_HEIGHT = matrix.columns.some((h) => h.group !== null) ? GROUP_HEIGHT : 0;
   const rows = visibleRange(scroll.top, viewport.height, ROW_HEIGHT, matrix.rows.length);
   const columns = visibleRange(scroll.left, viewport.width, COLUMN_WIDTH, matrix.columns.length);
   const totalWidth = matrix.columns.length * COLUMN_WIDTH;
   const totalHeight = matrix.rows.length * ROW_HEIGHT;
 
   async function click(cell: Cell, event: React.MouseEvent) {
-    const isMarked = marked.has(cellKey(cell.rowId, cell.columnId));
-    const actions = actionsFor(matrix, isMarked);
-    if (actions.length === 1) {
-      await run(actions[0], cell);
-    } else if (actions.length > 1) {
-      setMenu({ x: event.clientX, y: event.clientY, cell, actions });
+    const options = optionsFor(matrix, marked.get(cellKey(cell.rowId, cell.columnId)));
+    if (options.length === 1) {
+      await run(options[0], cell);
+    } else if (options.length > 1) {
+      setMenu({ x: event.clientX, y: event.clientY, cell, options });
     }
   }
 
-  async function run(action: MatrixAction, cell: Cell) {
+  async function run(option: CellOption, cell: Cell) {
     setMenu(null);
     setBusy(cellKey(cell.rowId, cell.columnId));
     try {
-      const errors = await onAction(action, cell);
+      const errors = await onAction(option, cell);
       if (errors.length > 0) {
         const anchors = new Set(errors.flatMap((e) => e.anchors));
         setFlash(anchors);
@@ -126,7 +129,7 @@ export function MatrixView({ matrix, onAction }: Props) {
 
       <div className="column-headers">
         <div style={{ width: totalWidth, height: '100%', transform: `translateX(${-scroll.left}px)` }} className="strip">
-          {columnSpans.map((span) => (
+          {COLUMN_GROUP_HEIGHT > 0 && columnSpans.map((span) => (
             <div key={`g${span.start}`} className="group column-group" style={{ left: span.start * COLUMN_WIDTH, width: span.count * COLUMN_WIDTH, height: COLUMN_GROUP_HEIGHT }}>
               {span.label}
             </div>
@@ -146,7 +149,7 @@ export function MatrixView({ matrix, onAction }: Props) {
 
       <div className="row-headers">
         <div style={{ height: totalHeight, width: '100%', transform: `translateY(${-scroll.top}px)` }} className="strip">
-          {rowSpans.map((span) => (
+          {ROW_GROUP_WIDTH > 0 && rowSpans.map((span) => (
             <div key={`g${span.start}`} className="group row-group" style={{ top: span.start * ROW_HEIGHT, height: span.count * ROW_HEIGHT, width: ROW_GROUP_WIDTH }}>
               {span.label}
             </div>
@@ -170,9 +173,9 @@ export function MatrixView({ matrix, onAction }: Props) {
 
       {menu && (
         <div className="menu" style={{ left: menu.x, top: menu.y }} role="menu">
-          {menu.actions.map((action) => (
-            <button key={action.id} type="button" role="menuitem" onClick={() => run(action, menu.cell)}>
-              {action.label}
+          {menu.options.map((option) => (
+            <button key={option.action.id + (option.remove ? ':remove' : '')} type="button" role="menuitem" onClick={() => run(option, menu.cell)}>
+              {option.label}
             </button>
           ))}
           <button type="button" className="cancel" onClick={() => setMenu(null)}>

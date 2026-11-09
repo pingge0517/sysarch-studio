@@ -176,6 +176,7 @@ public class ConsistencyService {
                 case "R3" -> actions.add(this.repairDuplicate(projectId, issue, actor));
                 case "R4" -> actions.add(new RepairAction(issue.id(), "R4", "NONE", "REFUSED", "层违规不允许自动修复，须人工修改模型"));
                 case "R5" -> unbound.add(issue);
+                case "R6" -> actions.add(new RepairAction(issue.id(), "R6", "NONE", "REFUSED", "需求是否被满足是建模决定，不自动修复；请在需求追溯矩阵中建立满足关系"));
                 default -> throw new IllegalStateException(issue.rule());
             }
         }

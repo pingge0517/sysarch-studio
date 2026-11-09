@@ -63,14 +63,16 @@ public interface ModelGateway {
      * @param rev the element's revision counter
      * @param errors constraint violations, for the push precheck
      */
+    /** @param satisfiedBy for a Requirement: the ids of the elements that satisfy it (P1 R6); empty otherwise */
     record ElementSnapshot(String id, String type, String name, String layer, List<String> stereotypes, String sourceId, String targetId, String text,
-            Integer rev, List<ValidationError> errors) {
+            Integer rev, List<ValidationError> errors, List<String> satisfiedBy) {
 
         public static final String TEXT = "text";
 
         public ElementSnapshot {
             stereotypes = List.copyOf(stereotypes);
             errors = List.copyOf(errors);
+            satisfiedBy = List.copyOf(satisfiedBy);
         }
     }
 

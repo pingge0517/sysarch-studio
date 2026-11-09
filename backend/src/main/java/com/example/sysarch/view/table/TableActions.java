@@ -29,7 +29,8 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
  * every constraint of the element is evaluated <i>before</i> it is added, as the canvas does for an edge drop
  * (spec P1 §3.3): a rejected link never reaches the model, and the errors go back to the caller.</li>
  * <li><b>delete-link</b>: deletes the elements that mark the cell.</li>
- * <li><b>link</b>: adds the column to the row's many-valued {@code feature}.</li>
+ * <li><b>link</b>: adds the column to the row's many-valued {@code feature}; with {@code remove}, takes it out again
+ * (P1 T5, user's decision: every link action can be undone from the matrix, although the YAML lists no unlink).</li>
  * </ul>
  */
 public final class TableActions {
@@ -46,6 +47,12 @@ public final class TableActions {
     }
 
     public static Outcome apply(TableDescription table, Collection<Resource> resources, String actionId, String rowId, String columnId,
+            ConstraintValidator constraints) {
+        return apply(table, resources, actionId, rowId, columnId, false, constraints);
+    }
+
+    /** @param remove for a link action: remove the relation; ignored by the other actions */
+    public static Outcome apply(TableDescription table, Collection<Resource> resources, String actionId, String rowId, String columnId, boolean remove,
             ConstraintValidator constraints) {
         MatrixProjector.Model model = MatrixProjector.Model.of(table, resources);
         TableAction action = model.action(actionId);
@@ -70,7 +77,7 @@ public final class TableActions {
                 }
                 yield new Outcome(true, List.of());
             }
-            case LINK -> link(action, row, column);
+            case LINK -> link(action, row, column, remove);
         };
     }
 
@@ -106,15 +113,22 @@ public final class TableActions {
         }
     }
 
-    private static Outcome link(TableAction action, EObject row, EObject column) {
+    private static Outcome link(TableAction action, EObject row, EObject column, boolean remove) {
         EStructuralFeature feature = row.eClass().getEStructuralFeature(action.feature());
         if (feature == null || !feature.isMany()) {
             throw new IllegalStateException("link feature " + action.feature() + " is not a many-valued feature of " + row.eClass().getName());
         }
         @SuppressWarnings("unchecked")
         EList<EObject> values = (EList<EObject>) row.eGet(feature);
+        List<String> anchors = List.of(ElementIds.of(row), ElementIds.of(column));
+        if (remove) {
+            if (!values.remove(column)) {
+                return Outcome.refused("NOT_LINKED", "这里没有这条关系", anchors);
+            }
+            return new Outcome(true, List.of());
+        }
         if (values.contains(column)) {
-            return Outcome.refused("ALREADY_LINKED", "这里已经有这条关系了", List.of(ElementIds.of(row), ElementIds.of(column)));
+            return Outcome.refused("ALREADY_LINKED", "这里已经有这条关系了", anchors);
         }
         values.add(column);
         return new Outcome(true, List.of());
