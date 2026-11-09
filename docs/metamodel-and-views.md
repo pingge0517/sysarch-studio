@@ -470,6 +470,6 @@ representations:
 |---|---|---|
 | 1. 测试 | `./gradlew test`；前端 job 另跑 `npm test` 和 `npm run build` | 全部模块的测试通过 |
 | 2. 生成确定性 | `:vsm-compiler:verifyDeterministicGeneration` | 两次生成的结果与已提交的 `view/generated` 三者 sha256 相同；哈希写入 `vsm-compiler/build/vsm-generation.sha256` |
-| 3. 性能阈值 | `:backend:checkPerfThreshold` | `IbdSyncTest` 写出的 `backend/build/perf-refresh.json`：500 个元素、20 次插入，中位数 < 800 ms，P95 < 2000 ms；阈值写死在构建脚本里，不从报告读取 |
+| 3. 性能阈值 | `:backend:checkPerfThreshold` | `IbdSyncTest` 写出的 `backend/build/perf-refresh.json`：500 个元素、20 次插入，中位数 < 800 ms，P95 < 2000 ms；P1 T9 起还要求 `ViewSwitchPerfTest` 写出的 `backend/build/perf-view-switch.json`（500 个元素，SA/LA/PA 轮流切换）每次切换 < 1000 ms。阈值写死在构建脚本里，不从报告读取 |
 
 CI 需要两个仓库 secret：`GPR_TOKEN`（**classic** PAT，带 `read:packages` 权限，用来读取 Sirius Web 的 GitHub Packages）和 `GPR_USER`。

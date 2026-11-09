@@ -81,10 +81,12 @@ tasks.named<Jar>("jar") {
 // read from the report, so a test cannot loosen its own gate.
 val checkPerfThreshold = tasks.register("checkPerfThreshold") {
     group = "verification"
-    description = "Fails unless build/perf-refresh.json reports median < 800 ms and P95 < 2000 ms."
+    description = "Fails unless build/perf-refresh.json reports median < 800 ms and P95 < 2000 ms, and build/perf-view-switch.json every switch < 1000 ms."
     val report = layout.buildDirectory.file("perf-refresh.json")
+    val viewSwitchReport = layout.buildDirectory.file("perf-view-switch.json")
     dependsOn(tasks.named("test"))
     inputs.file(report)
+    inputs.file(viewSwitchReport)
     doLast {
         val file = report.get().asFile
         if (!file.isFile) {
@@ -103,6 +105,24 @@ val checkPerfThreshold = tasks.register("checkPerfThreshold") {
             throw GradleException("perf gate failed: median $median ms (limit 800), P95 $p95 ms (limit 2000)")
         }
         logger.lifecycle("perf gate passed: median $median ms, P95 $p95 ms ($elements elements, $additions inserts)")
+
+        // P1 T9 step 3: 500 elements, SA/LA/PA open together, every view switch < 1 s (ViewSwitchPerfTest).
+        val switches = viewSwitchReport.get().asFile
+        if (!switches.isFile) {
+            throw GradleException("perf gate: ${switches} is missing; ViewSwitchPerfTest did not run")
+        }
+        @Suppress("UNCHECKED_CAST")
+        val switch = groovy.json.JsonSlurper().parse(switches) as Map<String, Any?>
+        val switchElements = (switch["elements"] as Number).toInt()
+        val views = (switch["views"] as Number).toInt()
+        val worst = maxOf((switch["plainMaxMs"] as Number).toDouble(), (switch["afterEditMaxMs"] as Number).toDouble())
+        if (switchElements < 500 || views < 3) {
+            throw GradleException("perf gate: the view-switch scenario must be 500 elements and 3 views, was $switchElements and $views")
+        }
+        if (worst >= 1000.0) {
+            throw GradleException("perf gate failed: a view switch took $worst ms (limit 1000)")
+        }
+        logger.lifecycle("perf gate passed: slowest view switch $worst ms ($switchElements elements, $views views)")
     }
 }
 
