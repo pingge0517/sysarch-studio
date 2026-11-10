@@ -372,3 +372,29 @@ body,
 .locks tr.lost td {
   color: #b71c1c;
 }
+
+/* P2 T3: branches */
+.branches section {
+  margin-bottom: 1.5rem;
+}
+.branches h2 {
+  font-size: 1rem;
+  margin: 0 0 0.5rem;
+}
+.branches .row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.branches table.list td {
+  padding: 0.25rem 0.75rem 0.25rem 0;
+}
+.branches td.actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.branches tr.closed td {
+  color: #888;
+}

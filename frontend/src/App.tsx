@@ -6,6 +6,10 @@ import { MatrixView } from './matrix/MatrixView';
 import { BaselinePage } from './baseline/BaselinePage';
 import { LocksPage } from './locks/LocksPage';
 import { currentUser, setCurrentUser } from './identity/user';
+import type { Branch } from './branch/api';
+import { leaveBranch, listBranches } from './branch/api';
+import { BranchesPage } from './branch/BranchesPage';
+import { effectiveProject, trunks } from './branch/workspaces';
 
 // TODO: mount the Sirius Web frontend components and register the BDD/IBD views. Until then the diagrams are
 // edited in Sirius Web's own UI (backend :8080); this shell hosts the P1 matrix pages.
@@ -23,16 +27,22 @@ function setParams(values: Record<string, string>) {
 }
 
 /**
- * The shell (P1 T4, T7, P2 T1): pick a Sirius project, then the matrix of a VSM table, the baselines and their diffs,
- * or the edit locks; ?project=…&view=…&table=… keeps the choice in the URL. The user name (top right) is the temporary
+ * The shell (P1 T4, T7, P2 T1, T3): pick a Sirius project and a workspace (the trunk or one of its branches), then the
+ * matrix of a VSM table, the baselines and their diffs, the edit locks or the branches; ?project=…&branch=…&view=…&table=…
+ * keeps the choice in the URL. Switching away from a branch releases the user's locks there and closes their session
+ * (P2 T3 step 3). The user name (top right) is the temporary
  * identity until T8: a cookie that Sirius Web on :8080 receives too, so the backend knows who edits there.
  */
 export function App() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [tables, setTables] = useState<TableInfo[]>([]);
   const [project, setProject] = useState(param('project'));
+  const [branchId, setBranchId] = useState(param('branch'));
+  const [allOpen, setAllOpen] = useState<Branch[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [notice, setNotice] = useState<string | null>(null);
   const [table, setTable] = useState(param('table') || 'allocation-matrix');
-  const [view, setView] = useState(['baselines', 'locks'].includes(param('view')) ? param('view') : 'matrix');
+  const [view, setView] = useState(['baselines', 'locks', 'branches'].includes(param('view')) ? param('view') : 'matrix');
   const [user, setUser] = useState(currentUser());
   const [matrix, setMatrix] = useState<Matrix | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -42,12 +52,51 @@ export function App() {
 
   useEffect(() => {
     fetchProjects().then(setProjects, (e: Error) => setError(`项目列表：${e.message}`));
+    listBranches().then(setAllOpen, () => setAllOpen([]));
     fetchTables().then(setTables, (e: Error) => setError(`表格列表：${e.message}`));
   }, []);
 
+  // The trunk's branches, for the workspace selector.
+  const reloadBranches = useCallback(async () => {
+    if (!project) {
+      setBranches([]);
+      return;
+    }
+    try {
+      setBranches(await listBranches(project));
+      setAllOpen(await listBranches());
+    } catch {
+      setBranches([]);
+    }
+  }, [project]);
+
+  useEffect(() => {
+    void reloadBranches();
+  }, [reloadBranches]);
+
+  const branch = branches.find((b) => b.id === branchId);
+  const workspace = effectiveProject(project, branch);
+
+  /** Switch the workspace; leaving a branch releases my locks there and closes my session (T3 step 3). */
+  const switchTo = useCallback(
+    async (next: string) => {
+      if (branchId && branchId !== next && user) {
+        try {
+          const released = await leaveBranch(branchId);
+          setNotice(`已离开分支，释放了 ${released} 把锁`);
+        } catch (e) {
+          setNotice(`离开分支时出错：${(e as Error).message}`);
+        }
+      }
+      setBranchId(next);
+      await reloadBranches();
+    },
+    [branchId, user, reloadBranches],
+  );
+
   const load = useCallback(
     async (measure: boolean) => {
-      if (!project || !table || view !== 'matrix') {
+      if (!workspace || !table || view !== 'matrix') {
         return;
       }
       if (measure) {
@@ -55,21 +104,21 @@ export function App() {
         setFirstRender(null);
       }
       try {
-        setMatrix(await fetchMatrix(project, table));
+        setMatrix(await fetchMatrix(workspace, table));
         setError(null);
       } catch (e) {
         setError((e as Error).message);
         setMatrix(null);
       }
     },
-    [project, table, view],
+    [workspace, table, view],
   );
 
   useEffect(() => {
-    setParams({ project, table, view: view === 'matrix' ? '' : view });
+    setParams({ project, branch: branchId, table, view: view === 'matrix' ? '' : view });
     setMatrix(null);
     void load(true);
-  }, [project, table, load]);
+  }, [project, branchId, table, load]);
 
   // Other people edit the model in Sirius Web: refetch now and then, and when the page gets focus again.
   useEffect(() => {
@@ -94,7 +143,7 @@ export function App() {
   const onAction = useCallback(
     async (option: CellOption, cell: Cell) => {
       try {
-        const response = await runAction(project, table, option.action.id, cell, option.remove);
+        const response = await runAction(workspace, table, option.action.id, cell, option.remove);
         setMatrix(response.matrix);
         setRefusal(response.errors);
         return response.errors;
@@ -103,7 +152,7 @@ export function App() {
         return [];
       }
     },
-    [project, table],
+    [workspace, table],
   );
 
   return (
@@ -112,21 +161,43 @@ export function App() {
         <h1>SysArch Studio</h1>
         <label>
           项目
-          <select value={project} onChange={(e) => setProject(e.target.value)}>
+          <select
+            value={project}
+            onChange={(e) => {
+              void switchTo('');
+              setProject(e.target.value);
+            }}
+          >
             <option value="">请选择</option>
-            {projects.map((p) => (
+            {trunks(projects, allOpen).map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
               </option>
             ))}
           </select>
         </label>
+        {project && (
+          <label title="分支在自己的工作区里编辑；切走时释放你在该分支的锁">
+            工作区
+            <select value={branch ? branchId : ''} onChange={(e) => void switchTo(e.target.value)}>
+              <option value="">主干</option>
+              {branches
+                .filter((b) => b.status === 'OPEN')
+                .map((b) => (
+                  <option key={b.id} value={b.id}>
+                    ⎇ {b.name}
+                  </option>
+                ))}
+            </select>
+          </label>
+        )}
         <label>
           视图
           <select value={view} onChange={(e) => setView(e.target.value)}>
             <option value="matrix">矩阵</option>
             <option value="baselines">基线与差异</option>
             <option value="locks">编辑锁</option>
+            <option value="branches">分支</option>
           </select>
         </label>
         {view === 'matrix' && <label>
@@ -161,6 +232,14 @@ export function App() {
           {error}
         </div>
       )}
+      {notice && (
+        <div className="notice" role="status">
+          {notice}
+          <button type="button" onClick={() => setNotice(null)}>
+            知道了
+          </button>
+        </div>
+      )}
       {refusal.length > 0 && (
         <div className="notice refusal" role="alert">
           <strong>未执行：</strong>
@@ -173,8 +252,9 @@ export function App() {
 
       <main className="content">
         {!project && <p className="hint">选择一个 Sirius 项目。</p>}
-        {project && view === 'baselines' && <BaselinePage project={project} />}
-        {project && view === 'locks' && <LocksPage project={project} user={user} />}
+        {project && view === 'baselines' && <BaselinePage project={workspace} />}
+        {project && view === 'locks' && <LocksPage project={workspace} user={user} />}
+        {project && view === 'branches' && <BranchesPage trunk={project} current={branch ? branchId : ''} onSwitch={(id) => void switchTo(id)} />}
         {project && view === 'matrix' && matrix && <MatrixView matrix={matrix} onAction={onAction} />}
         {project && view === 'matrix' && !matrix && !error && <p className="hint">加载中…</p>}
       </main>

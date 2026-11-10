@@ -13,7 +13,7 @@ import java.util.TreeSet;
 /**
  * The diff of two model states (P1 T7 step 2): elements aligned by element id; {@code added} and {@code removed} ids,
  * and for {@code modified} the fields that differ: {@code name}, {@code layer}, {@code type} and the attribute names
- * ({@link ModelSnapshot}). Everything sorted, so the same two states always give the same diff.
+ * ({@link ModelSnapshot}; {@code container} when an element moved, P2). Everything sorted, so the same two states always give the same diff.
  */
 public final class ModelDiffs {
 
@@ -45,7 +45,8 @@ public final class ModelDiffs {
         return new ModelDiff().added(added).removed(removed).modified(modified);
     }
 
-    static List<String> fields(ElementState old, ElementState now) {
+    /** The fields that differ (also a branch changeset row's {@code fields}). */
+    public static List<String> fields(ElementState old, ElementState now) {
         List<String> fields = new ArrayList<>();
         if (!Objects.equals(old.type(), now.type())) {
             fields.add("type");
@@ -59,8 +60,11 @@ public final class ModelDiffs {
         TreeSet<String> keys = new TreeSet<>(old.attributes().keySet());
         keys.addAll(now.attributes().keySet());
         for (String key : keys) {
+            if (key.startsWith("$") && !(old.attributes().containsKey(key) && now.attributes().containsKey(key))) {
+                continue; // a baseline from before P2 has no structure: not a change
+            }
             if (!Objects.equals(old.attributes().get(key), now.attributes().get(key))) {
-                fields.add(key);
+                fields.add(key.startsWith("$") ? key.substring(1) : key);
             }
         }
         return fields;

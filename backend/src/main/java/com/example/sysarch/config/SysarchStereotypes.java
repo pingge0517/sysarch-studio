@@ -8,10 +8,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.eclipse.sirius.components.core.api.IEditingContext;
-import org.eclipse.sirius.components.emf.ResourceMetadataAdapter;
-import org.eclipse.sirius.components.emf.migration.MigrationService;
-import org.eclipse.sirius.components.emf.migration.api.IMigrationParticipant;
-import org.eclipse.sirius.components.emf.services.JSONResourceFactory;
 import org.eclipse.sirius.components.emf.services.api.IEMFEditingContext;
 import org.eclipse.sirius.web.application.document.dto.DocumentDTO;
 import org.eclipse.sirius.web.application.document.dto.Stereotype;
@@ -49,10 +45,10 @@ public final class SysarchStereotypes {
     @Service
     public static class Handler implements IStereotypeHandler {
 
-        private final List<IMigrationParticipant> migrationParticipants;
+        private final SiriusDocuments documents;
 
-        public Handler(List<IMigrationParticipant> migrationParticipants) {
-            this.migrationParticipants = Objects.requireNonNull(migrationParticipants);
+        public Handler(SiriusDocuments documents) {
+            this.documents = Objects.requireNonNull(documents);
         }
 
         @Override
@@ -65,15 +61,7 @@ public final class SysarchStereotypes {
             if (!(editingContext instanceof IEMFEditingContext emfEditingContext)) {
                 return Optional.empty();
             }
-            var documentId = UUID.randomUUID();
-            var resource = new JSONResourceFactory().createResourceFromPath(documentId.toString());
-            var metadata = new ResourceMetadataAdapter(name);
-            metadata.addMigrationData(new MigrationService(this.migrationParticipants).getMostRecentParticipantMigrationData());
-            resource.eAdapters().add(metadata);
-            if (DEMO_MODEL.equals(stereotypeId)) {
-                resource.getContents().addAll(DomainControllerDemo.build());
-            }
-            emfEditingContext.getDomain().getResourceSet().getResources().add(resource);
+            UUID documentId = this.documents.create(emfEditingContext, name, DEMO_MODEL.equals(stereotypeId) ? DomainControllerDemo.build() : List.of());
             return Optional.of(new DocumentDTO(documentId, name, ExplorerDescriptionProvider.DOCUMENT_KIND));
         }
     }

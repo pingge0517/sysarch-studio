@@ -92,12 +92,17 @@ public final class ConstraintEnforcement {
 
         private final EditAdmission admission;
 
-        public Guard(ConstraintValidator constraints, VetoNotices notices, Editors editors, LockEnforcement locks, EditAdmission admission) {
+        /** Lazy: the branch service depends (through ProjectModels) on Sirius' processor registry, which needs this consumer. */
+        private final org.springframework.beans.factory.ObjectProvider<com.example.sysarch.branch.BranchService> branches;
+
+        public Guard(ConstraintValidator constraints, VetoNotices notices, Editors editors, LockEnforcement locks, EditAdmission admission,
+                org.springframework.beans.factory.ObjectProvider<com.example.sysarch.branch.BranchService> branches) {
             this.guard = new ChangeGuard(Objects.requireNonNull(constraints));
             this.notices = Objects.requireNonNull(notices);
             this.editors = Objects.requireNonNull(editors);
             this.locks = Objects.requireNonNull(locks);
             this.admission = Objects.requireNonNull(admission);
+            this.branches = Objects.requireNonNull(branches);
         }
 
         @Override
@@ -142,6 +147,8 @@ public final class ConstraintEnforcement {
                 } else {
                     this.locks.deletedBySystem(project.get(), change);
                 }
+                // P2 T3: in a branch workspace, the changeset follows every edit that went through.
+                this.branches.ifAvailable(b -> b.recordEdit(project.get(), resourceSet.get(), change));
             }
             // The client already has its answer, so the reason goes onto the edited fields until the next edit.
             this.notices.record(resourceSet.get(), edited, introduced);

@@ -12,4 +12,6 @@
     <include file="db/sysarch/007-collab.xml"/>
     <include file="db/sysarch/008-audit-log.xml"/>
     <include file="db/sysarch/009-edit-session-activity.xml"/>
+    <include file="db/sysarch/010-branch.xml"/>
+    <include file="db/sysarch/011-branch-workspace.xml"/>
 </databaseChangeLog>

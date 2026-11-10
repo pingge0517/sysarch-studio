@@ -132,6 +132,25 @@ public class ProjectModels {
         return ids.get(0);
     }
 
+    /**
+     * Adds a document with the given contents to the project's model (as the system: no lock applies), saved by
+     * Sirius like any edit. The contents are built on the editing context's thread.
+     *
+     * @return the new document's id
+     */
+    public String addDocument(String project, String name, java.util.function.Supplier<List<org.eclipse.emf.ecore.EObject>> contents) {
+        String editingContextId = this.projectEditingContexts.getEditingContextId(this.siriusProjectId(project))
+                .orElseThrow(() -> new UnknownProjectException("project '" + project + "' has no model"));
+        IPayload payload = this.editingContexts.dispatchEvent(editingContextId, new DocumentInput(UUID.randomUUID(), name, contents)).block(TIMEOUT);
+        if (payload instanceof TaskPayload result) {
+            if (result.failure() != null) {
+                throw result.failure();
+            }
+            return (String) result.value();
+        }
+        throw new IllegalStateException("adding a document failed: " + payload);
+    }
+
     /** The Sirius project's name (read-only, Sirius' {@code project} table). */
     public String projectName(String project) {
         String id = this.siriusProjectId(project);
@@ -139,6 +158,10 @@ public class ProjectModels {
     }
 
     record TaskInput(UUID id, Function<List<Resource>, ? extends Outcome<?>> task, String projectId, Editor editor) implements IInput {
+    }
+
+    /** A new document in the project's editing context (P2 T3: a branch workspace's model). */
+    record DocumentInput(UUID id, String name, java.util.function.Supplier<List<org.eclipse.emf.ecore.EObject>> contents) implements IInput {
     }
 
     /** {@code failure} is set when the task threw. */
@@ -151,18 +174,32 @@ public class ProjectModels {
 
         private final EditAdmission admission;
 
-        public Handler(EditAdmission admission) {
+        private final com.example.sysarch.config.SiriusDocuments documents;
+
+        public Handler(EditAdmission admission, com.example.sysarch.config.SiriusDocuments documents) {
             this.admission = Objects.requireNonNull(admission);
+            this.documents = Objects.requireNonNull(documents);
         }
 
         @Override
         public boolean canHandle(IEditingContext editingContext, IInput input) {
-            return editingContext instanceof IEMFEditingContext && input instanceof TaskInput;
+            return editingContext instanceof IEMFEditingContext && (input instanceof TaskInput || input instanceof DocumentInput);
         }
 
         @Override
         public void handle(Sinks.One<IPayload> payloadSink, Sinks.Many<ChangeDescription> changeDescriptionSink, IEditingContext editingContext,
                 IInput input) {
+            if (input instanceof DocumentInput document) {
+                try {
+                    UUID documentId = this.documents.create((IEMFEditingContext) editingContext, document.name(), document.contents().get());
+                    payloadSink.tryEmitValue(new TaskPayload(input.id(), documentId.toString(), null));
+                    changeDescriptionSink.tryEmitNext(new ChangeDescription(ChangeKind.SEMANTIC_CHANGE, editingContext.getId(), input));
+                } catch (RuntimeException e) {
+                    payloadSink.tryEmitValue(new TaskPayload(input.id(), null, e));
+                    changeDescriptionSink.tryEmitNext(new ChangeDescription(ChangeKind.NOTHING, editingContext.getId(), input));
+                }
+                return;
+            }
             TaskInput task = (TaskInput) input;
             boolean changed = false;
             var resourceSet = ((IEMFEditingContext) editingContext).getDomain().getResourceSet();

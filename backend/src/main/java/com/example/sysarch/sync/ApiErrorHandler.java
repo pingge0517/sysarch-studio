@@ -26,7 +26,8 @@ import org.springframework.web.server.ResponseStatusException;
 @RestControllerAdvice(basePackageClasses = { SyncController.class, LinksController.class, com.example.sysarch.view.table.TableController.class,
         com.example.sysarch.trace.TraceController.class, com.example.sysarch.baseline.BaselineController.class,
         com.example.sysarch.project.ElementLocationController.class, com.example.sysarch.export.ExportController.class,
-        com.example.sysarch.lock.LockController.class, com.example.sysarch.session.SessionController.class })
+        com.example.sysarch.lock.LockController.class, com.example.sysarch.session.SessionController.class,
+        com.example.sysarch.branch.BranchController.class })
 public class ApiErrorHandler {
 
     @ExceptionHandler(ResponseStatusException.class)

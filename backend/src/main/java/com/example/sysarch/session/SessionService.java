@@ -55,7 +55,11 @@ public class SessionService {
         private final int limit;
 
         public FullException(int open, int limit) {
-            super("当前项目编辑人数已满（" + open + "/" + limit + "），请稍后再试");
+            this("当前项目编辑人数已满（" + open + "/" + limit + "），请稍后再试", open, limit);
+        }
+
+        FullException(String message, int open, int limit) {
+            super(message);
             this.open = open;
             this.limit = limit;
         }
@@ -88,6 +92,8 @@ public class SessionService {
 
     private final int limit;
 
+    private final List<ProjectLimits> limits;
+
     private final Duration idleTimeout;
 
     private final Clock clock;
@@ -102,19 +108,48 @@ public class SessionService {
 
     @Autowired
     public SessionService(JdbcClient jdbc, @Value("${sysarch.sessions.max-per-project:30}") int limit,
-            @Value("${sysarch.sessions.idle-timeout:PT30M}") Duration idleTimeout) {
-        this(jdbc, limit, idleTimeout, Clock.systemUTC());
+            @Value("${sysarch.sessions.idle-timeout:PT30M}") Duration idleTimeout, List<ProjectLimits> limits) {
+        this(jdbc, limit, idleTimeout, Clock.systemUTC(), limits);
     }
 
     SessionService(JdbcClient jdbc, int limit, Duration idleTimeout, Clock clock) {
+        this(jdbc, limit, idleTimeout, clock, List.of());
+    }
+
+    /** With a given clock and per-project limits (tests). */
+    public SessionService(JdbcClient jdbc, int limit, Duration idleTimeout, Clock clock, List<ProjectLimits> limits) {
         this.jdbc = Objects.requireNonNull(jdbc);
         this.limit = limit;
+        this.limits = List.copyOf(limits);
         this.idleTimeout = Objects.requireNonNull(idleTimeout);
         this.clock = Objects.requireNonNull(clock);
     }
 
+    /** The default limit. */
     public int limit() {
         return this.limit;
+    }
+
+    /** The limit of one project: the default, or lower for a branch workspace (one writer, P2 T3). */
+    public int limit(String projectId) {
+        return this.limits.stream().map(l -> l.limit(projectId)).filter(java.util.OptionalInt::isPresent).mapToInt(java.util.OptionalInt::getAsInt)
+                .min().orElse(this.limit);
+    }
+
+    /** The user's open session in the project is closed (leaving a branch workspace, P2 T3). */
+    public void closeUser(String projectId, String user) {
+        this.jdbc.sql("UPDATE edit_session SET closed_at = :now WHERE project_id = :p AND user_id = :u AND closed_at IS NULL")
+                .param("now", at(this.clock.instant())).param("p", projectId).param("u", user).update();
+        this.recent.remove(projectId + '\n' + user);
+    }
+
+    private FullException full(String projectId, int open, int limit) {
+        if (limit == 1) {
+            String holders = this.jdbc.sql("SELECT user_id FROM edit_session WHERE project_id = :p AND closed_at IS NULL").param("p", projectId)
+                    .query(String.class).list().stream().collect(java.util.stream.Collectors.joining("、"));
+            return new FullException("该分支正由 " + holders + " 编辑，同一分支同时只允许一人写，请稍后再试", open, limit);
+        }
+        return new FullException(open, limit);
     }
 
     /**
@@ -142,15 +177,16 @@ public class SessionService {
                 return session;
             }
             int open = this.countOpen(projectId);
-            if (open >= this.limit) {
-                throw new FullException(open, this.limit);
+            int limit = this.limit(projectId);
+            if (open >= limit) {
+                throw this.full(projectId, open, limit);
             }
             String id = UUID.randomUUID().toString();
             this.jdbc.sql("INSERT INTO edit_session (id, project_id, user_id, opened_at, last_active_at, client_info) VALUES (:id, :p, :u, :now, :now, :c)")
                     .param("id", id).param("p", projectId).param("u", user).param("now", at(now)).param("c", truncate(clientInfo)).update();
             Session session = this.open(id).orElseThrow();
             this.recent.put(key, new Recent(session, now));
-            this.logger.debug("Opened edit session {} for {} in project {} ({}/{})", id, user, projectId, open + 1, this.limit);
+            this.logger.debug("Opened edit session {} for {} in project {} ({}/{})", id, user, projectId, open + 1, limit);
             return session;
         }
     }
@@ -165,8 +201,9 @@ public class SessionService {
         synchronized (this.projectLocks.computeIfAbsent(projectId, p -> new Object())) {
             this.closeIdle(projectId, now);
             int open = this.countOpen(projectId);
-            if (open >= this.limit) {
-                throw new FullException(open, this.limit);
+            int limit = this.limit(projectId);
+            if (open >= limit) {
+                throw this.full(projectId, open, limit);
             }
         }
     }

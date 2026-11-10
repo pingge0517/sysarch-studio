@@ -34,6 +34,12 @@ import org.eclipse.emf.ecore.resource.Resource;
  * Sirius keeps the real layout outside the model anyway);</li>
  * <li>empty values, so "unset" and "empty" are the same.</li>
  * </ul>
+ *
+ * <p>Since P2 T3 a snapshot also records where each element sits, so that a branch workspace can be rebuilt from a
+ * baseline: {@value #CONTAINER} = the containing element's id ({@code ""} at the top of a document) and
+ * {@value #FEATURE} = the containment feature. They are the element's own data: adding a part is still one "added"
+ * (the block's state does not change), moving it to another block is one "modified" ({@code container}). Baselines
+ * from before P2 lack them; {@link ModelDiffs} compares them only when both sides have them.
  */
 public final class ModelSnapshot {
 
@@ -45,9 +51,20 @@ public final class ModelSnapshot {
         }
     }
 
+    /** The containing element's id; {@code ""} for an element at the top of its document. */
+    public static final String CONTAINER = "$container";
+
+    /** The containment feature the element sits in; absent at the top of a document. */
+    public static final String FEATURE = "$feature";
+
     private static final Set<String> COLUMNS = Set.of("id", "name", "layer");
 
     private ModelSnapshot() {
+    }
+
+    /** Whether a stored snapshot records where elements sit (baselines from P2 on), so a model can be rebuilt from it. */
+    public static boolean isStructural(Map<String, ElementState> elements) {
+        return !elements.isEmpty() && elements.values().stream().allMatch(e -> e.attributes().containsKey(CONTAINER));
     }
 
     /** Every model element of the resources, by element id (sorted). */
@@ -64,8 +81,14 @@ public final class ModelSnapshot {
         return elements;
     }
 
-    static ElementState state(ArchElement element) {
+    /** The state of one element (P2 T3: also the changeset payload of a branch). */
+    public static ElementState state(ArchElement element) {
         Map<String, Object> attributes = new TreeMap<>();
+        EObject container = element.eContainer();
+        attributes.put(CONTAINER, container == null ? "" : ElementIds.of(container));
+        if (container != null) {
+            attributes.put(FEATURE, element.eContainingFeature().getName());
+        }
         for (EStructuralFeature feature : element.eClass().getEAllStructuralFeatures()) {
             if (COLUMNS.contains(feature.getName()) || feature.isDerived() || feature.isTransient()
                     || feature instanceof EReference reference && (reference.isContainment() || reference.isContainer())) {

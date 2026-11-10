@@ -18,6 +18,7 @@ const LABELS: Record<string, string> = {
   type: '类型',
   stereotypes: '构造型',
   description: '说明',
+  container: '所属',
 };
 
 /** One row per change, in the order added, modified, removed; each group sorted by element id (as the backend sends it). */

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- P2 T3 (user's decision "独立工作区项目"): a branch is edited in its own Sirius project, rebuilt from the base
+     baseline. The spec's branch table has no column for it: additive. Also one changeset row per element (user's
+     decision "每个元素一条净变更"), enforced by a unique index. -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <changeSet id="sysarch-011-branch-workspace" author="sysarch">
+        <addColumn tableName="branch">
+            <column name="workspace_project_id" type="VARCHAR(64)"/>
+        </addColumn>
+        <createIndex tableName="branch" indexName="idx_branch_workspace"><column name="workspace_project_id"/></createIndex>
+        <createIndex tableName="changeset" indexName="uq_changeset_element" unique="true">
+            <column name="branch_id"/>
+            <column name="element_id"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>

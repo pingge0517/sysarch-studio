@@ -73,7 +73,8 @@ public class SessionController {
 
     @GetMapping
     public Sessions list(@RequestParam("projectId") String projectId) {
-        return new Sessions(this.sessions.limit(), this.sessions.list(this.models.siriusProjectId(projectId)));
+        String project = this.models.siriusProjectId(projectId);
+        return new Sessions(this.sessions.limit(project), this.sessions.list(project));
     }
 
     @ExceptionHandler(SessionService.FullException.class)

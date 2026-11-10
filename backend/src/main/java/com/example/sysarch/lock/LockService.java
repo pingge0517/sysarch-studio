@@ -222,6 +222,16 @@ public class LockService {
         return this.release(lock.get(), actor, force);
     }
 
+    /** All of a user's locks in a project end (leaving a branch workspace, P2 T3 step 3). */
+    public int releaseAll(String projectId, String owner) {
+        return this.jdbc.sql("DELETE FROM edit_lock WHERE project_id = :p AND owner_user = :o").param("p", projectId).param("o", owner).update();
+    }
+
+    /** Every lock of a project ends (its branch workspace is deleted, P2 T3). */
+    public int dropProject(String projectId) {
+        return this.jdbc.sql("DELETE FROM edit_lock WHERE project_id = :p").param("p", projectId).update();
+    }
+
     /** Same, by lock id. */
     public boolean releaseById(String lockId, String actor, boolean force) {
         Optional<Lock> lock = this.held(lockId);

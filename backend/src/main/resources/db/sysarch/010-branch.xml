@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- P2 T3: branches and their changesets. On PostgreSQL the DDL is the spec's (P2 §3.4, continuing V3__collab.sql),
+     verbatim in 010-branch.sql. H2, which only the tests use, knows neither timestamptz nor jsonb: it gets the same
+     tables in its own types. -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <changeSet id="sysarch-010-branch" author="sysarch" dbms="postgresql">
+        <sqlFile path="010-branch.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
+    <changeSet id="sysarch-010-branch-h2" author="sysarch" dbms="h2">
+        <comment>The same tables as 010-branch.sql for the tests' H2 (timestamptz → TIMESTAMP WITH TIME ZONE, jsonb → TEXT).</comment>
+        <createTable tableName="branch">
+            <column name="id" type="VARCHAR(64)"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="project_id" type="VARCHAR(64)"><constraints nullable="false"/></column>
+            <column name="name" type="VARCHAR(200)"><constraints nullable="false"/></column>
+            <column name="base_baseline" type="VARCHAR(64)">
+                <constraints nullable="false" foreignKeyName="fk_branch_baseline" references="baseline(id)"/>
+            </column>
+            <column name="created_by" type="VARCHAR(128)"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+            <column name="status" type="VARCHAR(16)" defaultValue="OPEN"><constraints nullable="false"/></column>
+        </createTable>
+        <addUniqueConstraint tableName="branch" columnNames="project_id, name"/>
+        <createTable tableName="changeset">
+            <column name="id" type="VARCHAR(64)"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="branch_id" type="VARCHAR(64)">
+                <constraints nullable="false" foreignKeyName="fk_changeset_branch" references="branch(id)" deleteCascade="true"/>
+            </column>
+            <column name="element_id" type="VARCHAR(64)"><constraints nullable="false"/></column>
+            <column name="op" type="VARCHAR(16)"><constraints nullable="false"/></column>
+            <column name="payload" type="TEXT"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+        </createTable>
+    </changeSet>
+</databaseChangeLog>
