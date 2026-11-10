@@ -53,11 +53,11 @@ public final class MatrixProjector {
         List<Matrix.Header> columns = model.columns.stream().map(e -> header(table.columns(), e)).toList();
         List<Matrix.Cell> cells = new ArrayList<>();
         Set<String> marked = new LinkedHashSet<>();
-        for (EObject row : model.rows) {
-            for (EObject column : model.columns) {
-                if (model.marked(row, column) && marked.add(ElementIds.of(row) + "\u0000" + ElementIds.of(column))) {
-                    cells.add(new Matrix.Cell(ElementIds.of(row), ElementIds.of(column), model.links(row, column)));
-                }
+        for (EObject[] pair : markedPairs(model)) {
+            EObject row = pair[0];
+            EObject column = pair[1];
+            if (marked.add(ElementIds.of(row) + "\u0000" + ElementIds.of(column))) {
+                cells.add(new Matrix.Cell(ElementIds.of(row), ElementIds.of(column), model.links(row, column)));
             }
         }
         Set<String> groupKeys = new LinkedHashSet<>();
@@ -69,6 +69,106 @@ public final class MatrixProjector {
                         a.kind() == TableActionKind.LINK ? undoLabel(a.label()) : null))
                 .toList();
         return new Matrix(table.id(), table.label(), table.markSymbol(), table.markColor(), groups, rows, columns, cells, actions);
+    }
+
+    /**
+     * The marked (row, column) pairs in row order, then column order (P2 T7, "关系预计算"). Testing every cell against
+     * every domain element is rows × columns × elements: about 1.3 billion tests and 190 s on the 10,000-element
+     * benchmark. When the cell condition is anchored on both sides (every way it can hold sets a positive
+     * {@code feature == row|column} or {@code includes} of each side), the candidates of a cell come from the domain
+     * elements' own feature values, and only those pairs are tested, with the same {@link #holds}. Other conditions
+     * (a {@code not} or {@code or} without an anchor) keep the full scan, so the result never differs.
+     */
+    static List<EObject[]> markedPairs(Model model) {
+        CellCondition condition = model.table.cellCondition();
+        boolean rowAnchored = model.selfMode || anchored(condition, CellCondition.Side.ROW);
+        if (!rowAnchored || !anchored(condition, CellCondition.Side.COLUMN)) {
+            List<EObject[]> pairs = new ArrayList<>();
+            for (EObject row : model.rows) {
+                for (EObject column : model.columns) {
+                    if (model.marked(row, column)) {
+                        pairs.add(new EObject[] { row, column });
+                    }
+                }
+            }
+            return pairs;
+        }
+        Map<EObject, Integer> rowIndex = index(model.rows);
+        Map<EObject, Integer> columnIndex = index(model.columns);
+        java.util.TreeMap<Long, EObject[]> pairs = new java.util.TreeMap<>();
+        if (model.selfMode) {
+            for (EObject row : model.rows) {
+                if (!model.domainClass.isInstance(row)) {
+                    continue;
+                }
+                for (EObject column : candidates(condition, row, CellCondition.Side.COLUMN, columnIndex)) {
+                    if (holds(condition, row, row, column)) {
+                        pairs.putIfAbsent((long) rowIndex.get(row) << 32 | columnIndex.get(column), new EObject[] { row, column });
+                    }
+                }
+            }
+        } else {
+            for (EObject element : model.domainElements) {
+                for (EObject row : candidates(condition, element, CellCondition.Side.ROW, rowIndex)) {
+                    for (EObject column : candidates(condition, element, CellCondition.Side.COLUMN, columnIndex)) {
+                        if (holds(condition, element, row, column)) {
+                            pairs.putIfAbsent((long) rowIndex.get(row) << 32 | columnIndex.get(column), new EObject[] { row, column });
+                        }
+                    }
+                }
+            }
+        }
+        return new ArrayList<>(pairs.values());
+    }
+
+    /** Whether every way the condition can hold sets a positive atom on that side. */
+    static boolean anchored(CellCondition condition, CellCondition.Side side) {
+        return switch (condition) {
+            case CellCondition.And and -> anchored(and.left(), side) || anchored(and.right(), side);
+            case CellCondition.Or or -> anchored(or.left(), side) && anchored(or.right(), side);
+            case CellCondition.Not not -> false;
+            case CellCondition.EqualTo equalTo -> equalTo.side() == side;
+            case CellCondition.Includes includes -> includes.side() == side;
+        };
+    }
+
+    /** The axis elements {@code self} names through any atom on that side (a superset of the ones that can hold). */
+    private static List<EObject> candidates(CellCondition condition, EObject self, CellCondition.Side side, Map<EObject, Integer> axis) {
+        java.util.Set<EObject> found = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        collect(condition, self, side, axis, found);
+        return new ArrayList<>(found);
+    }
+
+    private static void collect(CellCondition condition, EObject self, CellCondition.Side side, Map<EObject, Integer> axis, Set<EObject> found) {
+        switch (condition) {
+            case CellCondition.And and -> {
+                collect(and.left(), self, side, axis, found);
+                collect(and.right(), self, side, axis, found);
+            }
+            case CellCondition.Or or -> {
+                collect(or.left(), self, side, axis, found);
+                collect(or.right(), self, side, axis, found);
+            }
+            case CellCondition.Not not -> collect(not.inner(), self, side, axis, found);
+            case CellCondition.EqualTo equalTo -> {
+                if (equalTo.side() == side && value(self, equalTo.feature()) instanceof EObject target && axis.containsKey(target)) {
+                    found.add(target);
+                }
+            }
+            case CellCondition.Includes includes -> {
+                if (includes.side() == side && value(self, includes.feature()) instanceof Collection<?> values) {
+                    values.stream().filter(v -> v instanceof EObject && axis.containsKey(v)).forEach(v -> found.add((EObject) v));
+                }
+            }
+        }
+    }
+
+    private static Map<EObject, Integer> index(List<EObject> elements) {
+        Map<EObject, Integer> index = new java.util.IdentityHashMap<>();
+        for (int i = 0; i < elements.size(); i++) {
+            index.putIfAbsent(elements.get(i), i);
+        }
+        return index;
     }
 
     /** 建立满足关系 → 取消满足关系; any other label gets 取消 in front. */

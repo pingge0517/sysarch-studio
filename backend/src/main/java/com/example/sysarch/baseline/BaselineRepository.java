@@ -19,6 +19,8 @@ import java.util.TreeMap;
 import javax.sql.DataSource;
 
 import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 /** {@code baseline} and {@code baseline_element} (spec P1 §4.2): a baseline row and its element states. */
@@ -41,7 +43,12 @@ public class BaselineRepository {
         this.jdbc = Objects.requireNonNull(jdbc);
         this.json = Objects.requireNonNull(json);
         this.attributesValue = isPostgres(dataSource) ? "CAST(:attributes AS jsonb)" : ":attributes";
+        this.batch = new NamedParameterJdbcTemplate(dataSource);
     }
+
+    private static final int BATCH = 500;
+
+    private final NamedParameterJdbcTemplate batch;
 
     public void insert(StoredBaseline baseline, Collection<ElementState> elements) {
         this.jdbc.sql("INSERT INTO baseline (id, project_id, label, description, model_rev, element_count, created_by, created_at) "
@@ -50,12 +57,20 @@ public class BaselineRepository {
                 .param("description", baseline.description()).param("rev", baseline.modelRev()).param("count", baseline.elementCount())
                 .param("by", baseline.createdBy()).param("at", baseline.createdAt())
                 .update();
+        // P2 T7 §6.2 "批量写": one batched statement per 500 elements instead of one round trip each.
+        String sql = "INSERT INTO baseline_element (baseline_id, element_id, element_type, name, layer, attributes) "
+                + "VALUES (:baseline, :id, :type, :name, :layer, " + this.attributesValue + ")";
+        List<MapSqlParameterSource> rows = new java.util.ArrayList<>();
         for (ElementState element : elements) {
-            this.jdbc.sql("INSERT INTO baseline_element (baseline_id, element_id, element_type, name, layer, attributes) "
-                    + "VALUES (:baseline, :id, :type, :name, :layer, " + this.attributesValue + ")")
-                    .param("baseline", baseline.id()).param("id", element.id()).param("type", element.type()).param("name", element.name())
-                    .param("layer", element.layer()).param("attributes", this.write(element.attributes()))
-                    .update();
+            rows.add(new MapSqlParameterSource().addValue("baseline", baseline.id()).addValue("id", element.id()).addValue("type", element.type())
+                    .addValue("name", element.name()).addValue("layer", element.layer()).addValue("attributes", this.write(element.attributes())));
+            if (rows.size() == BATCH) {
+                this.batch.batchUpdate(sql, rows.toArray(MapSqlParameterSource[]::new));
+                rows.clear();
+            }
+        }
+        if (!rows.isEmpty()) {
+            this.batch.batchUpdate(sql, rows.toArray(MapSqlParameterSource[]::new));
         }
     }
 

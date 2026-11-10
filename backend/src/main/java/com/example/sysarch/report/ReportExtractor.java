@@ -77,11 +77,15 @@ public final class ReportExtractor {
 
     private final List<Port> ports = new ArrayList<>();
 
+    /** Element ids → elements (P2 T7: the appendix names every referenced element; a scan per value was 10k × 10k). */
+    private final java.util.Map<String, ArchElement> byId = new java.util.HashMap<>();
+
     private ReportExtractor(Collection<Resource> model) {
         for (Resource resource : model) {
             resource.getAllContents().forEachRemaining(e -> {
                 if (e instanceof ArchElement element && !(e instanceof DiagramLayout)) {
                     this.all.add(element);
+                    this.byId.putIfAbsent(ElementIds.of(element), element);
                     switch (element) {
                         case PartDefinition block -> this.blocks.add(block);
                         case Part part -> this.parts.add(part);
@@ -295,7 +299,8 @@ public final class ReportExtractor {
         List<String> names = new ArrayList<>();
         for (Object value : values) {
             String text = String.valueOf(value);
-            names.add(this.all.stream().filter(e -> ElementIds.of(e).equals(text)).findFirst().map(e -> text(e.getName()) + "（" + text + "）").orElse(text));
+            ArchElement element = this.byId.get(text);
+            names.add(element == null ? text : text(element.getName()) + "（" + text + "）");
         }
         return names;
     }

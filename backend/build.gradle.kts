@@ -98,12 +98,14 @@ tasks.named<Jar>("jar") {
 // read from the report, so a test cannot loosen its own gate.
 val checkPerfThreshold = tasks.register("checkPerfThreshold") {
     group = "verification"
-    description = "Fails unless build/perf-refresh.json reports median < 800 ms and P95 < 2000 ms, and build/perf-view-switch.json every switch < 1000 ms."
+    description = "Fails unless build/perf-refresh.json reports median < 800 ms and P95 < 2000 ms, build/perf-view-switch.json every switch < 1000 ms, and build/perf/benchmark-10k.json the P2 §6.1 limits."
     val report = layout.buildDirectory.file("perf-refresh.json")
     val viewSwitchReport = layout.buildDirectory.file("perf-view-switch.json")
+    val benchmark10k = layout.buildDirectory.file("perf/benchmark-10k.json")
     dependsOn(tasks.named("test"))
     inputs.file(report)
     inputs.file(viewSwitchReport)
+    inputs.file(benchmark10k)
     doLast {
         val file = report.get().asFile
         if (!file.isFile) {
@@ -140,6 +142,25 @@ val checkPerfThreshold = tasks.register("checkPerfThreshold") {
             throw GradleException("perf gate failed: a view switch took $worst ms (limit 1000)")
         }
         logger.lifecycle("perf gate passed: slowest view switch $worst ms ($switchElements elements, $views views)")
+
+        // P2 T7 (spec P2 §6.1): 10,000 elements (TenThousandBenchmarkTest). The 30-editor P99 < 500 ms needs a running
+        // backend (tests/perf/concurrent-writes.mjs) and the matrix's first screen a browser; both are measured live.
+        val tenK = benchmark10k.get().asFile
+        if (!tenK.isFile) {
+            throw GradleException("perf gate: ${tenK} is missing; TenThousandBenchmarkTest did not run")
+        }
+        @Suppress("UNCHECKED_CAST")
+        val big = groovy.json.JsonSlurper().parse(tenK) as Map<String, Any?>
+        val bigElements = (big["elements"] as Number).toInt()
+        if (bigElements < 10_000 || (big["mergeOperations"] as Number).toInt() < 200) {
+            throw GradleException("perf gate: the benchmark must be 10,000 elements and a 200-change merge, was $bigElements and ${big["mergeOperations"]}")
+        }
+        val limits = linkedMapOf("ibdOpenColdMs" to 3000.0, "matrixColdMs" to 1500.0, "srsTotalMs" to 60000.0, "mergePreviewMs" to 10000.0)
+        val over = limits.filter { (key, limit) -> (big[key] as Number).toDouble() >= limit }
+        if (over.isNotEmpty()) {
+            throw GradleException("perf gate failed (10k): " + over.map { (key, limit) -> "$key ${big[key]} ms (limit ${limit.toInt()})" })
+        }
+        logger.lifecycle("perf gate passed (10k): " + limits.keys.joinToString { "$it ${big[it]} ms" })
     }
 }
 
@@ -156,4 +177,9 @@ tasks.register<JavaExec>("rollbackInterfaceMigration") {
     if (project.hasProperty("apply")) {
         args("--apply")
     }
+}
+
+// P2 T7: the 10,000-element benchmark holds several copies of the model and its snapshots (512 MB by default ran out).
+tasks.named<Test>("test") {
+    maxHeapSize = "2g"
 }

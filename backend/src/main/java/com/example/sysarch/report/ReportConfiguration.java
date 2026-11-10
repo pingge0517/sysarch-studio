@@ -38,7 +38,7 @@ public class ReportConfiguration {
     static final String DEFAULT_FONTS = "C:/Windows/Fonts/Deng.ttf,C:/Windows/Fonts/simhei.ttf,/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf";
 
     /** The default fonts as paths (also for the tests). */
-    static List<Path> defaultFonts() {
+    public static List<Path> defaultFonts() {
         return java.util.Arrays.stream(DEFAULT_FONTS.split(",")).map(Path::of).toList();
     }
 
