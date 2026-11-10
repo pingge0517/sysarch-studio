@@ -30,7 +30,7 @@
 | P1-AC-2 | 脚本、`AllocationMatrixTest`；T4 时在浏览器里检查过 | 通过：返回 422，提示 `跨层跳过：SA → PA（跳过 LA）` |
 | P1-AC-3 | 模型侧由脚本和 `RequirementTraceTest` 覆盖；Polarion 侧由 `TraceAndScheduleIT` 覆盖，T6 时对本机 Polarion 实测 | 通过：矩阵出现标记，Polarion 里建出 `implements` / `verifies` 链接 |
 | P1-AC-4 | 脚本（在画布上改名）、`BaselineTest`；T7 时实测 | 通过：差异只有 1 条修改 `PD-006 [name]` |
-| P1-AC-5 | 导出结果用 OMG 试点实现校验：0 错误、0 警告，解析得到的元素数和名称与模型一致 | **待确认**：本机没有 SysON |
+| P1-AC-5 | 导出结果用 OMG 试点实现校验：0 错误、0 警告，解析得到的元素数和名称与模型一致 | **通过**（2026-11-10，SysON 2026.11.0）：导入无错误，元素数、名称、ID、层级和连接端点与模型一致 |
 | P1-AC-6 | `TraceAndScheduleIT`；T6 时把 Polarion 地址指向不可达，做了模拟 | 通过：失败 3 次后暂停并显示红色告警，建模仍可继续 |
 | P1-AC-7 | 健康检查和约束否决由脚本覆盖；P0 的 AC 测试全部在 `./gradlew build` 中 | 通过 |
 
@@ -88,4 +88,4 @@
 |---|---|---|---|---|---|---|---|
 | U-01 | | | | | | | |
 
-试用结束时需要满足：关闭率 ≥ 80%，没有遗留的 BLOCKER。另外需要确认 P1-AC-5：把 `POST /api/v1/export/sysmlv2` 的导出文本导入 SysON，核对元素数、名称和层级。
+试用结束时需要满足：关闭率 ≥ 80%，没有遗留的 BLOCKER。P1-AC-5 已于 2026-11-10 在 SysON 2026.11.0 中确认。

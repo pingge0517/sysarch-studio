@@ -170,7 +170,7 @@
 - `layer` 和 `stereotypes` 写成元数据 `@SysArchInfo`；
 - 描述、需求字段、分配、满足/验证、ItemFlow 写成 `doc` 注释。
 
-导出结果已经用 OMG SysML v2 试点实现校验过：无错误、无警告，解析得到的元素数和名称与模型一致。在 SysON 里导入（P1-AC-5）还待确认。
+导出结果已经用 OMG SysML v2 试点实现校验过：无错误、无警告，解析得到的元素数和名称与模型一致。在 SysON 里导入（P1-AC-5）也已确认：2026-11-10 在本机 SysON 2026.11.0 中确认：演示模型的项目导出（`demo-project.sysml`）上传后无导入错误，元素齐全（1 个 port def、6 个 part def、3 个 part、6 个 port、4 个 connection、5 个 requirement），元素 ID 保留为短名称，层和构造型以 `SysArchInfo` 元数据保留，连接的两端解析为 `部件.端口` 的特征链。
 
 ---
 
@@ -198,7 +198,7 @@ node tests/acceptance/p1-acceptance.mjs [http://localhost:8080] [--keep]
 脚本测不到的部分，覆盖方式如下：
 
 - P1-AC-3 的 Polarion 侧和 P1-AC-6：会写 Polarion，由 `TraceAndScheduleIT`（WireMock）覆盖，T6 时又对本机 Polarion 2512 做过实测；
-- P1-AC-5：需要 SysON；
+- P1-AC-5：需要 SysON，已在本机 SysON 2026.11.0 中手工确认（见上文导出一节）；
 - P0 AC-2～AC-6 中只能在浏览器里看的部分：P0 验收时已在浏览器检查；对应的自动化测试每次构建都会跑。
 
 删除项目时，它的基线不会跟着删除（试用问题 T9-02），所以每跑一次脚本，`baseline` 表里会多一条 `p1-acceptance` 记录。
