@@ -14,4 +14,5 @@
     <include file="db/sysarch/009-edit-session-activity.xml"/>
     <include file="db/sysarch/010-branch.xml"/>
     <include file="db/sysarch/011-branch-workspace.xml"/>
+    <include file="db/sysarch/012-merge-run.xml"/>
 </databaseChangeLog>

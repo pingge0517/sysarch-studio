@@ -68,6 +68,8 @@ public class BranchService {
 
     public static final String ABANDONED = "ABANDONED";
 
+    public static final String MERGED = "MERGED";
+
     /** A request that cannot be served as asked (400/409 at the API; the message says why). */
     public static class BranchRequestException extends RuntimeException {
 
@@ -239,12 +241,21 @@ public class BranchService {
         if (!branch.open()) {
             throw new BranchRequestException("分支「" + branch.name() + "」已是 " + branch.status(), true);
         }
-        this.jdbc.sql("UPDATE branch SET status = :s WHERE id = :id").param("s", ABANDONED).param("id", branchId).update();
+        this.close(branch, ABANDONED);
+        this.audit.append(branch.projectId(), actor, "BRANCH_ABANDON", null, "branch " + branch.name() + " (" + branchId + ")");
+        return this.view(this.find(branchId));
+    }
+
+    /** After its merge into the trunk (T4, user's decision): MERGED, workspace deleted, changeset kept. */
+    public void markMerged(String branchId) {
+        this.close(this.find(branchId), MERGED);
+    }
+
+    private void close(Branch branch, String status) {
+        this.jdbc.sql("UPDATE branch SET status = :s WHERE id = :id").param("s", status).param("id", branch.id()).update();
         this.workspaces.forget(branch.workspaceProjectId());
         this.locks.dropProject(branch.workspaceProjectId());
         this.projects.deleteProject(new DeleteProjectInput(UUID.randomUUID(), branch.workspaceProjectId()));
-        this.audit.append(branch.projectId(), actor, "BRANCH_ABANDON", null, "branch " + branch.name() + " (" + branchId + ")");
-        return this.view(this.find(branchId));
     }
 
     /**

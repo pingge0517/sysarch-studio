@@ -5,6 +5,8 @@ import { fieldLabel } from '../baseline/diffRows';
 import type { Branch, Change } from './api';
 import { abandonBranch, createBranch, listBranches, listChanges } from './api';
 import { opLabel } from './workspaces';
+import { MergePanel } from './MergePanel';
+import type { MergeView } from './api';
 
 function time(iso: string): string {
   return new Date(iso).toLocaleString();
@@ -12,7 +14,8 @@ function time(iso: string): string {
 
 /**
  * Branches of a trunk project (P2 T3): fork one from a baseline, switch to it (the shell's workspace selector), see its
- * changeset (one net change per element against the base baseline), open its workspace in Sirius Web, abandon it.
+ * changeset (one net change per element against the base baseline), open its workspace in Sirius Web, merge it into
+ * the trunk (preview, choose, apply; T4), abandon it.
  */
 export function BranchesPage({ trunk, current, onSwitch }: { trunk: string; current: string; onSwitch: (branchId: string) => void }) {
   const [branches, setBranches] = useState<Branch[]>([]);
@@ -23,6 +26,8 @@ export function BranchesPage({ trunk, current, onSwitch }: { trunk: string; curr
   const [changes, setChanges] = useState<Change[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [merging, setMerging] = useState<Branch | null>(null);
+  const [merged, setMerged] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
     try {
@@ -133,6 +138,11 @@ export function BranchesPage({ trunk, current, onSwitch }: { trunk: string; curr
                     </a>
                   )}
                   {b.status === 'OPEN' && (
+                    <button type="button" onClick={() => setMerging(b)}>
+                      合并到主干…
+                    </button>
+                  )}
+                  {b.status === 'OPEN' && (
                     <button type="button" title="删除工作区，保留变更集记录（写入审计）" onClick={() => void abandon(b)}>
                       放弃
                     </button>
@@ -143,6 +153,30 @@ export function BranchesPage({ trunk, current, onSwitch }: { trunk: string; curr
           </tbody>
         </table>
       </section>
+
+      {merged && (
+        <div className="notice" role="status">
+          {merged}
+          <button type="button" onClick={() => setMerged(null)}>
+            知道了
+          </button>
+        </div>
+      )}
+
+      {merging && (
+        <MergePanel
+          branch={merging}
+          onClose={() => setMerging(null)}
+          onDone={(result: MergeView) => {
+            setMerging(null);
+            setMerged(`已合并「${merging.name}」：新增 ${result.stats.added}、修改 ${result.stats.modified}、删除 ${result.stats.deleted}；合并前的主干已保存为基线，可在“基线与差异”中查看。`);
+            if (current === merging.id) {
+              onSwitch('');
+            }
+            void reload();
+          }}
+        />
+      )}
 
       {shown && (
         <section>

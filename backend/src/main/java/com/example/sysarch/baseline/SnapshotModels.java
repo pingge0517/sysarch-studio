@@ -132,6 +132,22 @@ public final class SnapshotModels {
         return EcoreUtil.createFromString(type, text);
     }
 
+    /**
+     * Puts an element where its state says: in its container's containment feature, or (no container) at the top of
+     * {@code topLevel}. Used by the merge (T4) for added and moved elements.
+     */
+    public static void place(EObject element, ElementState state, Map<String, EObject> elements, org.eclipse.emf.ecore.resource.Resource topLevel) {
+        Object container = state.attributes().get(ModelSnapshot.CONTAINER);
+        if (container == null || "".equals(container)) {
+            if (element.eContainer() != null || element.eResource() == null) { // a top-level element stays in its own document
+                topLevel.getContents().add(element);
+            }
+        } else if (element.eContainer() == null || !container.toString().equals(com.example.sysarch.ElementIds.of(element.eContainer()))
+                || !element.eContainingFeature().getName().equals(state.attributes().get(ModelSnapshot.FEATURE))) {
+            contain(elements, state, element, container.toString());
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private static void contain(Map<String, EObject> elements, ElementState state, EObject element, String containerId) {
         EObject container = elements.get(containerId);

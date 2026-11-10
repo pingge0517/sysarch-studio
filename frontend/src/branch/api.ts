@@ -65,3 +65,67 @@ export async function leaveBranch(branchId: string): Promise<number> {
 export async function abandonBranch(branchId: string): Promise<Branch> {
   return json(await fetch(`/api/v1/branches/${encodeURIComponent(branchId)}`, { method: 'DELETE' }));
 }
+
+// ---------------------------------------------------------------- merge (P2 T4)
+
+export type Side = 'OURS' | 'THEIRS';
+export type Strategy = 'POLARION_WINS' | 'MODEL_WINS';
+
+export interface MergeConflict {
+  elementId: string;
+  /** null: the whole element (DELETE_MODIFY, DUPLICATE_ID). */
+  field: string | null;
+  kind: 'FIELD' | 'DELETE_MODIFY' | 'DUPLICATE_ID' | 'DANGLING';
+  base: string | null;
+  theirs: string | null;
+  ours: string | null;
+}
+
+export interface Resolution {
+  elementId: string;
+  field: string | null;
+  take: Side;
+}
+
+export interface MergeView {
+  runId: string;
+  mode: 'PREVIEW' | 'APPLY';
+  status: string;
+  strategy: Strategy;
+  merged: number;
+  conflicts: MergeConflict[];
+  unresolved: MergeConflict[];
+  autoResolved: { elementId: string; field: string; strategy: Strategy; value: string | null }[];
+  operations: { elementId: string; op: 'ADD' | 'MODIFY' | 'DELETE'; fields: string[] }[];
+  stats: { added: number; modified: number; deleted: number; conflicts: number; unresolved: number; autoResolved: number };
+  applicable: boolean;
+  autoMergeRefused: boolean;
+  preMergeBaseline: string | null;
+  errors: { message: string }[];
+}
+
+/** 409 from APPLY: refused, with the recomputed result when there is one. */
+export class MergeRefused extends Error {
+  constructor(message: string, readonly result: MergeView | null) {
+    super(message);
+  }
+}
+
+export async function merge(
+  branchId: string,
+  mode: 'PREVIEW' | 'APPLY',
+  strategy: Strategy,
+  resolutions: Resolution[],
+  runId?: string,
+): Promise<MergeView> {
+  const response = await fetch(`/api/v1/branches/${encodeURIComponent(branchId)}/merge`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mode, strategy, runId, resolutions }),
+  });
+  if (response.status === 409) {
+    const body = await response.json();
+    throw new MergeRefused(body.message, body.result ?? null);
+  }
+  return json(response);
+}

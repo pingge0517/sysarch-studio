@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- P2 T4: merge runs. A PREVIEW is stored with fingerprints of the trunk and branch it was computed from; APPLY names
+     it, recomputes, refuses if either side changed since ("用户确认后才落库"), and records the applied result and the
+     pre-merge baseline (risk table: "合并前自动打临时基线"). The spec gives no DDL for it. -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <changeSet id="sysarch-012-merge-run" author="sysarch">
+        <createTable tableName="merge_run">
+            <column name="id" type="VARCHAR(64)"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="branch_id" type="VARCHAR(64)">
+                <constraints nullable="false" foreignKeyName="fk_merge_run_branch" references="branch(id)" deleteCascade="true"/>
+            </column>
+            <column name="status" type="VARCHAR(16)"><constraints nullable="false"/></column>
+            <column name="strategy" type="VARCHAR(16)"><constraints nullable="false"/></column>
+            <column name="ours_fingerprint" type="VARCHAR(64)"><constraints nullable="false"/></column>
+            <column name="theirs_fingerprint" type="VARCHAR(64)"><constraints nullable="false"/></column>
+            <column name="result" type="TEXT"><constraints nullable="false"/></column>
+            <column name="pre_merge_baseline" type="VARCHAR(64)"/>
+            <column name="created_by" type="VARCHAR(128)"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+            <column name="applied_at" type="TIMESTAMP WITH TIME ZONE"/>
+        </createTable>
+        <createIndex tableName="merge_run" indexName="idx_merge_run_branch"><column name="branch_id"/></createIndex>
+    </changeSet>
+</databaseChangeLog>
