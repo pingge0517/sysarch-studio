@@ -86,7 +86,7 @@ class ReportServiceTest {
             Function<List<Resource>, ?> task = call.getArgument(1);
             return task.apply(List.of(this.model));
         });
-        ReportRenderer renderer = new ReportRenderer(List.of(Path.of("C:/Windows/Fonts/Deng.ttf"), Path.of("/usr/share/fonts/truetype/wqy/wqy-microhei.ttf")));
+        ReportRenderer renderer = new ReportRenderer(ReportConfiguration.defaultFonts());
         this.reports = new ReportService(this.jdbc, models, this.baselines, renderer, new AuditLog(this.jdbc), json, this.dir, Runnable::run, this.clock);
     }
 

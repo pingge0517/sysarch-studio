@@ -29,6 +29,10 @@ jobs:
           java-version: "21"
       - uses: gradle/actions/setup-gradle@v4
 
+      # P2 T5: report PDFs embed a CJK TrueType font (sysarch.report.fonts); Droid Sans Fallback is one on Ubuntu.
+      - name: CJK font for report PDFs
+        run: sudo apt-get update -q && sudo apt-get install -y -q fonts-droid-fallback
+
       - name: "Gate 1: gradle tests"
         run: ./gradlew test --console=plain
 

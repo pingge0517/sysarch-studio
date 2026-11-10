@@ -288,15 +288,17 @@ public final class SysmlV2Exporter {
         this.line(1, (block.isIsAbstract() ? "abstract " : "") + "part def " + shortAndName(block) + specializes(block.getSuperTypes()) + " {");
         this.metadata(2, block);
         this.doc(2, block.getDescription() == null ? List.of() : List.of(block.getDescription()));
-        block.getOwnedPorts().forEach(port -> this.port(2, port));
+        block.getOwnedPorts().forEach(port -> this.port(2, port, block.getLayer()));
         for (Part part : block.getOwnedParts()) {
             this.count("part");
             String head = "part " + shortAndName(part) + (part.getTypedBy() == null ? "" : " : " + quote(name(part.getTypedBy()))) + multiplicity(part);
-            if (part.getPorts().isEmpty()) {
+            boolean extras = this.hasExtras(part, block.getLayer());
+            if (part.getPorts().isEmpty() && !extras) {
                 this.line(2, head + ";");
             } else {
                 this.line(2, head + " {");
-                part.getPorts().forEach(port -> this.port(3, port));
+                this.extras(3, part, block.getLayer());
+                part.getPorts().forEach(port -> this.port(3, port, part.getLayer()));
                 this.line(2, "}");
             }
         }
@@ -311,18 +313,48 @@ public final class SysmlV2Exporter {
                     doc.add("item flow " + id(flow) + " " + name(flow) + ": " + Objects.toString(flow.getItemName(), "") + " : " + Objects.toString(flow.getItemType(), ""));
                 }
             }
+            if (connection.getDescription() != null) {
+                doc.add("description: " + connection.getDescription());
+            }
             this.line(2, head + " {");
+            if (connection.getLayer() != block.getLayer() || !connection.getStereotypes().isEmpty()) {
+                this.metadata(3, connection);
+            }
             this.doc(3, doc);
             this.line(2, "}");
         }
         this.line(1, "}");
     }
 
-    private void port(int depth, Port port) {
+    /**
+     * What a part or port carries beyond its declaration (P2 T6, for a lossless import): metadata when its layer
+     * differs from the layer it sits in or it has stereotypes, a doc when it has a description. Nothing for the
+     * common case, so the usual export stays as it was.
+     */
+    private boolean hasExtras(ArchElement element, Layer inherited) {
+        return element.getLayer() != inherited || !element.getStereotypes().isEmpty() || element.getDescription() != null;
+    }
+
+    private void extras(int depth, ArchElement element, Layer inherited) {
+        if (element.getLayer() != inherited || !element.getStereotypes().isEmpty()) {
+            this.metadata(depth, element);
+        }
+        if (element.getDescription() != null) {
+            this.doc(depth, List.of(element.getDescription()));
+        }
+    }
+
+    private void port(int depth, Port port, Layer inherited) {
         this.count("port");
         String direction = port.getDirection() == PortDirection.IN ? "in " : port.getDirection() == PortDirection.OUT ? "out " : "inout ";
         String type = port.getInterfaceType() == null ? "" : " : " + (port.isIsConjugated() ? "~" : "") + quote(name(port.getInterfaceType()));
-        this.line(depth, direction + "port " + shortAndName(port) + type + ";");
+        if (this.hasExtras(port, inherited)) {
+            this.line(depth, direction + "port " + shortAndName(port) + type + " {");
+            this.extras(depth + 1, port, inherited);
+            this.line(depth, "}");
+        } else {
+            this.line(depth, direction + "port " + shortAndName(port) + type + ";");
+        }
     }
 
     private void requirement(Requirement requirement) {
@@ -338,7 +370,7 @@ public final class SysmlV2Exporter {
             doc.add(requirement.getText());
         }
         if (requirement.getDescription() != null) {
-            doc.add(requirement.getDescription());
+            doc.add("description: " + requirement.getDescription()); // P2 T6: told apart from the text on import
         }
         this.doc(2, doc);
         this.line(1, "}");
@@ -350,7 +382,7 @@ public final class SysmlV2Exporter {
         for (EObject element : this.all) {
             if (element instanceof Allocate allocate && (this.selected.contains(blockOrSelf(allocate.getFrom())) || this.selected.contains(blockOrSelf(allocate.getTo())))) {
                 notes.add("分配 " + id(allocate) + "：" + reference(allocate.getFrom()) + " → " + reference(allocate.getTo())
-                        + (allocate.getRationale() == null ? "" : "（" + allocate.getRationale() + "）"));
+                        + (allocate.getRationale() == null ? "" : "（" + allocate.getRationale() + "）") + allocationExtras(allocate));
             }
             if (element instanceof Requirement requirement && this.selected.contains(requirement)) {
                 requirement.getSatisfiedBy().forEach(by -> notes.add("满足 " + reference(requirement) + " ← " + reference(by)));
@@ -430,6 +462,29 @@ public final class SysmlV2Exporter {
 
     private static String id(ArchElement element) {
         return ElementIds.of(element);
+    }
+
+    /**
+     * An allocation's name and layer when they are not the import's defaults (name "from → to", the layer of "to"),
+     * and its description: {@code {name: …; layer: …; description: …}} (P2 T6). Empty for the usual allocation.
+     */
+    static String allocationExtras(Allocate allocate) {
+        List<String> parts = new ArrayList<>();
+        String defaultName = allocate.getFrom() == null || allocate.getTo() == null ? null : name(allocate.getFrom()) + " → " + name(allocate.getTo());
+        if (allocate.getName() != null && !allocate.getName().equals(defaultName)) {
+            parts.add("name: " + allocate.getName());
+        }
+        Layer defaultLayer = allocate.getTo() == null ? null : allocate.getTo().getLayer();
+        if (allocate.getLayer() != null && allocate.getLayer() != defaultLayer) {
+            parts.add("layer: " + allocate.getLayer().getName());
+        }
+        if (allocate.getDescription() != null) {
+            parts.add("description: " + allocate.getDescription().replace('\n', ' '));
+        }
+        if (!allocate.getStereotypes().isEmpty()) {
+            parts.add("stereotypes: " + String.join(", ", allocate.getStereotypes()));
+        }
+        return parts.isEmpty() ? "" : " {" + String.join("; ", parts) + "}";
     }
 
     private static String reference(ArchElement element) {

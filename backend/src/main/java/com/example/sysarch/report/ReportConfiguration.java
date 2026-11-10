@@ -30,9 +30,17 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 @Configuration
 public class ReportConfiguration {
 
-    /** Common places of a CJK TrueType font: Windows (DengXian, SimHei), Debian/Ubuntu (WenQuanYi Micro Hei, AR PL). */
-    static final String DEFAULT_FONTS = "C:/Windows/Fonts/Deng.ttf,C:/Windows/Fonts/simhei.ttf,/usr/share/fonts/truetype/wqy/wqy-microhei.ttf,"
-            + "/usr/share/fonts/truetype/arphic/uming.ttf,/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf";
+    /**
+     * Common places of a CJK TrueType font: Windows (DengXian, SimHei) and Debian/Ubuntu's fonts-droid-fallback. (The
+     * Debian WenQuanYi and AR PL packages ship .ttc collections and Noto CJK is CFF OpenType: openhtmltopdf embeds
+     * neither.)
+     */
+    static final String DEFAULT_FONTS = "C:/Windows/Fonts/Deng.ttf,C:/Windows/Fonts/simhei.ttf,/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf";
+
+    /** The default fonts as paths (also for the tests). */
+    static List<Path> defaultFonts() {
+        return java.util.Arrays.stream(DEFAULT_FONTS.split(",")).map(Path::of).toList();
+    }
 
     @Bean
     public ReportRenderer reportRenderer(@Value("${sysarch.report.fonts:" + DEFAULT_FONTS + "}") List<String> fonts) {

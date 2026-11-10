@@ -39,10 +39,7 @@ class ReportTemplatesTest {
 
     private static final Path OUT = Path.of("build", "reports");
 
-    private static final List<Path> FONTS = List.of(Path.of("C:/Windows/Fonts/Deng.ttf"), Path.of("C:/Windows/Fonts/simhei.ttf"),
-            Path.of("/usr/share/fonts/truetype/wqy/wqy-microhei.ttf"), Path.of("/usr/share/fonts/truetype/arphic/uming.ttf"));
-
-    private static final ReportRenderer RENDERER = new ReportRenderer(FONTS);
+    private static final ReportRenderer RENDERER = new ReportRenderer(ReportConfiguration.defaultFonts());
 
     private static Resource demo;
 

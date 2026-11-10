@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- P2 T6: SysML v2 import jobs (spec §4.5 /imports/sysmlv2: "导入任务已入队，返回 jobId"). The report (counts, layers
+     defaulted, unmapped, the consistency check) or the problems with their lines. No DDL in the spec. -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <changeSet id="sysarch-014-import-job" author="sysarch">
+        <createTable tableName="import_job">
+            <column name="id" type="VARCHAR(64)"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="status" type="VARCHAR(16)"><constraints nullable="false"/></column>
+            <column name="source_name" type="VARCHAR(300)"/>
+            <column name="default_layer" type="VARCHAR(32)"><constraints nullable="false"/></column>
+            <column name="project_id" type="VARCHAR(64)"/>
+            <column name="report" type="TEXT"/>
+            <column name="problems" type="TEXT"/>
+            <column name="error" type="TEXT"/>
+            <column name="requested_by" type="VARCHAR(128)"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="finished_at" type="TIMESTAMP WITH TIME ZONE"/>
+        </createTable>
+        <createIndex tableName="import_job" indexName="idx_import_job_created"><column name="created_at"/></createIndex>
+    </changeSet>
+</databaseChangeLog>

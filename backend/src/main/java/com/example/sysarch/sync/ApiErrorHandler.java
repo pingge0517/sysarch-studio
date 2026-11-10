@@ -28,7 +28,7 @@ import org.springframework.web.server.ResponseStatusException;
         com.example.sysarch.project.ElementLocationController.class, com.example.sysarch.export.ExportController.class,
         com.example.sysarch.lock.LockController.class, com.example.sysarch.session.SessionController.class,
         com.example.sysarch.branch.BranchController.class, com.example.sysarch.merge.MergeController.class,
-        com.example.sysarch.report.ReportController.class })
+        com.example.sysarch.report.ReportController.class, com.example.sysarch.sysmlimport.ImportController.class })
 public class ApiErrorHandler {
 
     @ExceptionHandler(ResponseStatusException.class)

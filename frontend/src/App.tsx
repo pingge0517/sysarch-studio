@@ -11,6 +11,7 @@ import { leaveBranch, listBranches } from './branch/api';
 import { BranchesPage } from './branch/BranchesPage';
 import { effectiveProject, trunks } from './branch/workspaces';
 import { ReportsPage } from './report/ReportsPage';
+import { ImportPage } from './sysmlimport/ImportPage';
 
 // TODO: mount the Sirius Web frontend components and register the BDD/IBD views. Until then the diagrams are
 // edited in Sirius Web's own UI (backend :8080); this shell hosts the P1 matrix pages.
@@ -43,7 +44,7 @@ export function App() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
   const [table, setTable] = useState(param('table') || 'allocation-matrix');
-  const [view, setView] = useState(['baselines', 'locks', 'branches', 'reports'].includes(param('view')) ? param('view') : 'matrix');
+  const [view, setView] = useState(['baselines', 'locks', 'branches', 'reports', 'import'].includes(param('view')) ? param('view') : 'matrix');
   const [user, setUser] = useState(currentUser());
   const [matrix, setMatrix] = useState<Matrix | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -200,6 +201,7 @@ export function App() {
             <option value="locks">编辑锁</option>
             <option value="branches">分支</option>
             <option value="reports">报告</option>
+            <option value="import">导入 SysML v2</option>
           </select>
         </label>
         {view === 'matrix' && <label>
@@ -253,7 +255,17 @@ export function App() {
       )}
 
       <main className="content">
-        {!project && <p className="hint">选择一个 Sirius 项目。</p>}
+        {!project && view !== 'import' && <p className="hint">选择一个 Sirius 项目。</p>}
+        {view === 'import' && (
+          <ImportPage
+            onOpen={(id) => {
+              fetchProjects().then(setProjects, (e: Error) => setError(`项目列表：${e.message}`));
+              void switchTo('');
+              setProject(id);
+              setView('matrix');
+            }}
+          />
+        )}
         {project && view === 'baselines' && <BaselinePage project={workspace} />}
         {project && view === 'locks' && <LocksPage project={workspace} user={user} />}
         {project && view === 'reports' && <ReportsPage project={workspace} />}

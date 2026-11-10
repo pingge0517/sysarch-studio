@@ -455,3 +455,31 @@ body,
 .reports .muted {
   color: #666;
 }
+
+/* P2 T6: SysML v2 import */
+.imports section {
+  margin-bottom: 1.5rem;
+}
+.imports h2 {
+  font-size: 1rem;
+  margin: 0 0 0.5rem;
+}
+.imports h3 {
+  font-size: 0.95rem;
+  margin: 0.8rem 0 0.3rem;
+}
+.imports .row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+.imports textarea {
+  width: 100%;
+  font-family: monospace;
+  font-size: 0.85rem;
+}
+.imports .missing {
+  color: #b71c1c;
+}
