@@ -1332,6 +1332,1314 @@ public interface SysarchPackage extends EPackage {
 	int DIAGRAM_LAYOUT_OPERATION_COUNT = ARCH_ELEMENT_OPERATION_COUNT + 0;
 
 	/**
+	 * The meta object id for the '{@link com.example.sysarch.model.impl.ConstraintBlockImpl <em>Constraint Block</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see com.example.sysarch.model.impl.ConstraintBlockImpl
+	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getConstraintBlock()
+	 * @generated
+	 */
+	int CONSTRAINT_BLOCK = 10;
+
+	/**
+	 * The feature id for the '<em><b>Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CONSTRAINT_BLOCK__ID = ARCH_ELEMENT__ID;
+
+	/**
+	 * The feature id for the '<em><b>Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CONSTRAINT_BLOCK__NAME = ARCH_ELEMENT__NAME;
+
+	/**
+	 * The feature id for the '<em><b>Description</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CONSTRAINT_BLOCK__DESCRIPTION = ARCH_ELEMENT__DESCRIPTION;
+
+	/**
+	 * The feature id for the '<em><b>Layer</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CONSTRAINT_BLOCK__LAYER = ARCH_ELEMENT__LAYER;
+
+	/**
+	 * The feature id for the '<em><b>Stereotypes</b></em>' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CONSTRAINT_BLOCK__STEREOTYPES = ARCH_ELEMENT__STEREOTYPES;
+
+	/**
+	 * The feature id for the '<em><b>Work Item Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CONSTRAINT_BLOCK__WORK_ITEM_ID = ARCH_ELEMENT__WORK_ITEM_ID;
+
+	/**
+	 * The feature id for the '<em><b>Rev</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CONSTRAINT_BLOCK__REV = ARCH_ELEMENT__REV;
+
+	/**
+	 * The feature id for the '<em><b>Parameters</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CONSTRAINT_BLOCK__PARAMETERS = ARCH_ELEMENT_FEATURE_COUNT + 0;
+
+	/**
+	 * The feature id for the '<em><b>Expression</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CONSTRAINT_BLOCK__EXPRESSION = ARCH_ELEMENT_FEATURE_COUNT + 1;
+
+	/**
+	 * The number of structural features of the '<em>Constraint Block</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CONSTRAINT_BLOCK_FEATURE_COUNT = ARCH_ELEMENT_FEATURE_COUNT + 2;
+
+	/**
+	 * The number of operations of the '<em>Constraint Block</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CONSTRAINT_BLOCK_OPERATION_COUNT = ARCH_ELEMENT_OPERATION_COUNT + 0;
+
+	/**
+	 * The meta object id for the '{@link com.example.sysarch.model.impl.ParameterImpl <em>Parameter</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see com.example.sysarch.model.impl.ParameterImpl
+	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getParameter()
+	 * @generated
+	 */
+	int PARAMETER = 11;
+
+	/**
+	 * The feature id for the '<em><b>Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int PARAMETER__ID = ARCH_ELEMENT__ID;
+
+	/**
+	 * The feature id for the '<em><b>Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int PARAMETER__NAME = ARCH_ELEMENT__NAME;
+
+	/**
+	 * The feature id for the '<em><b>Description</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int PARAMETER__DESCRIPTION = ARCH_ELEMENT__DESCRIPTION;
+
+	/**
+	 * The feature id for the '<em><b>Layer</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int PARAMETER__LAYER = ARCH_ELEMENT__LAYER;
+
+	/**
+	 * The feature id for the '<em><b>Stereotypes</b></em>' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int PARAMETER__STEREOTYPES = ARCH_ELEMENT__STEREOTYPES;
+
+	/**
+	 * The feature id for the '<em><b>Work Item Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int PARAMETER__WORK_ITEM_ID = ARCH_ELEMENT__WORK_ITEM_ID;
+
+	/**
+	 * The feature id for the '<em><b>Rev</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int PARAMETER__REV = ARCH_ELEMENT__REV;
+
+	/**
+	 * The feature id for the '<em><b>Unit</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int PARAMETER__UNIT = ARCH_ELEMENT_FEATURE_COUNT + 0;
+
+	/**
+	 * The feature id for the '<em><b>Direction</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int PARAMETER__DIRECTION = ARCH_ELEMENT_FEATURE_COUNT + 1;
+
+	/**
+	 * The feature id for the '<em><b>Default Value</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int PARAMETER__DEFAULT_VALUE = ARCH_ELEMENT_FEATURE_COUNT + 2;
+
+	/**
+	 * The number of structural features of the '<em>Parameter</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int PARAMETER_FEATURE_COUNT = ARCH_ELEMENT_FEATURE_COUNT + 3;
+
+	/**
+	 * The number of operations of the '<em>Parameter</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int PARAMETER_OPERATION_COUNT = ARCH_ELEMENT_OPERATION_COUNT + 0;
+
+	/**
+	 * The meta object id for the '{@link com.example.sysarch.model.impl.ConstraintExprImpl <em>Constraint Expr</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see com.example.sysarch.model.impl.ConstraintExprImpl
+	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getConstraintExpr()
+	 * @generated
+	 */
+	int CONSTRAINT_EXPR = 12;
+
+	/**
+	 * The feature id for the '<em><b>Language</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CONSTRAINT_EXPR__LANGUAGE = 0;
+
+	/**
+	 * The feature id for the '<em><b>Body</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CONSTRAINT_EXPR__BODY = 1;
+
+	/**
+	 * The feature id for the '<em><b>Declared Vars</b></em>' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CONSTRAINT_EXPR__DECLARED_VARS = 2;
+
+	/**
+	 * The number of structural features of the '<em>Constraint Expr</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CONSTRAINT_EXPR_FEATURE_COUNT = 3;
+
+	/**
+	 * The number of operations of the '<em>Constraint Expr</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CONSTRAINT_EXPR_OPERATION_COUNT = 0;
+
+	/**
+	 * The meta object id for the '{@link com.example.sysarch.model.impl.BindingConnectorImpl <em>Binding Connector</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see com.example.sysarch.model.impl.BindingConnectorImpl
+	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getBindingConnector()
+	 * @generated
+	 */
+	int BINDING_CONNECTOR = 13;
+
+	/**
+	 * The feature id for the '<em><b>Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int BINDING_CONNECTOR__ID = ARCH_ELEMENT__ID;
+
+	/**
+	 * The feature id for the '<em><b>Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int BINDING_CONNECTOR__NAME = ARCH_ELEMENT__NAME;
+
+	/**
+	 * The feature id for the '<em><b>Description</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int BINDING_CONNECTOR__DESCRIPTION = ARCH_ELEMENT__DESCRIPTION;
+
+	/**
+	 * The feature id for the '<em><b>Layer</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int BINDING_CONNECTOR__LAYER = ARCH_ELEMENT__LAYER;
+
+	/**
+	 * The feature id for the '<em><b>Stereotypes</b></em>' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int BINDING_CONNECTOR__STEREOTYPES = ARCH_ELEMENT__STEREOTYPES;
+
+	/**
+	 * The feature id for the '<em><b>Work Item Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int BINDING_CONNECTOR__WORK_ITEM_ID = ARCH_ELEMENT__WORK_ITEM_ID;
+
+	/**
+	 * The feature id for the '<em><b>Rev</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int BINDING_CONNECTOR__REV = ARCH_ELEMENT__REV;
+
+	/**
+	 * The feature id for the '<em><b>Source</b></em>' reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int BINDING_CONNECTOR__SOURCE = ARCH_ELEMENT_FEATURE_COUNT + 0;
+
+	/**
+	 * The feature id for the '<em><b>Target</b></em>' reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int BINDING_CONNECTOR__TARGET = ARCH_ELEMENT_FEATURE_COUNT + 1;
+
+	/**
+	 * The number of structural features of the '<em>Binding Connector</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int BINDING_CONNECTOR_FEATURE_COUNT = ARCH_ELEMENT_FEATURE_COUNT + 2;
+
+	/**
+	 * The number of operations of the '<em>Binding Connector</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int BINDING_CONNECTOR_OPERATION_COUNT = ARCH_ELEMENT_OPERATION_COUNT + 0;
+
+	/**
+	 * The meta object id for the '{@link com.example.sysarch.model.impl.StateMachineImpl <em>State Machine</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see com.example.sysarch.model.impl.StateMachineImpl
+	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getStateMachine()
+	 * @generated
+	 */
+	int STATE_MACHINE = 14;
+
+	/**
+	 * The feature id for the '<em><b>Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int STATE_MACHINE__ID = ARCH_ELEMENT__ID;
+
+	/**
+	 * The feature id for the '<em><b>Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int STATE_MACHINE__NAME = ARCH_ELEMENT__NAME;
+
+	/**
+	 * The feature id for the '<em><b>Description</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int STATE_MACHINE__DESCRIPTION = ARCH_ELEMENT__DESCRIPTION;
+
+	/**
+	 * The feature id for the '<em><b>Layer</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int STATE_MACHINE__LAYER = ARCH_ELEMENT__LAYER;
+
+	/**
+	 * The feature id for the '<em><b>Stereotypes</b></em>' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int STATE_MACHINE__STEREOTYPES = ARCH_ELEMENT__STEREOTYPES;
+
+	/**
+	 * The feature id for the '<em><b>Work Item Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int STATE_MACHINE__WORK_ITEM_ID = ARCH_ELEMENT__WORK_ITEM_ID;
+
+	/**
+	 * The feature id for the '<em><b>Rev</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int STATE_MACHINE__REV = ARCH_ELEMENT__REV;
+
+	/**
+	 * The feature id for the '<em><b>States</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int STATE_MACHINE__STATES = ARCH_ELEMENT_FEATURE_COUNT + 0;
+
+	/**
+	 * The feature id for the '<em><b>Transitions</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int STATE_MACHINE__TRANSITIONS = ARCH_ELEMENT_FEATURE_COUNT + 1;
+
+	/**
+	 * The number of structural features of the '<em>State Machine</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int STATE_MACHINE_FEATURE_COUNT = ARCH_ELEMENT_FEATURE_COUNT + 2;
+
+	/**
+	 * The number of operations of the '<em>State Machine</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int STATE_MACHINE_OPERATION_COUNT = ARCH_ELEMENT_OPERATION_COUNT + 0;
+
+	/**
+	 * The meta object id for the '{@link com.example.sysarch.model.impl.StateImpl <em>State</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see com.example.sysarch.model.impl.StateImpl
+	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getState()
+	 * @generated
+	 */
+	int STATE = 15;
+
+	/**
+	 * The feature id for the '<em><b>Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int STATE__ID = ARCH_ELEMENT__ID;
+
+	/**
+	 * The feature id for the '<em><b>Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int STATE__NAME = ARCH_ELEMENT__NAME;
+
+	/**
+	 * The feature id for the '<em><b>Description</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int STATE__DESCRIPTION = ARCH_ELEMENT__DESCRIPTION;
+
+	/**
+	 * The feature id for the '<em><b>Layer</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int STATE__LAYER = ARCH_ELEMENT__LAYER;
+
+	/**
+	 * The feature id for the '<em><b>Stereotypes</b></em>' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int STATE__STEREOTYPES = ARCH_ELEMENT__STEREOTYPES;
+
+	/**
+	 * The feature id for the '<em><b>Work Item Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int STATE__WORK_ITEM_ID = ARCH_ELEMENT__WORK_ITEM_ID;
+
+	/**
+	 * The feature id for the '<em><b>Rev</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int STATE__REV = ARCH_ELEMENT__REV;
+
+	/**
+	 * The feature id for the '<em><b>Is Initial</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int STATE__IS_INITIAL = ARCH_ELEMENT_FEATURE_COUNT + 0;
+
+	/**
+	 * The feature id for the '<em><b>Is Final</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int STATE__IS_FINAL = ARCH_ELEMENT_FEATURE_COUNT + 1;
+
+	/**
+	 * The feature id for the '<em><b>Do Behavior</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int STATE__DO_BEHAVIOR = ARCH_ELEMENT_FEATURE_COUNT + 2;
+
+	/**
+	 * The feature id for the '<em><b>Entry Behavior</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int STATE__ENTRY_BEHAVIOR = ARCH_ELEMENT_FEATURE_COUNT + 3;
+
+	/**
+	 * The feature id for the '<em><b>Exit Behavior</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int STATE__EXIT_BEHAVIOR = ARCH_ELEMENT_FEATURE_COUNT + 4;
+
+	/**
+	 * The number of structural features of the '<em>State</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int STATE_FEATURE_COUNT = ARCH_ELEMENT_FEATURE_COUNT + 5;
+
+	/**
+	 * The number of operations of the '<em>State</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int STATE_OPERATION_COUNT = ARCH_ELEMENT_OPERATION_COUNT + 0;
+
+	/**
+	 * The meta object id for the '{@link com.example.sysarch.model.impl.TransitionImpl <em>Transition</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see com.example.sysarch.model.impl.TransitionImpl
+	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getTransition()
+	 * @generated
+	 */
+	int TRANSITION = 16;
+
+	/**
+	 * The feature id for the '<em><b>Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TRANSITION__ID = ARCH_ELEMENT__ID;
+
+	/**
+	 * The feature id for the '<em><b>Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TRANSITION__NAME = ARCH_ELEMENT__NAME;
+
+	/**
+	 * The feature id for the '<em><b>Description</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TRANSITION__DESCRIPTION = ARCH_ELEMENT__DESCRIPTION;
+
+	/**
+	 * The feature id for the '<em><b>Layer</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TRANSITION__LAYER = ARCH_ELEMENT__LAYER;
+
+	/**
+	 * The feature id for the '<em><b>Stereotypes</b></em>' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TRANSITION__STEREOTYPES = ARCH_ELEMENT__STEREOTYPES;
+
+	/**
+	 * The feature id for the '<em><b>Work Item Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TRANSITION__WORK_ITEM_ID = ARCH_ELEMENT__WORK_ITEM_ID;
+
+	/**
+	 * The feature id for the '<em><b>Rev</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TRANSITION__REV = ARCH_ELEMENT__REV;
+
+	/**
+	 * The feature id for the '<em><b>Source</b></em>' reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TRANSITION__SOURCE = ARCH_ELEMENT_FEATURE_COUNT + 0;
+
+	/**
+	 * The feature id for the '<em><b>Target</b></em>' reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TRANSITION__TARGET = ARCH_ELEMENT_FEATURE_COUNT + 1;
+
+	/**
+	 * The feature id for the '<em><b>Trigger</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TRANSITION__TRIGGER = ARCH_ELEMENT_FEATURE_COUNT + 2;
+
+	/**
+	 * The feature id for the '<em><b>Guard</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TRANSITION__GUARD = ARCH_ELEMENT_FEATURE_COUNT + 3;
+
+	/**
+	 * The feature id for the '<em><b>Effect</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TRANSITION__EFFECT = ARCH_ELEMENT_FEATURE_COUNT + 4;
+
+	/**
+	 * The number of structural features of the '<em>Transition</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TRANSITION_FEATURE_COUNT = ARCH_ELEMENT_FEATURE_COUNT + 5;
+
+	/**
+	 * The number of operations of the '<em>Transition</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TRANSITION_OPERATION_COUNT = ARCH_ELEMENT_OPERATION_COUNT + 0;
+
+	/**
+	 * The meta object id for the '{@link com.example.sysarch.model.impl.ActivityImpl <em>Activity</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see com.example.sysarch.model.impl.ActivityImpl
+	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getActivity()
+	 * @generated
+	 */
+	int ACTIVITY = 17;
+
+	/**
+	 * The feature id for the '<em><b>Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTIVITY__ID = ARCH_ELEMENT__ID;
+
+	/**
+	 * The feature id for the '<em><b>Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTIVITY__NAME = ARCH_ELEMENT__NAME;
+
+	/**
+	 * The feature id for the '<em><b>Description</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTIVITY__DESCRIPTION = ARCH_ELEMENT__DESCRIPTION;
+
+	/**
+	 * The feature id for the '<em><b>Layer</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTIVITY__LAYER = ARCH_ELEMENT__LAYER;
+
+	/**
+	 * The feature id for the '<em><b>Stereotypes</b></em>' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTIVITY__STEREOTYPES = ARCH_ELEMENT__STEREOTYPES;
+
+	/**
+	 * The feature id for the '<em><b>Work Item Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTIVITY__WORK_ITEM_ID = ARCH_ELEMENT__WORK_ITEM_ID;
+
+	/**
+	 * The feature id for the '<em><b>Rev</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTIVITY__REV = ARCH_ELEMENT__REV;
+
+	/**
+	 * The feature id for the '<em><b>Actions</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTIVITY__ACTIONS = ARCH_ELEMENT_FEATURE_COUNT + 0;
+
+	/**
+	 * The feature id for the '<em><b>Flows</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTIVITY__FLOWS = ARCH_ELEMENT_FEATURE_COUNT + 1;
+
+	/**
+	 * The number of structural features of the '<em>Activity</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTIVITY_FEATURE_COUNT = ARCH_ELEMENT_FEATURE_COUNT + 2;
+
+	/**
+	 * The number of operations of the '<em>Activity</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTIVITY_OPERATION_COUNT = ARCH_ELEMENT_OPERATION_COUNT + 0;
+
+	/**
+	 * The meta object id for the '{@link com.example.sysarch.model.impl.ActionImpl <em>Action</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see com.example.sysarch.model.impl.ActionImpl
+	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getAction()
+	 * @generated
+	 */
+	int ACTION = 18;
+
+	/**
+	 * The feature id for the '<em><b>Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTION__ID = ARCH_ELEMENT__ID;
+
+	/**
+	 * The feature id for the '<em><b>Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTION__NAME = ARCH_ELEMENT__NAME;
+
+	/**
+	 * The feature id for the '<em><b>Description</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTION__DESCRIPTION = ARCH_ELEMENT__DESCRIPTION;
+
+	/**
+	 * The feature id for the '<em><b>Layer</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTION__LAYER = ARCH_ELEMENT__LAYER;
+
+	/**
+	 * The feature id for the '<em><b>Stereotypes</b></em>' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTION__STEREOTYPES = ARCH_ELEMENT__STEREOTYPES;
+
+	/**
+	 * The feature id for the '<em><b>Work Item Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTION__WORK_ITEM_ID = ARCH_ELEMENT__WORK_ITEM_ID;
+
+	/**
+	 * The feature id for the '<em><b>Rev</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTION__REV = ARCH_ELEMENT__REV;
+
+	/**
+	 * The feature id for the '<em><b>Kind</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTION__KIND = ARCH_ELEMENT_FEATURE_COUNT + 0;
+
+	/**
+	 * The feature id for the '<em><b>Expression</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTION__EXPRESSION = ARCH_ELEMENT_FEATURE_COUNT + 1;
+
+	/**
+	 * The number of structural features of the '<em>Action</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTION_FEATURE_COUNT = ARCH_ELEMENT_FEATURE_COUNT + 2;
+
+	/**
+	 * The number of operations of the '<em>Action</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTION_OPERATION_COUNT = ARCH_ELEMENT_OPERATION_COUNT + 0;
+
+	/**
+	 * The meta object id for the '{@link com.example.sysarch.model.impl.ActivityFlowImpl <em>Activity Flow</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see com.example.sysarch.model.impl.ActivityFlowImpl
+	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getActivityFlow()
+	 * @generated
+	 */
+	int ACTIVITY_FLOW = 19;
+
+	/**
+	 * The feature id for the '<em><b>Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTIVITY_FLOW__ID = ARCH_ELEMENT__ID;
+
+	/**
+	 * The feature id for the '<em><b>Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTIVITY_FLOW__NAME = ARCH_ELEMENT__NAME;
+
+	/**
+	 * The feature id for the '<em><b>Description</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTIVITY_FLOW__DESCRIPTION = ARCH_ELEMENT__DESCRIPTION;
+
+	/**
+	 * The feature id for the '<em><b>Layer</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTIVITY_FLOW__LAYER = ARCH_ELEMENT__LAYER;
+
+	/**
+	 * The feature id for the '<em><b>Stereotypes</b></em>' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTIVITY_FLOW__STEREOTYPES = ARCH_ELEMENT__STEREOTYPES;
+
+	/**
+	 * The feature id for the '<em><b>Work Item Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTIVITY_FLOW__WORK_ITEM_ID = ARCH_ELEMENT__WORK_ITEM_ID;
+
+	/**
+	 * The feature id for the '<em><b>Rev</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTIVITY_FLOW__REV = ARCH_ELEMENT__REV;
+
+	/**
+	 * The feature id for the '<em><b>Source</b></em>' reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTIVITY_FLOW__SOURCE = ARCH_ELEMENT_FEATURE_COUNT + 0;
+
+	/**
+	 * The feature id for the '<em><b>Target</b></em>' reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTIVITY_FLOW__TARGET = ARCH_ELEMENT_FEATURE_COUNT + 1;
+
+	/**
+	 * The feature id for the '<em><b>Is Object Flow</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTIVITY_FLOW__IS_OBJECT_FLOW = ARCH_ELEMENT_FEATURE_COUNT + 2;
+
+	/**
+	 * The number of structural features of the '<em>Activity Flow</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTIVITY_FLOW_FEATURE_COUNT = ARCH_ELEMENT_FEATURE_COUNT + 3;
+
+	/**
+	 * The number of operations of the '<em>Activity Flow</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTIVITY_FLOW_OPERATION_COUNT = ARCH_ELEMENT_OPERATION_COUNT + 0;
+
+	/**
+	 * The meta object id for the '{@link com.example.sysarch.model.impl.UseCaseImpl <em>Use Case</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see com.example.sysarch.model.impl.UseCaseImpl
+	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getUseCase()
+	 * @generated
+	 */
+	int USE_CASE = 20;
+
+	/**
+	 * The feature id for the '<em><b>Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int USE_CASE__ID = ARCH_ELEMENT__ID;
+
+	/**
+	 * The feature id for the '<em><b>Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int USE_CASE__NAME = ARCH_ELEMENT__NAME;
+
+	/**
+	 * The feature id for the '<em><b>Description</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int USE_CASE__DESCRIPTION = ARCH_ELEMENT__DESCRIPTION;
+
+	/**
+	 * The feature id for the '<em><b>Layer</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int USE_CASE__LAYER = ARCH_ELEMENT__LAYER;
+
+	/**
+	 * The feature id for the '<em><b>Stereotypes</b></em>' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int USE_CASE__STEREOTYPES = ARCH_ELEMENT__STEREOTYPES;
+
+	/**
+	 * The feature id for the '<em><b>Work Item Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int USE_CASE__WORK_ITEM_ID = ARCH_ELEMENT__WORK_ITEM_ID;
+
+	/**
+	 * The feature id for the '<em><b>Rev</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int USE_CASE__REV = ARCH_ELEMENT__REV;
+
+	/**
+	 * The feature id for the '<em><b>Actors</b></em>' reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int USE_CASE__ACTORS = ARCH_ELEMENT_FEATURE_COUNT + 0;
+
+	/**
+	 * The feature id for the '<em><b>Subject</b></em>' reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int USE_CASE__SUBJECT = ARCH_ELEMENT_FEATURE_COUNT + 1;
+
+	/**
+	 * The number of structural features of the '<em>Use Case</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int USE_CASE_FEATURE_COUNT = ARCH_ELEMENT_FEATURE_COUNT + 2;
+
+	/**
+	 * The number of operations of the '<em>Use Case</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int USE_CASE_OPERATION_COUNT = ARCH_ELEMENT_OPERATION_COUNT + 0;
+
+	/**
+	 * The meta object id for the '{@link com.example.sysarch.model.impl.ActorImpl <em>Actor</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see com.example.sysarch.model.impl.ActorImpl
+	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getActor()
+	 * @generated
+	 */
+	int ACTOR = 21;
+
+	/**
+	 * The feature id for the '<em><b>Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTOR__ID = ARCH_ELEMENT__ID;
+
+	/**
+	 * The feature id for the '<em><b>Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTOR__NAME = ARCH_ELEMENT__NAME;
+
+	/**
+	 * The feature id for the '<em><b>Description</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTOR__DESCRIPTION = ARCH_ELEMENT__DESCRIPTION;
+
+	/**
+	 * The feature id for the '<em><b>Layer</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTOR__LAYER = ARCH_ELEMENT__LAYER;
+
+	/**
+	 * The feature id for the '<em><b>Stereotypes</b></em>' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTOR__STEREOTYPES = ARCH_ELEMENT__STEREOTYPES;
+
+	/**
+	 * The feature id for the '<em><b>Work Item Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTOR__WORK_ITEM_ID = ARCH_ELEMENT__WORK_ITEM_ID;
+
+	/**
+	 * The feature id for the '<em><b>Rev</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTOR__REV = ARCH_ELEMENT__REV;
+
+	/**
+	 * The number of structural features of the '<em>Actor</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTOR_FEATURE_COUNT = ARCH_ELEMENT_FEATURE_COUNT + 0;
+
+	/**
+	 * The number of operations of the '<em>Actor</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACTOR_OPERATION_COUNT = ARCH_ELEMENT_OPERATION_COUNT + 0;
+
+	/**
 	 * The meta object id for the '{@link com.example.sysarch.model.Layer <em>Layer</em>}' enum.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1339,7 +2647,7 @@ public interface SysarchPackage extends EPackage {
 	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getLayer()
 	 * @generated
 	 */
-	int LAYER = 10;
+	int LAYER = 22;
 
 	/**
 	 * The meta object id for the '{@link com.example.sysarch.model.PortDirection <em>Port Direction</em>}' enum.
@@ -1349,7 +2657,7 @@ public interface SysarchPackage extends EPackage {
 	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getPortDirection()
 	 * @generated
 	 */
-	int PORT_DIRECTION = 11;
+	int PORT_DIRECTION = 23;
 
 	/**
 	 * The meta object id for the '{@link com.example.sysarch.model.ConnectionKind <em>Connection Kind</em>}' enum.
@@ -1359,7 +2667,7 @@ public interface SysarchPackage extends EPackage {
 	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getConnectionKind()
 	 * @generated
 	 */
-	int CONNECTION_KIND = 12;
+	int CONNECTION_KIND = 24;
 
 	/**
 	 * The meta object id for the '{@link com.example.sysarch.model.VerifyMethod <em>Verify Method</em>}' enum.
@@ -1369,7 +2677,17 @@ public interface SysarchPackage extends EPackage {
 	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getVerifyMethod()
 	 * @generated
 	 */
-	int VERIFY_METHOD = 13;
+	int VERIFY_METHOD = 25;
+
+	/**
+	 * The meta object id for the '{@link com.example.sysarch.model.ActionKind <em>Action Kind</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see com.example.sysarch.model.ActionKind
+	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getActionKind()
+	 * @generated
+	 */
+	int ACTION_KIND = 26;
 
 
 	/**
@@ -1989,6 +3307,467 @@ public interface SysarchPackage extends EPackage {
 	EAttribute getDiagramLayout_Waypoints();
 
 	/**
+	 * Returns the meta object for class '{@link com.example.sysarch.model.ConstraintBlock <em>Constraint Block</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Constraint Block</em>'.
+	 * @see com.example.sysarch.model.ConstraintBlock
+	 * @generated
+	 */
+	EClass getConstraintBlock();
+
+	/**
+	 * Returns the meta object for the containment reference list '{@link com.example.sysarch.model.ConstraintBlock#getParameters <em>Parameters</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference list '<em>Parameters</em>'.
+	 * @see com.example.sysarch.model.ConstraintBlock#getParameters()
+	 * @see #getConstraintBlock()
+	 * @generated
+	 */
+	EReference getConstraintBlock_Parameters();
+
+	/**
+	 * Returns the meta object for the containment reference '{@link com.example.sysarch.model.ConstraintBlock#getExpression <em>Expression</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference '<em>Expression</em>'.
+	 * @see com.example.sysarch.model.ConstraintBlock#getExpression()
+	 * @see #getConstraintBlock()
+	 * @generated
+	 */
+	EReference getConstraintBlock_Expression();
+
+	/**
+	 * Returns the meta object for class '{@link com.example.sysarch.model.Parameter <em>Parameter</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Parameter</em>'.
+	 * @see com.example.sysarch.model.Parameter
+	 * @generated
+	 */
+	EClass getParameter();
+
+	/**
+	 * Returns the meta object for the attribute '{@link com.example.sysarch.model.Parameter#getUnit <em>Unit</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Unit</em>'.
+	 * @see com.example.sysarch.model.Parameter#getUnit()
+	 * @see #getParameter()
+	 * @generated
+	 */
+	EAttribute getParameter_Unit();
+
+	/**
+	 * Returns the meta object for the attribute '{@link com.example.sysarch.model.Parameter#getDirection <em>Direction</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Direction</em>'.
+	 * @see com.example.sysarch.model.Parameter#getDirection()
+	 * @see #getParameter()
+	 * @generated
+	 */
+	EAttribute getParameter_Direction();
+
+	/**
+	 * Returns the meta object for the attribute '{@link com.example.sysarch.model.Parameter#getDefaultValue <em>Default Value</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Default Value</em>'.
+	 * @see com.example.sysarch.model.Parameter#getDefaultValue()
+	 * @see #getParameter()
+	 * @generated
+	 */
+	EAttribute getParameter_DefaultValue();
+
+	/**
+	 * Returns the meta object for class '{@link com.example.sysarch.model.ConstraintExpr <em>Constraint Expr</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Constraint Expr</em>'.
+	 * @see com.example.sysarch.model.ConstraintExpr
+	 * @generated
+	 */
+	EClass getConstraintExpr();
+
+	/**
+	 * Returns the meta object for the attribute '{@link com.example.sysarch.model.ConstraintExpr#getLanguage <em>Language</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Language</em>'.
+	 * @see com.example.sysarch.model.ConstraintExpr#getLanguage()
+	 * @see #getConstraintExpr()
+	 * @generated
+	 */
+	EAttribute getConstraintExpr_Language();
+
+	/**
+	 * Returns the meta object for the attribute '{@link com.example.sysarch.model.ConstraintExpr#getBody <em>Body</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Body</em>'.
+	 * @see com.example.sysarch.model.ConstraintExpr#getBody()
+	 * @see #getConstraintExpr()
+	 * @generated
+	 */
+	EAttribute getConstraintExpr_Body();
+
+	/**
+	 * Returns the meta object for the attribute list '{@link com.example.sysarch.model.ConstraintExpr#getDeclaredVars <em>Declared Vars</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute list '<em>Declared Vars</em>'.
+	 * @see com.example.sysarch.model.ConstraintExpr#getDeclaredVars()
+	 * @see #getConstraintExpr()
+	 * @generated
+	 */
+	EAttribute getConstraintExpr_DeclaredVars();
+
+	/**
+	 * Returns the meta object for class '{@link com.example.sysarch.model.BindingConnector <em>Binding Connector</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Binding Connector</em>'.
+	 * @see com.example.sysarch.model.BindingConnector
+	 * @generated
+	 */
+	EClass getBindingConnector();
+
+	/**
+	 * Returns the meta object for the reference '{@link com.example.sysarch.model.BindingConnector#getSource <em>Source</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the reference '<em>Source</em>'.
+	 * @see com.example.sysarch.model.BindingConnector#getSource()
+	 * @see #getBindingConnector()
+	 * @generated
+	 */
+	EReference getBindingConnector_Source();
+
+	/**
+	 * Returns the meta object for the reference '{@link com.example.sysarch.model.BindingConnector#getTarget <em>Target</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the reference '<em>Target</em>'.
+	 * @see com.example.sysarch.model.BindingConnector#getTarget()
+	 * @see #getBindingConnector()
+	 * @generated
+	 */
+	EReference getBindingConnector_Target();
+
+	/**
+	 * Returns the meta object for class '{@link com.example.sysarch.model.StateMachine <em>State Machine</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>State Machine</em>'.
+	 * @see com.example.sysarch.model.StateMachine
+	 * @generated
+	 */
+	EClass getStateMachine();
+
+	/**
+	 * Returns the meta object for the containment reference list '{@link com.example.sysarch.model.StateMachine#getStates <em>States</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference list '<em>States</em>'.
+	 * @see com.example.sysarch.model.StateMachine#getStates()
+	 * @see #getStateMachine()
+	 * @generated
+	 */
+	EReference getStateMachine_States();
+
+	/**
+	 * Returns the meta object for the containment reference list '{@link com.example.sysarch.model.StateMachine#getTransitions <em>Transitions</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference list '<em>Transitions</em>'.
+	 * @see com.example.sysarch.model.StateMachine#getTransitions()
+	 * @see #getStateMachine()
+	 * @generated
+	 */
+	EReference getStateMachine_Transitions();
+
+	/**
+	 * Returns the meta object for class '{@link com.example.sysarch.model.State <em>State</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>State</em>'.
+	 * @see com.example.sysarch.model.State
+	 * @generated
+	 */
+	EClass getState();
+
+	/**
+	 * Returns the meta object for the attribute '{@link com.example.sysarch.model.State#isIsInitial <em>Is Initial</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Is Initial</em>'.
+	 * @see com.example.sysarch.model.State#isIsInitial()
+	 * @see #getState()
+	 * @generated
+	 */
+	EAttribute getState_IsInitial();
+
+	/**
+	 * Returns the meta object for the attribute '{@link com.example.sysarch.model.State#isIsFinal <em>Is Final</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Is Final</em>'.
+	 * @see com.example.sysarch.model.State#isIsFinal()
+	 * @see #getState()
+	 * @generated
+	 */
+	EAttribute getState_IsFinal();
+
+	/**
+	 * Returns the meta object for the attribute '{@link com.example.sysarch.model.State#getDoBehavior <em>Do Behavior</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Do Behavior</em>'.
+	 * @see com.example.sysarch.model.State#getDoBehavior()
+	 * @see #getState()
+	 * @generated
+	 */
+	EAttribute getState_DoBehavior();
+
+	/**
+	 * Returns the meta object for the attribute '{@link com.example.sysarch.model.State#getEntryBehavior <em>Entry Behavior</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Entry Behavior</em>'.
+	 * @see com.example.sysarch.model.State#getEntryBehavior()
+	 * @see #getState()
+	 * @generated
+	 */
+	EAttribute getState_EntryBehavior();
+
+	/**
+	 * Returns the meta object for the attribute '{@link com.example.sysarch.model.State#getExitBehavior <em>Exit Behavior</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Exit Behavior</em>'.
+	 * @see com.example.sysarch.model.State#getExitBehavior()
+	 * @see #getState()
+	 * @generated
+	 */
+	EAttribute getState_ExitBehavior();
+
+	/**
+	 * Returns the meta object for class '{@link com.example.sysarch.model.Transition <em>Transition</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Transition</em>'.
+	 * @see com.example.sysarch.model.Transition
+	 * @generated
+	 */
+	EClass getTransition();
+
+	/**
+	 * Returns the meta object for the reference '{@link com.example.sysarch.model.Transition#getSource <em>Source</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the reference '<em>Source</em>'.
+	 * @see com.example.sysarch.model.Transition#getSource()
+	 * @see #getTransition()
+	 * @generated
+	 */
+	EReference getTransition_Source();
+
+	/**
+	 * Returns the meta object for the reference '{@link com.example.sysarch.model.Transition#getTarget <em>Target</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the reference '<em>Target</em>'.
+	 * @see com.example.sysarch.model.Transition#getTarget()
+	 * @see #getTransition()
+	 * @generated
+	 */
+	EReference getTransition_Target();
+
+	/**
+	 * Returns the meta object for the attribute '{@link com.example.sysarch.model.Transition#getTrigger <em>Trigger</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Trigger</em>'.
+	 * @see com.example.sysarch.model.Transition#getTrigger()
+	 * @see #getTransition()
+	 * @generated
+	 */
+	EAttribute getTransition_Trigger();
+
+	/**
+	 * Returns the meta object for the attribute '{@link com.example.sysarch.model.Transition#getGuard <em>Guard</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Guard</em>'.
+	 * @see com.example.sysarch.model.Transition#getGuard()
+	 * @see #getTransition()
+	 * @generated
+	 */
+	EAttribute getTransition_Guard();
+
+	/**
+	 * Returns the meta object for the attribute '{@link com.example.sysarch.model.Transition#getEffect <em>Effect</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Effect</em>'.
+	 * @see com.example.sysarch.model.Transition#getEffect()
+	 * @see #getTransition()
+	 * @generated
+	 */
+	EAttribute getTransition_Effect();
+
+	/**
+	 * Returns the meta object for class '{@link com.example.sysarch.model.Activity <em>Activity</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Activity</em>'.
+	 * @see com.example.sysarch.model.Activity
+	 * @generated
+	 */
+	EClass getActivity();
+
+	/**
+	 * Returns the meta object for the containment reference list '{@link com.example.sysarch.model.Activity#getActions <em>Actions</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference list '<em>Actions</em>'.
+	 * @see com.example.sysarch.model.Activity#getActions()
+	 * @see #getActivity()
+	 * @generated
+	 */
+	EReference getActivity_Actions();
+
+	/**
+	 * Returns the meta object for the containment reference list '{@link com.example.sysarch.model.Activity#getFlows <em>Flows</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference list '<em>Flows</em>'.
+	 * @see com.example.sysarch.model.Activity#getFlows()
+	 * @see #getActivity()
+	 * @generated
+	 */
+	EReference getActivity_Flows();
+
+	/**
+	 * Returns the meta object for class '{@link com.example.sysarch.model.Action <em>Action</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Action</em>'.
+	 * @see com.example.sysarch.model.Action
+	 * @generated
+	 */
+	EClass getAction();
+
+	/**
+	 * Returns the meta object for the attribute '{@link com.example.sysarch.model.Action#getKind <em>Kind</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Kind</em>'.
+	 * @see com.example.sysarch.model.Action#getKind()
+	 * @see #getAction()
+	 * @generated
+	 */
+	EAttribute getAction_Kind();
+
+	/**
+	 * Returns the meta object for the attribute '{@link com.example.sysarch.model.Action#getExpression <em>Expression</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Expression</em>'.
+	 * @see com.example.sysarch.model.Action#getExpression()
+	 * @see #getAction()
+	 * @generated
+	 */
+	EAttribute getAction_Expression();
+
+	/**
+	 * Returns the meta object for class '{@link com.example.sysarch.model.ActivityFlow <em>Activity Flow</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Activity Flow</em>'.
+	 * @see com.example.sysarch.model.ActivityFlow
+	 * @generated
+	 */
+	EClass getActivityFlow();
+
+	/**
+	 * Returns the meta object for the reference '{@link com.example.sysarch.model.ActivityFlow#getSource <em>Source</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the reference '<em>Source</em>'.
+	 * @see com.example.sysarch.model.ActivityFlow#getSource()
+	 * @see #getActivityFlow()
+	 * @generated
+	 */
+	EReference getActivityFlow_Source();
+
+	/**
+	 * Returns the meta object for the reference '{@link com.example.sysarch.model.ActivityFlow#getTarget <em>Target</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the reference '<em>Target</em>'.
+	 * @see com.example.sysarch.model.ActivityFlow#getTarget()
+	 * @see #getActivityFlow()
+	 * @generated
+	 */
+	EReference getActivityFlow_Target();
+
+	/**
+	 * Returns the meta object for the attribute '{@link com.example.sysarch.model.ActivityFlow#isIsObjectFlow <em>Is Object Flow</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Is Object Flow</em>'.
+	 * @see com.example.sysarch.model.ActivityFlow#isIsObjectFlow()
+	 * @see #getActivityFlow()
+	 * @generated
+	 */
+	EAttribute getActivityFlow_IsObjectFlow();
+
+	/**
+	 * Returns the meta object for class '{@link com.example.sysarch.model.UseCase <em>Use Case</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Use Case</em>'.
+	 * @see com.example.sysarch.model.UseCase
+	 * @generated
+	 */
+	EClass getUseCase();
+
+	/**
+	 * Returns the meta object for the reference list '{@link com.example.sysarch.model.UseCase#getActors <em>Actors</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the reference list '<em>Actors</em>'.
+	 * @see com.example.sysarch.model.UseCase#getActors()
+	 * @see #getUseCase()
+	 * @generated
+	 */
+	EReference getUseCase_Actors();
+
+	/**
+	 * Returns the meta object for the reference '{@link com.example.sysarch.model.UseCase#getSubject <em>Subject</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the reference '<em>Subject</em>'.
+	 * @see com.example.sysarch.model.UseCase#getSubject()
+	 * @see #getUseCase()
+	 * @generated
+	 */
+	EReference getUseCase_Subject();
+
+	/**
+	 * Returns the meta object for class '{@link com.example.sysarch.model.Actor <em>Actor</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Actor</em>'.
+	 * @see com.example.sysarch.model.Actor
+	 * @generated
+	 */
+	EClass getActor();
+
+	/**
 	 * Returns the meta object for enum '{@link com.example.sysarch.model.Layer <em>Layer</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -2027,6 +3806,16 @@ public interface SysarchPackage extends EPackage {
 	 * @generated
 	 */
 	EEnum getVerifyMethod();
+
+	/**
+	 * Returns the meta object for enum '{@link com.example.sysarch.model.ActionKind <em>Action Kind</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for enum '<em>Action Kind</em>'.
+	 * @see com.example.sysarch.model.ActionKind
+	 * @generated
+	 */
+	EEnum getActionKind();
 
 	/**
 	 * Returns the factory that creates the instances of the model.
@@ -2528,6 +4317,374 @@ public interface SysarchPackage extends EPackage {
 		EAttribute DIAGRAM_LAYOUT__WAYPOINTS = eINSTANCE.getDiagramLayout_Waypoints();
 
 		/**
+		 * The meta object literal for the '{@link com.example.sysarch.model.impl.ConstraintBlockImpl <em>Constraint Block</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see com.example.sysarch.model.impl.ConstraintBlockImpl
+		 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getConstraintBlock()
+		 * @generated
+		 */
+		EClass CONSTRAINT_BLOCK = eINSTANCE.getConstraintBlock();
+
+		/**
+		 * The meta object literal for the '<em><b>Parameters</b></em>' containment reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference CONSTRAINT_BLOCK__PARAMETERS = eINSTANCE.getConstraintBlock_Parameters();
+
+		/**
+		 * The meta object literal for the '<em><b>Expression</b></em>' containment reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference CONSTRAINT_BLOCK__EXPRESSION = eINSTANCE.getConstraintBlock_Expression();
+
+		/**
+		 * The meta object literal for the '{@link com.example.sysarch.model.impl.ParameterImpl <em>Parameter</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see com.example.sysarch.model.impl.ParameterImpl
+		 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getParameter()
+		 * @generated
+		 */
+		EClass PARAMETER = eINSTANCE.getParameter();
+
+		/**
+		 * The meta object literal for the '<em><b>Unit</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute PARAMETER__UNIT = eINSTANCE.getParameter_Unit();
+
+		/**
+		 * The meta object literal for the '<em><b>Direction</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute PARAMETER__DIRECTION = eINSTANCE.getParameter_Direction();
+
+		/**
+		 * The meta object literal for the '<em><b>Default Value</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute PARAMETER__DEFAULT_VALUE = eINSTANCE.getParameter_DefaultValue();
+
+		/**
+		 * The meta object literal for the '{@link com.example.sysarch.model.impl.ConstraintExprImpl <em>Constraint Expr</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see com.example.sysarch.model.impl.ConstraintExprImpl
+		 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getConstraintExpr()
+		 * @generated
+		 */
+		EClass CONSTRAINT_EXPR = eINSTANCE.getConstraintExpr();
+
+		/**
+		 * The meta object literal for the '<em><b>Language</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute CONSTRAINT_EXPR__LANGUAGE = eINSTANCE.getConstraintExpr_Language();
+
+		/**
+		 * The meta object literal for the '<em><b>Body</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute CONSTRAINT_EXPR__BODY = eINSTANCE.getConstraintExpr_Body();
+
+		/**
+		 * The meta object literal for the '<em><b>Declared Vars</b></em>' attribute list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute CONSTRAINT_EXPR__DECLARED_VARS = eINSTANCE.getConstraintExpr_DeclaredVars();
+
+		/**
+		 * The meta object literal for the '{@link com.example.sysarch.model.impl.BindingConnectorImpl <em>Binding Connector</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see com.example.sysarch.model.impl.BindingConnectorImpl
+		 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getBindingConnector()
+		 * @generated
+		 */
+		EClass BINDING_CONNECTOR = eINSTANCE.getBindingConnector();
+
+		/**
+		 * The meta object literal for the '<em><b>Source</b></em>' reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference BINDING_CONNECTOR__SOURCE = eINSTANCE.getBindingConnector_Source();
+
+		/**
+		 * The meta object literal for the '<em><b>Target</b></em>' reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference BINDING_CONNECTOR__TARGET = eINSTANCE.getBindingConnector_Target();
+
+		/**
+		 * The meta object literal for the '{@link com.example.sysarch.model.impl.StateMachineImpl <em>State Machine</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see com.example.sysarch.model.impl.StateMachineImpl
+		 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getStateMachine()
+		 * @generated
+		 */
+		EClass STATE_MACHINE = eINSTANCE.getStateMachine();
+
+		/**
+		 * The meta object literal for the '<em><b>States</b></em>' containment reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference STATE_MACHINE__STATES = eINSTANCE.getStateMachine_States();
+
+		/**
+		 * The meta object literal for the '<em><b>Transitions</b></em>' containment reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference STATE_MACHINE__TRANSITIONS = eINSTANCE.getStateMachine_Transitions();
+
+		/**
+		 * The meta object literal for the '{@link com.example.sysarch.model.impl.StateImpl <em>State</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see com.example.sysarch.model.impl.StateImpl
+		 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getState()
+		 * @generated
+		 */
+		EClass STATE = eINSTANCE.getState();
+
+		/**
+		 * The meta object literal for the '<em><b>Is Initial</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute STATE__IS_INITIAL = eINSTANCE.getState_IsInitial();
+
+		/**
+		 * The meta object literal for the '<em><b>Is Final</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute STATE__IS_FINAL = eINSTANCE.getState_IsFinal();
+
+		/**
+		 * The meta object literal for the '<em><b>Do Behavior</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute STATE__DO_BEHAVIOR = eINSTANCE.getState_DoBehavior();
+
+		/**
+		 * The meta object literal for the '<em><b>Entry Behavior</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute STATE__ENTRY_BEHAVIOR = eINSTANCE.getState_EntryBehavior();
+
+		/**
+		 * The meta object literal for the '<em><b>Exit Behavior</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute STATE__EXIT_BEHAVIOR = eINSTANCE.getState_ExitBehavior();
+
+		/**
+		 * The meta object literal for the '{@link com.example.sysarch.model.impl.TransitionImpl <em>Transition</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see com.example.sysarch.model.impl.TransitionImpl
+		 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getTransition()
+		 * @generated
+		 */
+		EClass TRANSITION = eINSTANCE.getTransition();
+
+		/**
+		 * The meta object literal for the '<em><b>Source</b></em>' reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference TRANSITION__SOURCE = eINSTANCE.getTransition_Source();
+
+		/**
+		 * The meta object literal for the '<em><b>Target</b></em>' reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference TRANSITION__TARGET = eINSTANCE.getTransition_Target();
+
+		/**
+		 * The meta object literal for the '<em><b>Trigger</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TRANSITION__TRIGGER = eINSTANCE.getTransition_Trigger();
+
+		/**
+		 * The meta object literal for the '<em><b>Guard</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TRANSITION__GUARD = eINSTANCE.getTransition_Guard();
+
+		/**
+		 * The meta object literal for the '<em><b>Effect</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TRANSITION__EFFECT = eINSTANCE.getTransition_Effect();
+
+		/**
+		 * The meta object literal for the '{@link com.example.sysarch.model.impl.ActivityImpl <em>Activity</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see com.example.sysarch.model.impl.ActivityImpl
+		 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getActivity()
+		 * @generated
+		 */
+		EClass ACTIVITY = eINSTANCE.getActivity();
+
+		/**
+		 * The meta object literal for the '<em><b>Actions</b></em>' containment reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference ACTIVITY__ACTIONS = eINSTANCE.getActivity_Actions();
+
+		/**
+		 * The meta object literal for the '<em><b>Flows</b></em>' containment reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference ACTIVITY__FLOWS = eINSTANCE.getActivity_Flows();
+
+		/**
+		 * The meta object literal for the '{@link com.example.sysarch.model.impl.ActionImpl <em>Action</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see com.example.sysarch.model.impl.ActionImpl
+		 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getAction()
+		 * @generated
+		 */
+		EClass ACTION = eINSTANCE.getAction();
+
+		/**
+		 * The meta object literal for the '<em><b>Kind</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ACTION__KIND = eINSTANCE.getAction_Kind();
+
+		/**
+		 * The meta object literal for the '<em><b>Expression</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ACTION__EXPRESSION = eINSTANCE.getAction_Expression();
+
+		/**
+		 * The meta object literal for the '{@link com.example.sysarch.model.impl.ActivityFlowImpl <em>Activity Flow</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see com.example.sysarch.model.impl.ActivityFlowImpl
+		 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getActivityFlow()
+		 * @generated
+		 */
+		EClass ACTIVITY_FLOW = eINSTANCE.getActivityFlow();
+
+		/**
+		 * The meta object literal for the '<em><b>Source</b></em>' reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference ACTIVITY_FLOW__SOURCE = eINSTANCE.getActivityFlow_Source();
+
+		/**
+		 * The meta object literal for the '<em><b>Target</b></em>' reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference ACTIVITY_FLOW__TARGET = eINSTANCE.getActivityFlow_Target();
+
+		/**
+		 * The meta object literal for the '<em><b>Is Object Flow</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ACTIVITY_FLOW__IS_OBJECT_FLOW = eINSTANCE.getActivityFlow_IsObjectFlow();
+
+		/**
+		 * The meta object literal for the '{@link com.example.sysarch.model.impl.UseCaseImpl <em>Use Case</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see com.example.sysarch.model.impl.UseCaseImpl
+		 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getUseCase()
+		 * @generated
+		 */
+		EClass USE_CASE = eINSTANCE.getUseCase();
+
+		/**
+		 * The meta object literal for the '<em><b>Actors</b></em>' reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference USE_CASE__ACTORS = eINSTANCE.getUseCase_Actors();
+
+		/**
+		 * The meta object literal for the '<em><b>Subject</b></em>' reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference USE_CASE__SUBJECT = eINSTANCE.getUseCase_Subject();
+
+		/**
+		 * The meta object literal for the '{@link com.example.sysarch.model.impl.ActorImpl <em>Actor</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see com.example.sysarch.model.impl.ActorImpl
+		 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getActor()
+		 * @generated
+		 */
+		EClass ACTOR = eINSTANCE.getActor();
+
+		/**
 		 * The meta object literal for the '{@link com.example.sysarch.model.Layer <em>Layer</em>}' enum.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -2566,6 +4723,16 @@ public interface SysarchPackage extends EPackage {
 		 * @generated
 		 */
 		EEnum VERIFY_METHOD = eINSTANCE.getVerifyMethod();
+
+		/**
+		 * The meta object literal for the '{@link com.example.sysarch.model.ActionKind <em>Action Kind</em>}' enum.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see com.example.sysarch.model.ActionKind
+		 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getActionKind()
+		 * @generated
+		 */
+		EEnum ACTION_KIND = eINSTANCE.getActionKind();
 
 	}
 

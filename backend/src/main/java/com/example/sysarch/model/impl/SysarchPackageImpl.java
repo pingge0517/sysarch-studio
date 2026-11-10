@@ -2,21 +2,34 @@
  */
 package com.example.sysarch.model.impl;
 
+import com.example.sysarch.model.Action;
+import com.example.sysarch.model.ActionKind;
+import com.example.sysarch.model.Activity;
+import com.example.sysarch.model.ActivityFlow;
+import com.example.sysarch.model.Actor;
 import com.example.sysarch.model.Allocate;
 import com.example.sysarch.model.ArchElement;
+import com.example.sysarch.model.BindingConnector;
 import com.example.sysarch.model.Connection;
 import com.example.sysarch.model.ConnectionKind;
+import com.example.sysarch.model.ConstraintBlock;
+import com.example.sysarch.model.ConstraintExpr;
 import com.example.sysarch.model.DiagramLayout;
 import com.example.sysarch.model.InterfaceDef;
 import com.example.sysarch.model.ItemFlow;
 import com.example.sysarch.model.Layer;
+import com.example.sysarch.model.Parameter;
 import com.example.sysarch.model.Part;
 import com.example.sysarch.model.PartDefinition;
 import com.example.sysarch.model.Port;
 import com.example.sysarch.model.PortDirection;
 import com.example.sysarch.model.Requirement;
+import com.example.sysarch.model.State;
+import com.example.sysarch.model.StateMachine;
 import com.example.sysarch.model.SysarchFactory;
 import com.example.sysarch.model.SysarchPackage;
+import com.example.sysarch.model.Transition;
+import com.example.sysarch.model.UseCase;
 import com.example.sysarch.model.VerifyMethod;
 
 import org.eclipse.emf.ecore.EAttribute;
@@ -110,6 +123,90 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	private EClass constraintBlockEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass parameterEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass constraintExprEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass bindingConnectorEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass stateMachineEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass stateEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass transitionEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass activityEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass actionEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass activityFlowEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass useCaseEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass actorEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	private EEnum layerEEnum = null;
 
 	/**
@@ -132,6 +229,13 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 	 * @generated
 	 */
 	private EEnum verifyMethodEEnum = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EEnum actionKindEEnum = null;
 
 	/**
 	 * Creates an instance of the model <b>Package</b>, registered with
@@ -769,6 +873,436 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 	 * @generated
 	 */
 	@Override
+	public EClass getConstraintBlock() {
+		return constraintBlockEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getConstraintBlock_Parameters() {
+		return (EReference)constraintBlockEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getConstraintBlock_Expression() {
+		return (EReference)constraintBlockEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getParameter() {
+		return parameterEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getParameter_Unit() {
+		return (EAttribute)parameterEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getParameter_Direction() {
+		return (EAttribute)parameterEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getParameter_DefaultValue() {
+		return (EAttribute)parameterEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getConstraintExpr() {
+		return constraintExprEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getConstraintExpr_Language() {
+		return (EAttribute)constraintExprEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getConstraintExpr_Body() {
+		return (EAttribute)constraintExprEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getConstraintExpr_DeclaredVars() {
+		return (EAttribute)constraintExprEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getBindingConnector() {
+		return bindingConnectorEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getBindingConnector_Source() {
+		return (EReference)bindingConnectorEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getBindingConnector_Target() {
+		return (EReference)bindingConnectorEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getStateMachine() {
+		return stateMachineEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getStateMachine_States() {
+		return (EReference)stateMachineEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getStateMachine_Transitions() {
+		return (EReference)stateMachineEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getState() {
+		return stateEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getState_IsInitial() {
+		return (EAttribute)stateEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getState_IsFinal() {
+		return (EAttribute)stateEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getState_DoBehavior() {
+		return (EAttribute)stateEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getState_EntryBehavior() {
+		return (EAttribute)stateEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getState_ExitBehavior() {
+		return (EAttribute)stateEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getTransition() {
+		return transitionEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getTransition_Source() {
+		return (EReference)transitionEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getTransition_Target() {
+		return (EReference)transitionEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getTransition_Trigger() {
+		return (EAttribute)transitionEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getTransition_Guard() {
+		return (EAttribute)transitionEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getTransition_Effect() {
+		return (EAttribute)transitionEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getActivity() {
+		return activityEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getActivity_Actions() {
+		return (EReference)activityEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getActivity_Flows() {
+		return (EReference)activityEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getAction() {
+		return actionEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAction_Kind() {
+		return (EAttribute)actionEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAction_Expression() {
+		return (EAttribute)actionEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getActivityFlow() {
+		return activityFlowEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getActivityFlow_Source() {
+		return (EReference)activityFlowEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getActivityFlow_Target() {
+		return (EReference)activityFlowEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getActivityFlow_IsObjectFlow() {
+		return (EAttribute)activityFlowEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getUseCase() {
+		return useCaseEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getUseCase_Actors() {
+		return (EReference)useCaseEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getUseCase_Subject() {
+		return (EReference)useCaseEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getActor() {
+		return actorEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EEnum getLayer() {
 		return layerEEnum;
 	}
@@ -801,6 +1335,16 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 	@Override
 	public EEnum getVerifyMethod() {
 		return verifyMethodEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getActionKind() {
+		return actionKindEEnum;
 	}
 
 	/**
@@ -899,11 +1443,67 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 		createEAttribute(diagramLayoutEClass, DIAGRAM_LAYOUT__HEIGHT);
 		createEAttribute(diagramLayoutEClass, DIAGRAM_LAYOUT__WAYPOINTS);
 
+		constraintBlockEClass = createEClass(CONSTRAINT_BLOCK);
+		createEReference(constraintBlockEClass, CONSTRAINT_BLOCK__PARAMETERS);
+		createEReference(constraintBlockEClass, CONSTRAINT_BLOCK__EXPRESSION);
+
+		parameterEClass = createEClass(PARAMETER);
+		createEAttribute(parameterEClass, PARAMETER__UNIT);
+		createEAttribute(parameterEClass, PARAMETER__DIRECTION);
+		createEAttribute(parameterEClass, PARAMETER__DEFAULT_VALUE);
+
+		constraintExprEClass = createEClass(CONSTRAINT_EXPR);
+		createEAttribute(constraintExprEClass, CONSTRAINT_EXPR__LANGUAGE);
+		createEAttribute(constraintExprEClass, CONSTRAINT_EXPR__BODY);
+		createEAttribute(constraintExprEClass, CONSTRAINT_EXPR__DECLARED_VARS);
+
+		bindingConnectorEClass = createEClass(BINDING_CONNECTOR);
+		createEReference(bindingConnectorEClass, BINDING_CONNECTOR__SOURCE);
+		createEReference(bindingConnectorEClass, BINDING_CONNECTOR__TARGET);
+
+		stateMachineEClass = createEClass(STATE_MACHINE);
+		createEReference(stateMachineEClass, STATE_MACHINE__STATES);
+		createEReference(stateMachineEClass, STATE_MACHINE__TRANSITIONS);
+
+		stateEClass = createEClass(STATE);
+		createEAttribute(stateEClass, STATE__IS_INITIAL);
+		createEAttribute(stateEClass, STATE__IS_FINAL);
+		createEAttribute(stateEClass, STATE__DO_BEHAVIOR);
+		createEAttribute(stateEClass, STATE__ENTRY_BEHAVIOR);
+		createEAttribute(stateEClass, STATE__EXIT_BEHAVIOR);
+
+		transitionEClass = createEClass(TRANSITION);
+		createEReference(transitionEClass, TRANSITION__SOURCE);
+		createEReference(transitionEClass, TRANSITION__TARGET);
+		createEAttribute(transitionEClass, TRANSITION__TRIGGER);
+		createEAttribute(transitionEClass, TRANSITION__GUARD);
+		createEAttribute(transitionEClass, TRANSITION__EFFECT);
+
+		activityEClass = createEClass(ACTIVITY);
+		createEReference(activityEClass, ACTIVITY__ACTIONS);
+		createEReference(activityEClass, ACTIVITY__FLOWS);
+
+		actionEClass = createEClass(ACTION);
+		createEAttribute(actionEClass, ACTION__KIND);
+		createEAttribute(actionEClass, ACTION__EXPRESSION);
+
+		activityFlowEClass = createEClass(ACTIVITY_FLOW);
+		createEReference(activityFlowEClass, ACTIVITY_FLOW__SOURCE);
+		createEReference(activityFlowEClass, ACTIVITY_FLOW__TARGET);
+		createEAttribute(activityFlowEClass, ACTIVITY_FLOW__IS_OBJECT_FLOW);
+
+		useCaseEClass = createEClass(USE_CASE);
+		createEReference(useCaseEClass, USE_CASE__ACTORS);
+		createEReference(useCaseEClass, USE_CASE__SUBJECT);
+
+		actorEClass = createEClass(ACTOR);
+
 		// Create enums
 		layerEEnum = createEEnum(LAYER);
 		portDirectionEEnum = createEEnum(PORT_DIRECTION);
 		connectionKindEEnum = createEEnum(CONNECTION_KIND);
 		verifyMethodEEnum = createEEnum(VERIFY_METHOD);
+		actionKindEEnum = createEEnum(ACTION_KIND);
 	}
 
 	/**
@@ -943,6 +1543,17 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 		interfaceDefEClass.getESuperTypes().add(this.getArchElement());
 		allocateEClass.getESuperTypes().add(this.getArchElement());
 		diagramLayoutEClass.getESuperTypes().add(this.getArchElement());
+		constraintBlockEClass.getESuperTypes().add(this.getArchElement());
+		parameterEClass.getESuperTypes().add(this.getArchElement());
+		bindingConnectorEClass.getESuperTypes().add(this.getArchElement());
+		stateMachineEClass.getESuperTypes().add(this.getArchElement());
+		stateEClass.getESuperTypes().add(this.getArchElement());
+		transitionEClass.getESuperTypes().add(this.getArchElement());
+		activityEClass.getESuperTypes().add(this.getArchElement());
+		actionEClass.getESuperTypes().add(this.getArchElement());
+		activityFlowEClass.getESuperTypes().add(this.getArchElement());
+		useCaseEClass.getESuperTypes().add(this.getArchElement());
+		actorEClass.getESuperTypes().add(this.getArchElement());
 
 		// Initialize classes, features, and operations; add parameters
 		initEClass(archElementEClass, ArchElement.class, "ArchElement", IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
@@ -1014,6 +1625,61 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 		initEAttribute(getDiagramLayout_Height(), ecorePackage.getEInt(), "height", "90", 0, 1, DiagramLayout.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDiagramLayout_Waypoints(), ecorePackage.getEString(), "waypoints", null, 0, -1, DiagramLayout.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
+		initEClass(constraintBlockEClass, ConstraintBlock.class, "ConstraintBlock", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEReference(getConstraintBlock_Parameters(), this.getParameter(), null, "parameters", null, 1, -1, ConstraintBlock.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getConstraintBlock_Expression(), this.getConstraintExpr(), null, "expression", null, 1, 1, ConstraintBlock.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(parameterEClass, Parameter.class, "Parameter", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getParameter_Unit(), ecorePackage.getEString(), "unit", null, 0, 1, Parameter.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getParameter_Direction(), ecorePackage.getEString(), "direction", "IN", 0, 1, Parameter.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getParameter_DefaultValue(), ecorePackage.getEDouble(), "defaultValue", null, 0, 1, Parameter.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(constraintExprEClass, ConstraintExpr.class, "ConstraintExpr", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getConstraintExpr_Language(), ecorePackage.getEString(), "language", "PYTHON", 0, 1, ConstraintExpr.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getConstraintExpr_Body(), ecorePackage.getEString(), "body", null, 0, 1, ConstraintExpr.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getConstraintExpr_DeclaredVars(), ecorePackage.getEString(), "declaredVars", null, 0, -1, ConstraintExpr.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(bindingConnectorEClass, BindingConnector.class, "BindingConnector", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEReference(getBindingConnector_Source(), this.getParameter(), null, "source", null, 1, 1, BindingConnector.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getBindingConnector_Target(), this.getParameter(), null, "target", null, 1, 1, BindingConnector.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(stateMachineEClass, StateMachine.class, "StateMachine", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEReference(getStateMachine_States(), this.getState(), null, "states", null, 0, -1, StateMachine.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getStateMachine_Transitions(), this.getTransition(), null, "transitions", null, 0, -1, StateMachine.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(stateEClass, State.class, "State", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getState_IsInitial(), ecorePackage.getEBoolean(), "isInitial", "false", 0, 1, State.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getState_IsFinal(), ecorePackage.getEBoolean(), "isFinal", "false", 0, 1, State.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getState_DoBehavior(), ecorePackage.getEString(), "doBehavior", null, 0, 1, State.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getState_EntryBehavior(), ecorePackage.getEString(), "entryBehavior", null, 0, 1, State.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getState_ExitBehavior(), ecorePackage.getEString(), "exitBehavior", null, 0, 1, State.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(transitionEClass, Transition.class, "Transition", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEReference(getTransition_Source(), this.getState(), null, "source", null, 1, 1, Transition.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getTransition_Target(), this.getState(), null, "target", null, 1, 1, Transition.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getTransition_Trigger(), ecorePackage.getEString(), "trigger", null, 0, 1, Transition.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getTransition_Guard(), ecorePackage.getEString(), "guard", null, 0, 1, Transition.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getTransition_Effect(), ecorePackage.getEString(), "effect", null, 0, 1, Transition.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(activityEClass, Activity.class, "Activity", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEReference(getActivity_Actions(), this.getAction(), null, "actions", null, 0, -1, Activity.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getActivity_Flows(), this.getActivityFlow(), null, "flows", null, 0, -1, Activity.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(actionEClass, Action.class, "Action", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getAction_Kind(), this.getActionKind(), "kind", "CALL", 0, 1, Action.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAction_Expression(), ecorePackage.getEString(), "expression", null, 0, 1, Action.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(activityFlowEClass, ActivityFlow.class, "ActivityFlow", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEReference(getActivityFlow_Source(), this.getAction(), null, "source", null, 1, 1, ActivityFlow.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getActivityFlow_Target(), this.getAction(), null, "target", null, 1, 1, ActivityFlow.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getActivityFlow_IsObjectFlow(), ecorePackage.getEBoolean(), "isObjectFlow", "false", 0, 1, ActivityFlow.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(useCaseEClass, UseCase.class, "UseCase", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEReference(getUseCase_Actors(), this.getActor(), null, "actors", null, 0, -1, UseCase.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getUseCase_Subject(), this.getPartDefinition(), null, "subject", null, 0, 1, UseCase.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(actorEClass, Actor.class, "Actor", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+
 		// Initialize enums and add enum literals
 		initEEnum(layerEEnum, Layer.class, "Layer");
 		addEEnumLiteral(layerEEnum, Layer.OPERATIONAL);
@@ -1037,6 +1703,11 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 		addEEnumLiteral(verifyMethodEEnum, VerifyMethod.INSPECTION);
 		addEEnumLiteral(verifyMethodEEnum, VerifyMethod.TEST);
 		addEEnumLiteral(verifyMethodEEnum, VerifyMethod.DEMONSTRATION);
+
+		initEEnum(actionKindEEnum, ActionKind.class, "ActionKind");
+		addEEnumLiteral(actionKindEEnum, ActionKind.CALL);
+		addEEnumLiteral(actionKindEEnum, ActionKind.ASSIGN);
+		addEEnumLiteral(actionKindEEnum, ActionKind.DECIDE);
 
 		// Create resource
 		createResource(eNS_URI);
@@ -1086,6 +1757,19 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 		   new String[] {
 			   "LayerAdjacentOnly", "(from.layer = Layer::OPERATIONAL and to.layer = Layer::SYSTEM) or (from.layer = Layer::SYSTEM and to.layer = Layer::LOGICAL) or (from.layer = Layer::LOGICAL and to.layer = Layer::PHYSICAL) or (from.layer = Layer::PHYSICAL and to.layer = Layer::EPBS)",
 			   "NoSelfAllocate", "from <> to"
+		   });
+		addAnnotation
+		  (constraintBlockEClass,
+		   source,
+		   new String[] {
+			   "HasExpression", "not expression.oclIsUndefined()",
+			   "ParamsHaveUnit", "parameters->forAll(p | not p.unit.oclIsUndefined() and p.unit.size() > 0)"
+		   });
+		addAnnotation
+		  (parameterEClass,
+		   source,
+		   new String[] {
+			   "DirectionKnown", "direction.oclIsUndefined() or direction = \'IN\' or direction = \'OUT\' or direction = \'INOUT\'"
 		   });
 	}
 

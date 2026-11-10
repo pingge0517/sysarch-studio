@@ -107,6 +107,10 @@ public final class SysarchEValidator implements EValidator {
         features.put("LayerAdjacentOnly", List.of("from", "to"));
         features.put("NoSelfAllocate", List.of("from", "to"));
         features.put("ProtocolRequired", List.of("protocol"));
+        // P3 T1 (metamodel v1.3); appended, so the codes of the constraints above stay the same
+        features.put("HasExpression", List.of("expression"));
+        features.put("ParamsHaveUnit", List.of("parameters"));
+        features.put("DirectionKnown", List.of("direction"));
         return Collections.unmodifiableMap(features);
     }
 }

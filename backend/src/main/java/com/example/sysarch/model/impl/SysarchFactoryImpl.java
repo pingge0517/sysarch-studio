@@ -66,6 +66,18 @@ public class SysarchFactoryImpl extends EFactoryImpl implements SysarchFactory {
 			case SysarchPackage.INTERFACE_DEF: return createInterfaceDef();
 			case SysarchPackage.ALLOCATE: return createAllocate();
 			case SysarchPackage.DIAGRAM_LAYOUT: return createDiagramLayout();
+			case SysarchPackage.CONSTRAINT_BLOCK: return createConstraintBlock();
+			case SysarchPackage.PARAMETER: return createParameter();
+			case SysarchPackage.CONSTRAINT_EXPR: return createConstraintExpr();
+			case SysarchPackage.BINDING_CONNECTOR: return createBindingConnector();
+			case SysarchPackage.STATE_MACHINE: return createStateMachine();
+			case SysarchPackage.STATE: return createState();
+			case SysarchPackage.TRANSITION: return createTransition();
+			case SysarchPackage.ACTIVITY: return createActivity();
+			case SysarchPackage.ACTION: return createAction();
+			case SysarchPackage.ACTIVITY_FLOW: return createActivityFlow();
+			case SysarchPackage.USE_CASE: return createUseCase();
+			case SysarchPackage.ACTOR: return createActor();
 			default:
 				throw new IllegalArgumentException("The class '" + eClass.getName() + "' is not a valid classifier");
 		}
@@ -87,6 +99,8 @@ public class SysarchFactoryImpl extends EFactoryImpl implements SysarchFactory {
 				return createConnectionKindFromString(eDataType, initialValue);
 			case SysarchPackage.VERIFY_METHOD:
 				return createVerifyMethodFromString(eDataType, initialValue);
+			case SysarchPackage.ACTION_KIND:
+				return createActionKindFromString(eDataType, initialValue);
 			default:
 				throw new IllegalArgumentException("The datatype '" + eDataType.getName() + "' is not a valid classifier");
 		}
@@ -108,6 +122,8 @@ public class SysarchFactoryImpl extends EFactoryImpl implements SysarchFactory {
 				return convertConnectionKindToString(eDataType, instanceValue);
 			case SysarchPackage.VERIFY_METHOD:
 				return convertVerifyMethodToString(eDataType, instanceValue);
+			case SysarchPackage.ACTION_KIND:
+				return convertActionKindToString(eDataType, instanceValue);
 			default:
 				throw new IllegalArgumentException("The datatype '" + eDataType.getName() + "' is not a valid classifier");
 		}
@@ -217,6 +233,138 @@ public class SysarchFactoryImpl extends EFactoryImpl implements SysarchFactory {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	@Override
+	public ConstraintBlock createConstraintBlock() {
+		ConstraintBlockImpl constraintBlock = new ConstraintBlockImpl();
+		return constraintBlock;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Parameter createParameter() {
+		ParameterImpl parameter = new ParameterImpl();
+		return parameter;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public ConstraintExpr createConstraintExpr() {
+		ConstraintExprImpl constraintExpr = new ConstraintExprImpl();
+		return constraintExpr;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public BindingConnector createBindingConnector() {
+		BindingConnectorImpl bindingConnector = new BindingConnectorImpl();
+		return bindingConnector;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public StateMachine createStateMachine() {
+		StateMachineImpl stateMachine = new StateMachineImpl();
+		return stateMachine;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public State createState() {
+		StateImpl state = new StateImpl();
+		return state;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Transition createTransition() {
+		TransitionImpl transition = new TransitionImpl();
+		return transition;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Activity createActivity() {
+		ActivityImpl activity = new ActivityImpl();
+		return activity;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Action createAction() {
+		ActionImpl action = new ActionImpl();
+		return action;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public ActivityFlow createActivityFlow() {
+		ActivityFlowImpl activityFlow = new ActivityFlowImpl();
+		return activityFlow;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public UseCase createUseCase() {
+		UseCaseImpl useCase = new UseCaseImpl();
+		return useCase;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Actor createActor() {
+		ActorImpl actor = new ActorImpl();
+		return actor;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	public Layer createLayerFromString(EDataType eDataType, String initialValue) {
 		Layer result = Layer.get(initialValue);
 		if (result == null) throw new IllegalArgumentException("The value '" + initialValue + "' is not a valid enumerator of '" + eDataType.getName() + "'");
@@ -289,6 +437,26 @@ public class SysarchFactoryImpl extends EFactoryImpl implements SysarchFactory {
 	 * @generated
 	 */
 	public String convertVerifyMethodToString(EDataType eDataType, Object instanceValue) {
+		return instanceValue == null ? null : instanceValue.toString();
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public ActionKind createActionKindFromString(EDataType eDataType, String initialValue) {
+		ActionKind result = ActionKind.get(initialValue);
+		if (result == null) throw new IllegalArgumentException("The value '" + initialValue + "' is not a valid enumerator of '" + eDataType.getName() + "'");
+		return result;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public String convertActionKindToString(EDataType eDataType, Object instanceValue) {
 		return instanceValue == null ? null : instanceValue.toString();
 	}
 

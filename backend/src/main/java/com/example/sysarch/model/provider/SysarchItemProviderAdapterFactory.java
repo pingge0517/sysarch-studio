@@ -279,6 +279,282 @@ public class SysarchItemProviderAdapterFactory extends SysarchAdapterFactory imp
 	}
 
 	/**
+	 * This keeps track of the one adapter used for all {@link com.example.sysarch.model.ConstraintBlock} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected ConstraintBlockItemProvider constraintBlockItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link com.example.sysarch.model.ConstraintBlock}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createConstraintBlockAdapter() {
+		if (constraintBlockItemProvider == null) {
+			constraintBlockItemProvider = new ConstraintBlockItemProvider(this);
+		}
+
+		return constraintBlockItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link com.example.sysarch.model.Parameter} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected ParameterItemProvider parameterItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link com.example.sysarch.model.Parameter}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createParameterAdapter() {
+		if (parameterItemProvider == null) {
+			parameterItemProvider = new ParameterItemProvider(this);
+		}
+
+		return parameterItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link com.example.sysarch.model.ConstraintExpr} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected ConstraintExprItemProvider constraintExprItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link com.example.sysarch.model.ConstraintExpr}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createConstraintExprAdapter() {
+		if (constraintExprItemProvider == null) {
+			constraintExprItemProvider = new ConstraintExprItemProvider(this);
+		}
+
+		return constraintExprItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link com.example.sysarch.model.BindingConnector} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected BindingConnectorItemProvider bindingConnectorItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link com.example.sysarch.model.BindingConnector}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createBindingConnectorAdapter() {
+		if (bindingConnectorItemProvider == null) {
+			bindingConnectorItemProvider = new BindingConnectorItemProvider(this);
+		}
+
+		return bindingConnectorItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link com.example.sysarch.model.StateMachine} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected StateMachineItemProvider stateMachineItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link com.example.sysarch.model.StateMachine}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createStateMachineAdapter() {
+		if (stateMachineItemProvider == null) {
+			stateMachineItemProvider = new StateMachineItemProvider(this);
+		}
+
+		return stateMachineItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link com.example.sysarch.model.State} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected StateItemProvider stateItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link com.example.sysarch.model.State}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createStateAdapter() {
+		if (stateItemProvider == null) {
+			stateItemProvider = new StateItemProvider(this);
+		}
+
+		return stateItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link com.example.sysarch.model.Transition} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected TransitionItemProvider transitionItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link com.example.sysarch.model.Transition}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createTransitionAdapter() {
+		if (transitionItemProvider == null) {
+			transitionItemProvider = new TransitionItemProvider(this);
+		}
+
+		return transitionItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link com.example.sysarch.model.Activity} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected ActivityItemProvider activityItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link com.example.sysarch.model.Activity}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createActivityAdapter() {
+		if (activityItemProvider == null) {
+			activityItemProvider = new ActivityItemProvider(this);
+		}
+
+		return activityItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link com.example.sysarch.model.Action} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected ActionItemProvider actionItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link com.example.sysarch.model.Action}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createActionAdapter() {
+		if (actionItemProvider == null) {
+			actionItemProvider = new ActionItemProvider(this);
+		}
+
+		return actionItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link com.example.sysarch.model.ActivityFlow} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected ActivityFlowItemProvider activityFlowItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link com.example.sysarch.model.ActivityFlow}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createActivityFlowAdapter() {
+		if (activityFlowItemProvider == null) {
+			activityFlowItemProvider = new ActivityFlowItemProvider(this);
+		}
+
+		return activityFlowItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link com.example.sysarch.model.UseCase} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected UseCaseItemProvider useCaseItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link com.example.sysarch.model.UseCase}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createUseCaseAdapter() {
+		if (useCaseItemProvider == null) {
+			useCaseItemProvider = new UseCaseItemProvider(this);
+		}
+
+		return useCaseItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link com.example.sysarch.model.Actor} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected ActorItemProvider actorItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link com.example.sysarch.model.Actor}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createActorAdapter() {
+		if (actorItemProvider == null) {
+			actorItemProvider = new ActorItemProvider(this);
+		}
+
+		return actorItemProvider;
+	}
+
+	/**
 	 * This returns the root adapter factory that contains this factory.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -392,6 +668,18 @@ public class SysarchItemProviderAdapterFactory extends SysarchAdapterFactory imp
 		if (interfaceDefItemProvider != null) interfaceDefItemProvider.dispose();
 		if (allocateItemProvider != null) allocateItemProvider.dispose();
 		if (diagramLayoutItemProvider != null) diagramLayoutItemProvider.dispose();
+		if (constraintBlockItemProvider != null) constraintBlockItemProvider.dispose();
+		if (parameterItemProvider != null) parameterItemProvider.dispose();
+		if (constraintExprItemProvider != null) constraintExprItemProvider.dispose();
+		if (bindingConnectorItemProvider != null) bindingConnectorItemProvider.dispose();
+		if (stateMachineItemProvider != null) stateMachineItemProvider.dispose();
+		if (stateItemProvider != null) stateItemProvider.dispose();
+		if (transitionItemProvider != null) transitionItemProvider.dispose();
+		if (activityItemProvider != null) activityItemProvider.dispose();
+		if (actionItemProvider != null) actionItemProvider.dispose();
+		if (activityFlowItemProvider != null) activityFlowItemProvider.dispose();
+		if (useCaseItemProvider != null) useCaseItemProvider.dispose();
+		if (actorItemProvider != null) actorItemProvider.dispose();
 	}
 
 }

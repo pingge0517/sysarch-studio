@@ -33,6 +33,11 @@
       <genEnumLiterals ecoreEnumLiteral="sysarch.ecore#//VerifyMethod/TEST"/>
       <genEnumLiterals ecoreEnumLiteral="sysarch.ecore#//VerifyMethod/DEMONSTRATION"/>
     </genEnums>
+    <genEnums typeSafeEnumCompatible="false" ecoreEnum="sysarch.ecore#//ActionKind">
+      <genEnumLiterals ecoreEnumLiteral="sysarch.ecore#//ActionKind/CALL"/>
+      <genEnumLiterals ecoreEnumLiteral="sysarch.ecore#//ActionKind/ASSIGN"/>
+      <genEnumLiterals ecoreEnumLiteral="sysarch.ecore#//ActionKind/DECIDE"/>
+    </genEnums>
     <genClasses image="false" ecoreClass="sysarch.ecore#//ArchElement">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//ArchElement/id"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//ArchElement/name"/>
@@ -102,5 +107,59 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//DiagramLayout/height"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//DiagramLayout/waypoints"/>
     </genClasses>
+    <genClasses ecoreClass="sysarch.ecore#//ConstraintBlock">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference sysarch.ecore#//ConstraintBlock/parameters"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference sysarch.ecore#//ConstraintBlock/expression"/>
+    </genClasses>
+    <genClasses ecoreClass="sysarch.ecore#//Parameter">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//Parameter/unit"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//Parameter/direction"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//Parameter/defaultValue"/>
+    </genClasses>
+    <genClasses ecoreClass="sysarch.ecore#//ConstraintExpr">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//ConstraintExpr/language"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//ConstraintExpr/body"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//ConstraintExpr/declaredVars"/>
+    </genClasses>
+    <genClasses ecoreClass="sysarch.ecore#//BindingConnector">
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sysarch.ecore#//BindingConnector/source"/>
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sysarch.ecore#//BindingConnector/target"/>
+    </genClasses>
+    <genClasses ecoreClass="sysarch.ecore#//StateMachine">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference sysarch.ecore#//StateMachine/states"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference sysarch.ecore#//StateMachine/transitions"/>
+    </genClasses>
+    <genClasses ecoreClass="sysarch.ecore#//State">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//State/isInitial"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//State/isFinal"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//State/doBehavior"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//State/entryBehavior"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//State/exitBehavior"/>
+    </genClasses>
+    <genClasses ecoreClass="sysarch.ecore#//Transition">
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sysarch.ecore#//Transition/source"/>
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sysarch.ecore#//Transition/target"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//Transition/trigger"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//Transition/guard"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//Transition/effect"/>
+    </genClasses>
+    <genClasses ecoreClass="sysarch.ecore#//Activity">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference sysarch.ecore#//Activity/actions"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference sysarch.ecore#//Activity/flows"/>
+    </genClasses>
+    <genClasses ecoreClass="sysarch.ecore#//Action">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//Action/kind"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//Action/expression"/>
+    </genClasses>
+    <genClasses ecoreClass="sysarch.ecore#//ActivityFlow">
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sysarch.ecore#//ActivityFlow/source"/>
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sysarch.ecore#//ActivityFlow/target"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//ActivityFlow/isObjectFlow"/>
+    </genClasses>
+    <genClasses ecoreClass="sysarch.ecore#//UseCase">
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sysarch.ecore#//UseCase/actors"/>
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sysarch.ecore#//UseCase/subject"/>
+    </genClasses>
+    <genClasses ecoreClass="sysarch.ecore#//Actor"/>
   </genPackages>
 </genmodel:GenModel>

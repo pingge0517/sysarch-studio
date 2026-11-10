@@ -168,6 +168,14 @@ public final class ConstraintValidator implements AutoCloseable {
             case Allocate allocate -> new ValidationError(code, id, allocateMessage(code, allocate), ids(allocate.getFrom(), allocate.getTo()));
             case InterfaceDef interfaceDef when code.equals("ProtocolRequired") -> new ValidationError(code, id,
                     "接口「" + name(interfaceDef) + "」未设置协议", ids(interfaceDef));
+            case com.example.sysarch.model.ConstraintBlock block when code.equals("HasExpression") -> new ValidationError(code, id,
+                    "约束块「" + name(block) + "」没有表达式", ids(block));
+            case com.example.sysarch.model.ConstraintBlock block when code.equals("ParamsHaveUnit") -> new ValidationError(code, id,
+                    "约束块「" + name(block) + "」有参数没有单位：" + block.getParameters().stream()
+                            .filter(p -> p.getUnit() == null || p.getUnit().isEmpty()).map(p -> name(p)).collect(java.util.stream.Collectors.joining("、")),
+                    ids(block));
+            case com.example.sysarch.model.Parameter parameter when code.equals("DirectionKnown") -> new ValidationError(code, id,
+                    "参数「" + name(parameter) + "」的方向只能是 IN、OUT 或 INOUT，现在是 " + parameter.getDirection(), ids(parameter));
             case Port port when code.equals("InterfaceTypeRequired") -> new ValidationError(code, id,
                     "端口「" + name(port) + "」未设置接口类型（仅 INOUT 端口可以不设）", ids(port));
             default -> code.equals("NameNotEmpty") ? new ValidationError(code, id, "名称不能为空", ids(element))
