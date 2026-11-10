@@ -102,15 +102,50 @@ public class ConsistencyService {
      *            what is recorded (pull results, webhook marks), so R1 is still found but R2 only on the canvas side
      */
     public ConsistencyReport report(String projectId, PolarionToken token) {
-        if (this.status != null) {
-            this.status.checked(projectId, OffsetDateTime.now()); // P1 T6: the panel's "上次一致性校验"
+        List<Issue> issues = new ArrayList<>();
+        Facts facts = null;
+        try {
+            facts = this.facts(projectId, token);
+        } catch (ResponseStatusException e) {
+            if (e.getStatusCode().value() != HttpStatus.NOT_FOUND.value()) {
+                throw e;
+            } // not bound to Polarion: only the model's own rules below (P3 T2)
         }
-        Facts facts = this.facts(projectId, token);
-        List<Issue> issues = this.rules.evaluate(facts);
-        if (facts.isLive()) {
-            facts.live().keySet().forEach(workItemId -> this.store.clearCheck(projectId, workItemId)); // the marks are judged
+        boolean bound = facts != null;
+        if (bound) {
+            if (this.status != null) {
+                this.status.checked(projectId, OffsetDateTime.now()); // P1 T6: the panel's "上次一致性校验"
+            }
+            issues.addAll(this.rules.evaluate(facts));
+            if (facts.isLive()) {
+                facts.live().keySet().forEach(workItemId -> this.store.clearCheck(projectId, workItemId)); // the marks are judged
+            }
         }
+        // P3 T2: R7–R10 judge the model only, for every project (user's decision), bound to Polarion or not
+        try {
+            issues.addAll(this.behavior.apply(projectId));
+        } catch (com.example.sysarch.project.ProjectModels.UnknownProjectException e) {
+            if (!bound) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+            }
+        }
+        issues.sort(java.util.Comparator.comparing(Issue::rule, java.util.Comparator.comparingInt((String r) -> Integer.parseInt(r.substring(1))))
+                .thenComparing(Issue::id));
         return toReport(projectId, issues);
+    }
+
+    /** P3 T2: the behaviour issues of a project (its model, read on its editing context); none without Sirius (tests). */
+    private java.util.function.Function<String, List<Issue>> behavior = projectId -> List.of();
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void behaviorChecks(org.springframework.beans.factory.ObjectProvider<com.example.sysarch.project.ProjectModels> models) {
+        this.behavior = projectId -> models.getObject().read(projectId,
+                resources -> com.example.sysarch.behavior.BehaviorChecks.evaluate(org.eclipse.emf.ecore.util.EcoreUtil.getAllContents(resources, true)));
+    }
+
+    /** For tests: the behaviour issues without Sirius. */
+    void behaviorChecks(java.util.function.Function<String, List<Issue>> behavior) {
+        this.behavior = behavior;
     }
 
     static ConsistencyReport toReport(String projectId, List<Issue> issues) {
@@ -173,6 +208,11 @@ public class ConsistencyService {
         Facts facts = this.facts(projectId, token);
         Map<String, Issue> current = new LinkedHashMap<>();
         this.rules.evaluate(facts).forEach(issue -> current.put(issue.id(), issue));
+        try {
+            this.behavior.apply(projectId).forEach(issue -> current.put(issue.id(), issue)); // P3 T2: refused below
+        } catch (com.example.sysarch.project.ProjectModels.UnknownProjectException e) {
+            // a bound project whose model cannot be read has no behaviour issues to name
+        }
 
         List<RepairAction> actions = new ArrayList<>();
         List<Issue> unbound = new ArrayList<>();
@@ -189,6 +229,8 @@ public class ConsistencyService {
                 case "R4" -> actions.add(new RepairAction(issue.id(), "R4", "NONE", "REFUSED", "层违规不允许自动修复，须人工修改模型"));
                 case "R5" -> unbound.add(issue);
                 case "R6" -> actions.add(new RepairAction(issue.id(), "R6", "NONE", "REFUSED", "需求是否被满足是建模决定，不自动修复；请在需求追溯矩阵中建立满足关系"));
+                case "R7", "R8", "R9", "R10" -> actions.add(new RepairAction(issue.id(), issue.rule(), "NONE", "REFUSED",
+                        "状态机与活动的问题是建模决定，不自动修复；请在模型中修改"));
                 default -> throw new IllegalStateException(issue.rule());
             }
         }

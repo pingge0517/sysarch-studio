@@ -1763,13 +1763,26 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 		   source,
 		   new String[] {
 			   "HasExpression", "not expression.oclIsUndefined()",
-			   "ParamsHaveUnit", "parameters->forAll(p | not p.unit.oclIsUndefined() and p.unit.size() > 0)"
+			   "ParamsHaveUnit", "parameters->forAll(p | not p.unit.oclIsUndefined() and p.unit.size() > 0)",
+			   "NoDuplicateParamName", "parameters->isUnique(p | p.name)"
 		   });
 		addAnnotation
 		  (parameterEClass,
 		   source,
 		   new String[] {
 			   "DirectionKnown", "direction.oclIsUndefined() or direction = \'IN\' or direction = \'OUT\' or direction = \'INOUT\'"
+		   });
+		addAnnotation
+		  (stateMachineEClass,
+		   source,
+		   new String[] {
+			   "SingleInitial", "states->select(s | s.isInitial)->size() = 1"
+		   });
+		addAnnotation
+		  (transitionEClass,
+		   source,
+		   new String[] {
+			   "GuardNotEmpty", "guard.oclIsUndefined() or guard.size() = 0 or (not trigger.oclIsUndefined() and trigger.size() > 0)"
 		   });
 	}
 

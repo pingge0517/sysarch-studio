@@ -140,7 +140,37 @@ public final class ConstraintValidator implements AutoCloseable {
                 }
             }
         }
+        if (only == null) {
+            errors.addAll(javaConstraints(element));
+        }
         return errors;
+    }
+
+    /**
+     * The constraints that are Java, not OCL (P3 T2, user's decision): {@code ConstraintBlock::UnitConsistent} (the
+     * solvers' unit whitelist, {@link com.example.sysarch.solver.Units}, one list for both) and
+     * {@code StateMachine::Reachability} (a graph walk, spec §2.3). Marked red like the OCL ones, never vetoed.
+     */
+    static List<ValidationError> javaConstraints(ArchElement element) {
+        if (element instanceof com.example.sysarch.model.ConstraintBlock block) {
+            List<com.example.sysarch.model.Parameter> unknown = block.getParameters().stream()
+                    .filter(p -> p.getUnit() != null && !p.getUnit().isEmpty() && !com.example.sysarch.solver.Units.supported(p.getUnit())).toList();
+            if (!unknown.isEmpty()) {
+                return List.of(new ValidationError("UnitConsistent", block.getId(), "约束块「" + name(block) + "」的单位求解器不认识："
+                        + unknown.stream().map(p -> name(p) + " [" + p.getUnit() + "]").collect(java.util.stream.Collectors.joining("、"))
+                        + "；只认 " + String.join(", ", com.example.sysarch.solver.Units.WHITELIST) + "（不做单位换算）",
+                        unknown.stream().map(p -> p.getId()).filter(java.util.Objects::nonNull).toList()));
+            }
+        }
+        if (element instanceof com.example.sysarch.model.StateMachine machine) {
+            com.example.sysarch.behavior.Reachability.Result reach = com.example.sysarch.behavior.Reachability.of(machine);
+            if (reach.judged() && !reach.unreachable().isEmpty()) {
+                return List.of(new ValidationError("Reachability", machine.getId(), "状态机「" + name(machine) + "」有从初始状态到不了的状态："
+                        + reach.unreachable().stream().map(s -> name(s)).collect(java.util.stream.Collectors.joining("、")),
+                        reach.unreachable().stream().map(s -> s.getId()).filter(java.util.Objects::nonNull).toList()));
+            }
+        }
+        return List.of();
     }
 
     /** An invariant that evaluates to false, null or invalid (e.g. a missing port) is violated. */
@@ -174,6 +204,16 @@ public final class ConstraintValidator implements AutoCloseable {
                     "约束块「" + name(block) + "」有参数没有单位：" + block.getParameters().stream()
                             .filter(p -> p.getUnit() == null || p.getUnit().isEmpty()).map(p -> name(p)).collect(java.util.stream.Collectors.joining("、")),
                     ids(block));
+            case com.example.sysarch.model.ConstraintBlock block when code.equals("NoDuplicateParamName") -> new ValidationError(code, id,
+                    "约束块「" + name(block) + "」有同名参数：" + block.getParameters().stream().collect(java.util.stream.Collectors.groupingBy(
+                            p -> String.valueOf(p.getName()), java.util.LinkedHashMap::new, java.util.stream.Collectors.counting())).entrySet().stream()
+                            .filter(e -> e.getValue() > 1).map(java.util.Map.Entry::getKey).collect(java.util.stream.Collectors.joining("、")),
+                    ids(block));
+            case com.example.sysarch.model.StateMachine machine when code.equals("SingleInitial") -> new ValidationError(code, id,
+                    "状态机「" + name(machine) + "」必须有且仅有一个初始状态，现在有 " + machine.getStates().stream().filter(s -> s.isIsInitial()).count() + " 个",
+                    ids(machine));
+            case com.example.sysarch.model.Transition transition when code.equals("GuardNotEmpty") -> new ValidationError(code, id,
+                    "迁移「" + name(transition) + "」有守卫条件 [" + transition.getGuard() + "] 却没有触发事件；有 guard 必须有 trigger", ids(transition));
             case com.example.sysarch.model.Parameter parameter when code.equals("DirectionKnown") -> new ValidationError(code, id,
                     "参数「" + name(parameter) + "」的方向只能是 IN、OUT 或 INOUT，现在是 " + parameter.getDirection(), ids(parameter));
             case Port port when code.equals("InterfaceTypeRequired") -> new ValidationError(code, id,

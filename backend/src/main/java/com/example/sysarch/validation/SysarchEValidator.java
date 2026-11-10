@@ -111,6 +111,12 @@ public final class SysarchEValidator implements EValidator {
         features.put("HasExpression", List.of("expression"));
         features.put("ParamsHaveUnit", List.of("parameters"));
         features.put("DirectionKnown", List.of("direction"));
+        // P3 T2 (spec §2.3): three OCL, two Java (UnitConsistent, Reachability); appended
+        features.put("NoDuplicateParamName", List.of("parameters"));
+        features.put("SingleInitial", List.of("states"));
+        features.put("GuardNotEmpty", List.of("guard", "trigger"));
+        features.put("UnitConsistent", List.of("parameters"));
+        features.put("Reachability", List.of("states"));
         return Collections.unmodifiableMap(features);
     }
 }

@@ -18,7 +18,7 @@ import org.eclipse.emf.common.util.EList;
  * </ul>
  *
  * @see com.example.sysarch.model.SysarchPackage#getConstraintBlock()
- * @model annotation="http://www.eclipse.org/emf/2002/Ecore/OCL/Pivot HasExpression='not expression.oclIsUndefined()' ParamsHaveUnit='parameters-&gt;forAll(p | not p.unit.oclIsUndefined() and p.unit.size() &gt; 0)'"
+ * @model annotation="http://www.eclipse.org/emf/2002/Ecore/OCL/Pivot HasExpression='not expression.oclIsUndefined()' ParamsHaveUnit='parameters-&gt;forAll(p | not p.unit.oclIsUndefined() and p.unit.size() &gt; 0)' NoDuplicateParamName='parameters-&gt;isUnique(p | p.name)'"
  * @generated
  */
 public interface ConstraintBlock extends ArchElement {

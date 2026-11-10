@@ -20,7 +20,7 @@ package com.example.sysarch.model;
  * </ul>
  *
  * @see com.example.sysarch.model.SysarchPackage#getTransition()
- * @model
+ * @model annotation="http://www.eclipse.org/emf/2002/Ecore/OCL/Pivot GuardNotEmpty='guard.oclIsUndefined() or guard.size() = 0 or (not trigger.oclIsUndefined() and trigger.size() &gt; 0)'"
  * @generated
  */
 public interface Transition extends ArchElement {

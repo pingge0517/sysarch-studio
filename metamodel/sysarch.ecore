@@ -145,6 +145,8 @@
     <eAnnotations source="http://www.eclipse.org/emf/2002/Ecore/OCL/Pivot">
       <details key="HasExpression" value="not expression.oclIsUndefined()"/>
       <details key="ParamsHaveUnit" value="parameters->forAll(p | not p.unit.oclIsUndefined() and p.unit.size() &gt; 0)"/>
+      <!-- P3 T2 (spec §2.3), inserted -->
+      <details key="NoDuplicateParamName" value="parameters->isUnique(p | p.name)"/>
     </eAnnotations>
     <eStructuralFeatures xsi:type="ecore:EReference" name="parameters" lowerBound="1" upperBound="-1"
         eType="#//Parameter" containment="true"/>
@@ -173,6 +175,10 @@
   </eClassifiers>
 
   <eClassifiers xsi:type="ecore:EClass" name="StateMachine" eSuperTypes="#//ArchElement">
+    <!-- P3 T2 (spec §2.3), inserted; Reachability is a graph walk in Java (spec: not OCL) -->
+    <eAnnotations source="http://www.eclipse.org/emf/2002/Ecore/OCL/Pivot">
+      <details key="SingleInitial" value="states->select(s | s.isInitial)->size() = 1"/>
+    </eAnnotations>
     <eStructuralFeatures xsi:type="ecore:EReference" name="states" upperBound="-1" eType="#//State" containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="transitions" upperBound="-1" eType="#//Transition" containment="true"/>
   </eClassifiers>
@@ -187,6 +193,10 @@
   </eClassifiers>
 
   <eClassifiers xsi:type="ecore:EClass" name="Transition" eSuperTypes="#//ArchElement">
+    <!-- P3 T2 (spec §2.3), inserted: a guard needs a trigger -->
+    <eAnnotations source="http://www.eclipse.org/emf/2002/Ecore/OCL/Pivot">
+      <details key="GuardNotEmpty" value="guard.oclIsUndefined() or guard.size() = 0 or (not trigger.oclIsUndefined() and trigger.size() &gt; 0)"/>
+    </eAnnotations>
     <eStructuralFeatures xsi:type="ecore:EReference" name="source" lowerBound="1" eType="#//State"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="target" lowerBound="1" eType="#//State"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="trigger" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>

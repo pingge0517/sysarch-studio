@@ -191,8 +191,10 @@ class ValidationMatrixTest {
                 "Connection", List.of("PortInterfaceAssignable", "NoSelfLoop", "DirectionCompatible"),
                 "Allocate", List.of("LayerAdjacentOnly", "NoSelfAllocate"),
                 "InterfaceDef", List.of("ProtocolRequired"),
-                "ConstraintBlock", List.of("HasExpression", "ParamsHaveUnit"), // P3 T1, metamodel v1.3
-                "Parameter", List.of("DirectionKnown")), validator.constraintNames());
+                "ConstraintBlock", List.of("HasExpression", "ParamsHaveUnit", "NoDuplicateParamName"), // P3 T1–T2, metamodel v1.3
+                "Parameter", List.of("DirectionKnown"),
+                "StateMachine", List.of("SingleInitial"), // P3 T2
+                "Transition", List.of("GuardNotEmpty")), validator.constraintNames());
     }
 
     private Port port(String interfaceType, PortDirection direction) {

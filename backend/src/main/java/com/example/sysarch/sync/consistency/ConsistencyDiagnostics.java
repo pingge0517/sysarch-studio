@@ -75,11 +75,16 @@ public class ConsistencyDiagnostics implements IValidationService {
             return List.of();
         }
         try {
+            Map<String, ArchElement> index = ModelOperations.index(emf.getDomain().getResourceSet().getAllContents());
+            // P3 T2: R7–R10 judge the model only, for every project (user's decision)
+            List<Object> behavior = new ArrayList<>();
+            for (Issue issue : com.example.sysarch.behavior.BehaviorChecks.evaluate(emf.getDomain().getResourceSet().getAllContents())) {
+                behavior.add(toDiagnostic(issue, issue.elementId() == null ? null : index.get(issue.elementId())));
+            }
             Optional<String> projectId = this.gateway.getObject().polarionProjectOf(editingContext.getId());
             if (projectId.isEmpty()) {
-                return List.of(); // a project not bound to Polarion has no consistency to report
+                return behavior; // a project not bound to Polarion has no binding consistency (R1–R6, sync) to report
             }
-            Map<String, ArchElement> index = ModelOperations.index(emf.getDomain().getResourceSet().getAllContents());
             Facts facts = new Facts(projectId.get(), ModelOperations.snapshots(index, null, this.constraints), this.links.findByProject(projectId.get(), null),
                     this.store.pendingChecks(projectId.get()), this.store.pendingClaims(projectId.get()), null);
             List<Object> diagnostics = new ArrayList<>(this.syncStatus(projectId.get()));
@@ -89,6 +94,7 @@ public class ConsistencyDiagnostics implements IValidationService {
                     diagnostics.add(toDiagnostic(issue, element));
                 }
             }
+            diagnostics.addAll(behavior);
             return diagnostics;
         } catch (RuntimeException e) {
             // The Validation view must keep working even if the database is unreachable.

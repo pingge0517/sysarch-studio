@@ -18,7 +18,7 @@ import org.eclipse.emf.common.util.EList;
  * </ul>
  *
  * @see com.example.sysarch.model.SysarchPackage#getStateMachine()
- * @model
+ * @model annotation="http://www.eclipse.org/emf/2002/Ecore/OCL/Pivot SingleInitial='states-&gt;select(s | s.isInitial)-&gt;size() = 1'"
  * @generated
  */
 public interface StateMachine extends ArchElement {
