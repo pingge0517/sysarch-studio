@@ -483,3 +483,53 @@ body,
 .imports .missing {
   color: #b71c1c;
 }
+
+/* P2 T8: sign-in, comments, administration */
+.signin {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.signin .dev {
+  font-size: 0.75rem;
+  color: #b26a00;
+}
+.signin-form {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.signin-form input {
+  min-width: 14rem;
+}
+.signin .error,
+.page .error {
+  color: #b71c1c;
+}
+.page .row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin: 0.5rem 0;
+}
+.page .row textarea {
+  flex: 1 1 20rem;
+}
+.page table {
+  border-collapse: collapse;
+  margin: 0.5rem 0 1rem;
+}
+.page th,
+.page td {
+  border-bottom: 1px solid #ddd;
+  padding: 0.25rem 0.5rem;
+  text-align: left;
+  vertical-align: top;
+}
+.comment-body {
+  white-space: pre-wrap;
+  max-width: 40rem;
+}

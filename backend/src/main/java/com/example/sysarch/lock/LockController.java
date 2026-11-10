@@ -63,7 +63,13 @@ public class LockController {
 
     private final ProjectModels models;
 
-    public LockController(LockService locks, ProjectModels models) {
+    private final com.example.sysarch.access.Access access;
+
+    private final com.example.sysarch.config.FeatureProperties features;
+
+    public LockController(LockService locks, ProjectModels models, com.example.sysarch.access.Access access, com.example.sysarch.config.FeatureProperties features) {
+        this.features = Objects.requireNonNull(features);
+        this.access = Objects.requireNonNull(access);
         this.locks = Objects.requireNonNull(locks);
         this.models = Objects.requireNonNull(models);
     }
@@ -73,8 +79,10 @@ public class LockController {
         if (request == null || request.projectId() == null || request.projectId().isBlank() || request.elementIds() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "projectId, elementIds and ownerUser are required");
         }
+        com.example.sysarch.config.FeatureProperties.require(this.features.isLocks(), "编辑锁");
         String owner = this.actor(http, request.ownerUser());
         String projectId = this.project(request.projectId());
+        this.access.require(http, projectId, com.example.sysarch.access.Permission.MODEL_EDIT); // P2 T8
         Set<String> missing = new HashSet<>(request.elementIds());
         missing.removeAll(this.models.read(projectId, LockController::elementIds));
         missing.remove(null);
@@ -93,14 +101,24 @@ public class LockController {
     public ResponseEntity<Void> release(@RequestParam("projectId") String projectId, @RequestParam("elementId") String elementId,
             @RequestParam(value = "force", defaultValue = "false") boolean force, @RequestParam(value = "ownerUser", required = false) String ownerUser,
             HttpServletRequest http) {
-        this.locks.release(this.project(projectId), elementId, this.actor(http, ownerUser), force);
+        String project = this.project(projectId);
+        String actor = this.actor(http, ownerUser);
+        if (force && this.locks.held(project, List.of(elementId)).values().stream().anyMatch(l -> !l.ownerUser().equals(actor))) {
+            this.access.require(http, project, com.example.sysarch.access.Permission.LOCK_FORCE); // P2 T8: administrators
+        }
+        this.locks.release(project, elementId, actor, force);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{lockId}")
     public ResponseEntity<Void> releaseById(@PathVariable String lockId, @RequestParam(value = "force", defaultValue = "false") boolean force,
             @RequestParam(value = "ownerUser", required = false) String ownerUser, HttpServletRequest http) {
-        this.locks.releaseById(lockId, this.actor(http, ownerUser), force);
+        String actor = this.actor(http, ownerUser);
+        var lock = this.locks.find(lockId);
+        if (force && lock.isPresent() && !lock.get().ownerUser().equals(actor)) {
+            this.access.require(http, lock.get().projectId(), com.example.sysarch.access.Permission.LOCK_FORCE); // P2 T8: administrators
+        }
+        this.locks.releaseById(lockId, actor, force);
         return ResponseEntity.noContent().build();
     }
 
@@ -134,18 +152,17 @@ public class LockController {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
     }
 
-    /** The acting user: the request's identity; else the declared owner (until T8). */
+    /** The acting user: the request's identity (P2 T8: a declared owner alone no longer counts). */
     private String actor(HttpServletRequest http, String declared) {
         String identity = CurrentUser.of(http).orElse(null);
         String owner = declared == null || declared.isBlank() ? null : declared.strip();
         if (identity != null && owner != null && !identity.equals(owner)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "ownerUser '" + owner + "' is not the current user '" + identity + "'");
         }
-        String actor = identity != null ? identity : owner;
-        if (actor == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "ownerUser is required (or the X-Sysarch-User header)");
+        if (identity == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "请先登录：锁属于一个用户");
         }
-        return actor;
+        return identity;
     }
 
     private String project(String project) {

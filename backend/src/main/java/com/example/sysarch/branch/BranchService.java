@@ -242,7 +242,7 @@ public class BranchService {
             throw new BranchRequestException("分支「" + branch.name() + "」已是 " + branch.status(), true);
         }
         this.close(branch, ABANDONED);
-        this.audit.append(branch.projectId(), actor, "BRANCH_ABANDON", null, "branch " + branch.name() + " (" + branchId + ")");
+        this.audit.append(branch.projectId(), actor, com.example.sysarch.audit.AuditLog.BRANCH_ABANDON, null, "branch " + branch.name() + " (" + branchId + ")");
         return this.view(this.find(branchId));
     }
 

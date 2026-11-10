@@ -152,7 +152,7 @@ public class ReportService {
                 + "VALUES (:id, :p, :b, :l, :t, :k, 'QUEUED', :u, :at)")
                 .param("id", id).param("p", projectId).param("b", baselineId == null || baselineId.isBlank() ? null : baselineId).param("l", label)
                 .param("t", templateId).param("k", key).param("u", user).param("at", now).update();
-        this.audit.append(projectId, user, "REPORT_GENERATE", null, templateId + " from " + label + " (job " + id + ")");
+        this.audit.append(projectId, user, com.example.sysarch.audit.AuditLog.REPORT_GENERATE, null, templateId + " from " + label + " (job " + id + ")");
         String projectName = this.models.projectName(projectId);
         ReportExtractor.Source source = new ReportExtractor.Source(projectId, projectName, label, owner,
                 now.atZoneSameInstant(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));

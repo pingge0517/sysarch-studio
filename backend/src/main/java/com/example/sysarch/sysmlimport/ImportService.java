@@ -158,7 +158,7 @@ public class ImportService {
             report.put("unmapped", mapped.unmapped());
             report.put("consistency", this.consistency(projectId));
             this.finish(id, "DONE", projectId, report, List.of(), null);
-            this.audit.append(projectId, user, "IMPORT", null, "SysML v2: " + mapped.total() + " elements into new project " + name + " (job " + id + ")");
+            this.audit.append(projectId, user, com.example.sysarch.audit.AuditLog.IMPORT, null, "SysML v2: " + mapped.total() + " elements into new project " + name + " (job " + id + ")");
             this.logger.info("Imported {} elements into new project {} ({}) by {}", mapped.total(), name, projectId, user);
         } catch (RuntimeException e) {
             this.logger.error("Import job {} failed", id, e);

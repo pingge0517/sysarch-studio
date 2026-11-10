@@ -51,8 +51,18 @@ public class ImportController {
 
     private final ImportService imports;
 
-    public ImportController(ImportService imports) {
+    private final com.example.sysarch.access.Access access;
+
+    private com.example.sysarch.config.FeatureProperties features = new com.example.sysarch.config.FeatureProperties();
+
+    @org.springframework.beans.factory.annotation.Autowired
+    void features(com.example.sysarch.config.FeatureProperties features) {
+        this.features = features;
+    }
+
+    public ImportController(ImportService imports, com.example.sysarch.access.Access access) {
         this.imports = Objects.requireNonNull(imports);
+        this.access = Objects.requireNonNull(access);
     }
 
     @PostMapping(value = "/sysmlv2", consumes = { MediaType.TEXT_PLAIN_VALUE, MediaType.APPLICATION_OCTET_STREAM_VALUE, "*/*" })
@@ -60,8 +70,10 @@ public class ImportController {
             @RequestParam(value = "defaultLayer", required = false) String defaultLayer, @RequestParam(value = "fileName", required = false) String fileName,
             HttpServletRequest http) {
         String text = body == null ? null : new String(body, java.nio.charset.StandardCharsets.UTF_8);
-        return ResponseEntity.status(HttpStatus.ACCEPTED)
-                .body(this.imports.submit(text, projectName, defaultLayer, fileName, CurrentUser.of(http).orElse("anonymous")));
+        com.example.sysarch.config.FeatureProperties.require(this.features.isImports(), "SysML v2 导入");
+        // P2 T8: an import creates a new project, bound to no Polarion project yet: the role there decides
+        String user = this.access.require(http, null, com.example.sysarch.access.Permission.IMPORT).user();
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(this.imports.submit(text, projectName, defaultLayer, fileName, user));
     }
 
     @GetMapping("/{jobId}")

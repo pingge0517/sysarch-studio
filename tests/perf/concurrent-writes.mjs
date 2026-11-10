@@ -25,7 +25,10 @@ const WARMUP_S = Number(arg('warmup', 15));
 const OUT = arg('out', 'build/perf/concurrent-writes.json');
 const KEEP = process.argv.includes('--keep');
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const headers = user => ({ Origin: 'http://localhost:3000', 'Content-Type': 'application/json', ...(user ? { Cookie: 'sysarch_user=' + encodeURIComponent(user) } : {}) });
+// P2 T8: needs a backend in dev mode (SYSARCH_AUTH_MODE=dev): 31 named users (cookies), and an administrator (no user
+// argument) who creates and deletes the throw-away project.
+const headers = user => ({ Origin: 'http://localhost:3000', 'Content-Type': 'application/json',
+  ...(user ? { Cookie: 'sysarch_user=' + encodeURIComponent(user) } : { 'X-Sysarch-User': 'perf-admin', 'X-Sysarch-Roles': 'global:admin' }) });
 
 async function gql(query, variables, user) {
   const r = await fetch(BASE + '/api/graphql', { method: 'POST', headers: headers(user), body: JSON.stringify({ query, variables }) });
@@ -58,6 +61,10 @@ try {
   const ec = (await gql(`query($p:ID!){viewer{project(projectId:$p){currentEditingContext{id}}}}`, { p: projectId })).viewer.project.currentEditingContext.id;
   await gql(`mutation($i:CreateDocumentInput!){createDocument(input:$i){__typename}}`,
     { i: { id: randomUUID(), editingContextId: ec, stereotypeId: 'sysarch.demo.domain-controller', name: '域控演示' } });
+  // P2 T8: the administrator's document creation opened an edit session for them; close it, the 30 places are the users'.
+  for (const session of (await (await fetch(`${BASE}/api/v1/sessions?projectId=${projectId}`, { headers: headers() })).json()).sessions ?? []) {
+    await fetch(`${BASE}/api/v1/sessions/${session.id}`, { method: 'DELETE', headers: headers() });
+  }
   const root = (await (await fetch(`${BASE}/api/v1/projects/${projectId}/elements/PD-001/location`, { headers: headers() })).json()).objectId;
   const ds = (await gql(`query($e:ID!,$o:ID!){viewer{editingContext(editingContextId:$e){representationDescriptions(objectId:$o){edges{node{id label}}}}}}`,
     { e: ec, o: root })).viewer.editingContext.representationDescriptions.edges.map(e => e.node);

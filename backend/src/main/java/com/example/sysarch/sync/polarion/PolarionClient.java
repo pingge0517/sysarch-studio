@@ -70,6 +70,44 @@ public class PolarionClient {
         this.http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
     }
 
+    /** A Polarion user and their roles: global role ids, project roles as {@code <project>/<role>} (P2 T8). */
+    public record PolarionUser(String id, String name, List<String> globalRoles, List<String> projectRoles) {
+    }
+
+    /**
+     * The owner of a token (P2 T8): Polarion REST has no "current user" resource, but its query language knows
+     * {@code $[user.id]}, so the users matching {@code id:$[user.id]} are exactly the caller. Empty when Polarion
+     * refuses the token (401/403).
+     */
+    public Optional<PolarionUser> currentUser(PolarionToken token) {
+        HttpResponse<String> found = this.send(token, "GET", this.restRoot + "/users?query=" + encode("id:$[user.id]"), null);
+        if (found.statusCode() == 401 || found.statusCode() == 403) {
+            return Optional.empty();
+        }
+        this.requireSuccess(found, "find the token's user");
+        JsonNode first = this.read(found).path("data").path(0).path("id");
+        if (!first.isTextual()) {
+            return Optional.empty();
+        }
+        String id = first.asText();
+        HttpResponse<String> user = this.send(token, "GET", this.restRoot + "/users/" + encode(id) + "?fields%5Busers%5D=%40all", null);
+        this.requireSuccess(user, "read user " + id);
+        JsonNode data = this.read(user).path("data");
+        String name = data.path("attributes").path("name").asText(id);
+        return Optional.of(new PolarionUser(id, name, ids(data.path("relationships").path("globalRoles").path("data")),
+                ids(data.path("relationships").path("projectRoles").path("data"))));
+    }
+
+    private static List<String> ids(JsonNode items) {
+        List<String> ids = new ArrayList<>();
+        items.forEach(item -> {
+            if (item.path("id").isTextual()) {
+                ids.add(item.path("id").asText());
+            }
+        });
+        return ids;
+    }
+
     /** The Work Item, or empty if Polarion answers 404 (deleted or never existed). */
     public Optional<WorkItem> getWorkItem(String projectId, String workItemId, PolarionToken token) {
         HttpResponse<String> response = this.send(token, "GET", this.workItemUrl(projectId, workItemId) + "?fields%5Bworkitems%5D=%40all", null);

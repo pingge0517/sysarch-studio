@@ -1,4 +1,4 @@
-// The branch API of the backend (P2 T3, /api/v1/branches). The user goes along as the sysarch_user cookie.
+// The branch API of the backend (P2 T3, /api/v1/branches). The user goes along as the session cookie (P2 T8).
 
 export interface Branch {
   id: string;

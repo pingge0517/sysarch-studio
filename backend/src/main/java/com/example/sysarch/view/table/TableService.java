@@ -76,7 +76,8 @@ public class TableService {
             });
         } catch (IllegalArgumentException e) {
             throw new NotFoundException(e.getMessage());
-        } catch (com.example.sysarch.lock.LockService.LockedException | com.example.sysarch.session.SessionService.FullException refusal) {
+        } catch (com.example.sysarch.lock.LockService.LockedException | com.example.sysarch.session.SessionService.FullException
+                | com.example.sysarch.access.ForbiddenException refusal) {
             List<ValidationError> errors = com.example.sysarch.lock.EditAdmission.reasons(refusal);
             return new ActionResult(new TableActions.Outcome(false, errors), this.matrix(project, tableId), errors.get(0).code());
         }

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- P2 T8: role_mapping (spec §7.1: Polarion role → tool role, "映射表落库，不写死在代码里"; the spec gives no DDL).
+     polarion_project: a Polarion project id, '*' (every project) or '(unbound)' (Sirius projects bound to no Polarion
+     project). polarion_role: a project role id, 'global:<id>' (a Polarion global role) or '*' (every signed-in user).
+     A user's role is the highest of the matching rows; none matches → OBSERVER. The seed rows are the user's decision
+     ("走 role_mapping 的通配行"); administrators change them in the table or through /api/v1/role-mappings. -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <changeSet id="sysarch-015-role-mapping" author="sysarch">
+        <createTable tableName="role_mapping">
+            <column name="id" type="BIGINT" autoIncrement="true"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="polarion_project" type="VARCHAR(64)"><constraints nullable="false"/></column>
+            <column name="polarion_role" type="VARCHAR(128)"><constraints nullable="false"/></column>
+            <column name="tool_role" type="VARCHAR(16)"><constraints nullable="false"/></column>
+            <column name="created_by" type="VARCHAR(128)" defaultValue="system"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+        </createTable>
+        <addUniqueConstraint tableName="role_mapping" columnNames="polarion_project, polarion_role" constraintName="uq_role_mapping"/>
+        <sql>ALTER TABLE role_mapping ADD CONSTRAINT ck_role_mapping_tool_role CHECK (tool_role IN ('ADMIN', 'ARCHITECT', 'REVIEWER', 'OBSERVER'))</sql>
+        <insert tableName="role_mapping"><column name="polarion_project" value="*"/><column name="polarion_role" value="global:admin"/><column name="tool_role" value="ADMIN"/></insert>
+        <insert tableName="role_mapping"><column name="polarion_project" value="*"/><column name="polarion_role" value="project_admin"/><column name="tool_role" value="ADMIN"/></insert>
+        <insert tableName="role_mapping"><column name="polarion_project" value="*"/><column name="polarion_role" value="project_user"/><column name="tool_role" value="ARCHITECT"/></insert>
+        <insert tableName="role_mapping"><column name="polarion_project" value="*"/><column name="polarion_role" value="project_reviewer"/><column name="tool_role" value="REVIEWER"/></insert>
+        <insert tableName="role_mapping"><column name="polarion_project" value="*"/><column name="polarion_role" value="project_observer"/><column name="tool_role" value="OBSERVER"/></insert>
+        <insert tableName="role_mapping"><column name="polarion_project" value="(unbound)"/><column name="polarion_role" value="*"/><column name="tool_role" value="ARCHITECT"/></insert>
+        <insert tableName="role_mapping"><column name="polarion_project" value="*"/><column name="polarion_role" value="*"/><column name="tool_role" value="OBSERVER"/></insert>
+    </changeSet>
+</databaseChangeLog>

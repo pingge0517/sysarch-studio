@@ -20,10 +20,22 @@ import org.springframework.stereotype.Component;
 @Component
 public class Editors {
 
-    /** The user of an input; {@code user} is null for an anonymous edit. */
-    public record Editor(String user) {
+    /**
+     * The user of an input; {@code user} is null for an anonymous edit. {@code principal} (P2 T8) carries the user's
+     * Polarion roles, so the edit is checked against their role in the project; an editor with a user but no
+     * principal was already authorized by its caller (a merge applied by a user the merge endpoint checked).
+     */
+    public record Editor(String user, Principal principal) {
 
-        public static final Editor ANONYMOUS = new Editor(null);
+        public static final Editor ANONYMOUS = new Editor(null, null);
+
+        public Editor(String user) {
+            this(user, null);
+        }
+
+        public static Editor of(Principal principal) {
+            return new Editor(principal.user(), principal);
+        }
 
         public boolean holds(String owner) {
             return this.user != null && this.user.equals(owner);

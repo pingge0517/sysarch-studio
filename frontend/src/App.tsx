@@ -5,7 +5,11 @@ import type { CellOption } from './matrix/layout';
 import { MatrixView } from './matrix/MatrixView';
 import { BaselinePage } from './baseline/BaselinePage';
 import { LocksPage } from './locks/LocksPage';
-import { currentUser, setCurrentUser } from './identity/user';
+import type { AccessGrant, Me } from './identity/auth';
+import { fetchAccess, fetchMe } from './identity/auth';
+import { SignIn } from './identity/SignIn';
+import { AdminPage } from './identity/AdminPage';
+import { CommentsPage } from './comment/CommentsPage';
 import type { Branch } from './branch/api';
 import { leaveBranch, listBranches } from './branch/api';
 import { BranchesPage } from './branch/BranchesPage';
@@ -32,8 +36,8 @@ function setParams(values: Record<string, string>) {
  * The shell (P1 T4, T7, P2 T1, T3): pick a Sirius project and a workspace (the trunk or one of its branches), then the
  * matrix of a VSM table, the baselines and their diffs, the edit locks or the branches; ?project=…&branch=…&view=…&table=…
  * keeps the choice in the URL. Switching away from a branch releases the user's locks there and closes their session
- * (P2 T3 step 3). The user name (top right) is the temporary
- * identity until T8: a cookie that Sirius Web on :8080 receives too, so the backend knows who edits there.
+ * (P2 T3 step 3). Since P2 T8 the user signs in with their Polarion token (top right); the session cookie reaches
+ * Sirius Web on :8080 too, and the header shows the role in the selected workspace.
  */
 export function App() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -44,8 +48,10 @@ export function App() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
   const [table, setTable] = useState(param('table') || 'allocation-matrix');
-  const [view, setView] = useState(['baselines', 'locks', 'branches', 'reports', 'import'].includes(param('view')) ? param('view') : 'matrix');
-  const [user, setUser] = useState(currentUser());
+  const [view, setView] = useState(['baselines', 'locks', 'branches', 'reports', 'import', 'comments', 'admin'].includes(param('view')) ? param('view') : 'matrix');
+  const [me, setMe] = useState<Me | null>(null);
+  const [grant, setGrant] = useState<AccessGrant | null>(null);
+  const user = me?.user ?? '';
   const [matrix, setMatrix] = useState<Matrix | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [refusal, setRefusal] = useState<ValidationError[]>([]);
@@ -78,6 +84,15 @@ export function App() {
 
   const branch = branches.find((b) => b.id === branchId);
   const workspace = effectiveProject(project, branch);
+
+  const reloadMe = useCallback(() => {
+    fetchMe().then(setMe, () => setMe(null));
+  }, []);
+  useEffect(reloadMe, [reloadMe]);
+  // The role in the selected workspace (P2 T8): shown in the header; pages disable what it does not allow.
+  useEffect(() => {
+    fetchAccess(workspace).then(setGrant, () => setGrant(null));
+  }, [workspace, me]);
 
   /** Switch the workspace; leaving a branch releases my locks there and closes my session (T3 step 3). */
   const switchTo = useCallback(
@@ -202,6 +217,8 @@ export function App() {
             <option value="branches">分支</option>
             <option value="reports">报告</option>
             <option value="import">导入 SysML v2</option>
+            <option value="comments">评论</option>
+            <option value="admin">角色与审计</option>
           </select>
         </label>
         {view === 'matrix' && <label>
@@ -216,19 +233,7 @@ export function App() {
         </label>}
         <span className="spacer" />
         {view === 'matrix' && firstRender !== null && <span className="timing">首屏 {firstRender} ms</span>}
-        <label title="临时身份：T8 换成 Polarion 登录">
-          我是
-          <input
-            className="user"
-            defaultValue={user}
-            placeholder="你的名字"
-            onBlur={(e) => {
-              setCurrentUser(e.target.value);
-              setUser(currentUser());
-            }}
-            onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-          />
-        </label>
+        <SignIn me={me} grant={project ? grant : null} onChange={reloadMe} />
       </header>
 
       {error && (
@@ -255,7 +260,7 @@ export function App() {
       )}
 
       <main className="content">
-        {!project && view !== 'import' && <p className="hint">选择一个 Sirius 项目。</p>}
+        {!project && view !== 'import' && view !== 'admin' && <p className="hint">选择一个 Sirius 项目。</p>}
         {view === 'import' && (
           <ImportPage
             onOpen={(id) => {
@@ -269,6 +274,8 @@ export function App() {
         {project && view === 'baselines' && <BaselinePage project={workspace} />}
         {project && view === 'locks' && <LocksPage project={workspace} user={user} />}
         {project && view === 'reports' && <ReportsPage project={workspace} />}
+        {project && view === 'comments' && <CommentsPage project={workspace} grant={grant} />}
+        {view === 'admin' && <AdminPage project={project ? workspace : ''} />}
         {project && view === 'branches' && <BranchesPage trunk={project} current={branch ? branchId : ''} onSwitch={(id) => void switchTo(id)} />}
         {project && view === 'matrix' && matrix && <MatrixView matrix={matrix} onAction={onAction} />}
         {project && view === 'matrix' && !matrix && !error && <p className="hint">加载中…</p>}

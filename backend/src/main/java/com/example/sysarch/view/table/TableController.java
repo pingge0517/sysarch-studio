@@ -72,14 +72,14 @@ public class TableController {
         TableService.ActionResult result;
         try {
             result = this.tables.act(project, table, request.actionId(), request.rowId(), request.columnId(), Boolean.TRUE.equals(request.remove()),
-                    com.example.sysarch.identity.CurrentUser.of(http).map(com.example.sysarch.identity.Editors.Editor::new)
-                            .orElse(com.example.sysarch.identity.Editors.Editor.ANONYMOUS));
+                    com.example.sysarch.identity.CurrentUser.editor(http));
         } catch (TableService.NotFoundException | ProjectModels.UnknownProjectException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
         }
         ActionResponse body = new ActionResponse(result.outcome().changed(), result.outcome().errors(), result.matrix());
         HttpStatus status = com.example.sysarch.lock.EditAdmission.LOCKED.equals(result.admission()) ? HttpStatus.LOCKED
                 : com.example.sysarch.lock.EditAdmission.SESSIONS_FULL.equals(result.admission()) ? HttpStatus.TOO_MANY_REQUESTS
+                : com.example.sysarch.lock.EditAdmission.FORBIDDEN.equals(result.admission()) ? HttpStatus.FORBIDDEN
                         : result.outcome().errors().isEmpty() ? HttpStatus.OK : HttpStatus.UNPROCESSABLE_ENTITY;
         return ResponseEntity.status(status).body(body);
     }

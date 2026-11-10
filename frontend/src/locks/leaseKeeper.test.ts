@@ -3,7 +3,6 @@ import type { Lock } from './api';
 import { LostLockError } from './api';
 import type { Held } from './leaseKeeper';
 import { HEARTBEAT_MS, LeaseKeeper } from './leaseKeeper';
-import { userCookie, userFromCookies } from '../identity/user';
 
 const lock = (elementId: string, expiresAt = '2026-11-09T06:01:30Z'): Lock => ({
   id: `lock-${elementId}`,
@@ -70,15 +69,5 @@ describe('LeaseKeeper (P2 T1: 45 s heartbeat, lost lock = read-only)', () => {
     keeper.forget('PD-001');
     await vi.advanceTimersByTimeAsync(HEARTBEAT_MS * 3);
     expect(renew).not.toHaveBeenCalled();
-  });
-});
-
-describe('user cookie (temporary identity until T8)', () => {
-  it('reads and writes the user, Chinese names included', () => {
-    const cookie = userCookie(' 张三 ');
-    expect(cookie).toContain('sysarch_user=%E5%BC%A0%E4%B8%89; Path=/');
-    expect(userFromCookies(`a=1; ${cookie.split(';')[0]}; b=2`)).toBe('张三');
-    expect(userFromCookies('a=1')).toBe('');
-    expect(userCookie('')).toContain('Max-Age=0');
   });
 });

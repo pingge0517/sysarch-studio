@@ -1,0 +1,94 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "sysarch.name" . }}-frontend
+  labels: {{- include "sysarch.labels" . | nindent 4 }}
+data:
+  # frontend/nginx.conf with this release's backend service instead of "backend"
+  default.conf: |
+    server {
+        listen 3000;
+        root /usr/share/nginx/html;
+        client_max_body_size 50m;
+        location / {
+            try_files $uri /index.html;
+        }
+        location ~ ^/(api|graphql|actuator)(/|$) {
+            proxy_pass http://{{ include "sysarch.name" . }}-backend:8080;
+            proxy_set_header Host $host;
+            proxy_set_header Authorization $http_authorization;
+        }
+        location /subscriptions {
+            proxy_pass http://{{ include "sysarch.name" . }}-backend:8080;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_set_header Host $host;
+            proxy_read_timeout 1h;
+        }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sysarch.name" . }}-frontend
+  labels: {{- include "sysarch.labels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend
+spec:
+  replicas: {{ .Values.frontend.replicas }}
+  selector:
+    matchLabels: { app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/component: frontend }
+  template:
+    metadata:
+      labels: {{- include "sysarch.labels" . | nindent 8 }}
+        app.kubernetes.io/component: frontend
+      annotations:
+        sysarch/backend-service: {{ include "sysarch.name" . }}-backend   # the nginx config depends only on this
+    spec:
+      containers:
+        - name: frontend
+          image: {{ .Values.image.frontend }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports: [{ name: http, containerPort: 3000 }]
+          volumeMounts:
+            - { name: nginx, mountPath: /etc/nginx/conf.d }
+          readinessProbe:
+            httpGet: { path: /, port: http }
+          resources: {{- toYaml .Values.frontend.resources | nindent 12 }}
+      volumes:
+        - name: nginx
+          configMap: { name: {{ include "sysarch.name" . }}-frontend }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "sysarch.name" . }}-frontend
+  labels: {{- include "sysarch.labels" . | nindent 4 }}
+spec:
+  selector: { app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/component: frontend }
+  ports: [{ name: http, port: 3000, targetPort: http }]
+{{- if .Values.ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "sysarch.name" . }}
+  labels: {{- include "sysarch.labels" . | nindent 4 }}
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 50m
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  tls:
+    - hosts: [{{ .Values.ingress.host }}, {{ .Values.ingress.siriusHost }}]
+      secretName: {{ .Values.ingress.tlsSecret }}
+  rules:
+    - host: {{ .Values.ingress.host }}
+      http:
+        paths:
+          - { path: /, pathType: Prefix, backend: { service: { name: {{ include "sysarch.name" . }}-frontend, port: { number: 3000 } } } }
+    - host: {{ .Values.ingress.siriusHost }}
+      http:
+        paths:
+          - { path: /, pathType: Prefix, backend: { service: { name: {{ include "sysarch.name" . }}-backend, port: { number: 8080 } } } }
+{{- end }}

@@ -17,4 +17,7 @@
     <include file="db/sysarch/012-merge-run.xml"/>
     <include file="db/sysarch/013-report-job.xml"/>
     <include file="db/sysarch/014-import-job.xml"/>
+    <include file="db/sysarch/015-role-mapping.xml"/>
+    <include file="db/sysarch/016-audit-append-only.xml"/>
+    <include file="db/sysarch/017-element-comment.xml"/>
 </databaseChangeLog>

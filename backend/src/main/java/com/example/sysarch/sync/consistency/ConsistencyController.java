@@ -38,7 +38,16 @@ public class ConsistencyController {
 
     private final HttpServletRequest request;
 
+    /** P2 T8; null only in tests that construct the controller without Spring. */
+    private final com.example.sysarch.access.Access access;
+
     public ConsistencyController(ConsistencyService consistency, HttpServletRequest request) {
+        this(consistency, request, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public ConsistencyController(ConsistencyService consistency, HttpServletRequest request, com.example.sysarch.access.Access access) {
+        this.access = access;
         this.consistency = Objects.requireNonNull(consistency);
         this.request = Objects.requireNonNull(request);
     }
@@ -54,8 +63,12 @@ public class ConsistencyController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "projectId is required");
         }
         String strategy = body.getStrategy() == null ? null : body.getStrategy().getValue();
-        String actor = this.request.getHeader(ACTOR_HEADER);
-        return this.consistency.repair(body.getProjectId(), body.getIssueIds(), strategy, this.token(), actor == null || actor.isBlank() ? "anonymous" : actor);
+        if (this.access != null) {
+            // P2 T8: a repair changes the model or Polarion: architects and administrators
+            this.access.requirePolarion(this.request, body.getProjectId(), com.example.sysarch.access.Permission.SYNC);
+        }
+        String actor = com.example.sysarch.identity.CurrentUser.of(this.request).orElse("anonymous");
+        return this.consistency.repair(body.getProjectId(), body.getIssueIds(), strategy, this.token(), actor);
     }
 
     private PolarionToken token() {

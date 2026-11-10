@@ -48,8 +48,21 @@ public class BranchController {
 
     private final BranchService branches;
 
-    public BranchController(BranchService branches) {
+    private final ProjectModels models;
+
+    private final com.example.sysarch.access.Access access;
+
+    private com.example.sysarch.config.FeatureProperties features = new com.example.sysarch.config.FeatureProperties();
+
+    @org.springframework.beans.factory.annotation.Autowired
+    void features(com.example.sysarch.config.FeatureProperties features) {
+        this.features = features;
+    }
+
+    public BranchController(BranchService branches, ProjectModels models, com.example.sysarch.access.Access access) {
         this.branches = Objects.requireNonNull(branches);
+        this.models = Objects.requireNonNull(models);
+        this.access = Objects.requireNonNull(access);
     }
 
     @PostMapping
@@ -57,7 +70,8 @@ public class BranchController {
         if (request == null || request.projectId() == null || request.projectId().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "projectId is required");
         }
-        String actor = CurrentUser.of(http).orElse("anonymous");
+        com.example.sysarch.config.FeatureProperties.require(this.features.isBranches(), "分支");
+        String actor = this.access.require(http, this.models.siriusProjectId(request.projectId()), com.example.sysarch.access.Permission.BRANCH_CREATE).user();
         return ResponseEntity.status(HttpStatus.CREATED).body(this.branches.create(request.projectId(), request.name(), request.baselineId(), actor));
     }
 
@@ -78,13 +92,15 @@ public class BranchController {
 
     @PostMapping("/{branchId}/leave")
     public Map<String, Integer> leave(@PathVariable String branchId, HttpServletRequest http) {
-        String user = CurrentUser.of(http).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "leaving a branch needs a user"));
+        String user = CurrentUser.of(http).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "请先登录"));
         return Map.of("releasedLocks", this.branches.leave(branchId, user));
     }
 
     @DeleteMapping("/{branchId}")
     public BranchService.BranchView abandon(@PathVariable String branchId, HttpServletRequest http) {
-        return this.branches.abandon(branchId, CurrentUser.of(http).orElse("anonymous"));
+        // P2 T8 (§7.1): deleting a branch is for project administrators
+        String actor = this.access.require(http, this.branches.get(branchId).projectId(), com.example.sysarch.access.Permission.BRANCH_DELETE).user();
+        return this.branches.abandon(branchId, actor);
     }
 
     @ExceptionHandler(BranchService.BranchRequestException.class)

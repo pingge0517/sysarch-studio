@@ -51,9 +51,12 @@ public class SessionController {
 
     private final ProjectModels models;
 
-    public SessionController(SessionService sessions, ProjectModels models) {
+    private final com.example.sysarch.access.Access access;
+
+    public SessionController(SessionService sessions, ProjectModels models, com.example.sysarch.access.Access access) {
         this.sessions = Objects.requireNonNull(sessions);
         this.models = Objects.requireNonNull(models);
+        this.access = Objects.requireNonNull(access);
     }
 
     @PostMapping
@@ -62,7 +65,10 @@ public class SessionController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "projectId is required");
         }
         String client = request.clientInfo() != null ? request.clientInfo() : http.getHeader("User-Agent");
-        return ResponseEntity.status(HttpStatus.CREATED).body(this.sessions.touch(this.models.siriusProjectId(request.projectId()), user(http), client));
+        String project = this.models.siriusProjectId(request.projectId());
+        String user = user(http);
+        this.access.require(http, project, com.example.sysarch.access.Permission.MODEL_EDIT); // P2 T8: an edit session is for modellers
+        return ResponseEntity.status(HttpStatus.CREATED).body(this.sessions.touch(project, user, client));
     }
 
     @DeleteMapping("/{sessionId}")
@@ -94,6 +100,6 @@ public class SessionController {
 
     private static String user(HttpServletRequest http) {
         return CurrentUser.of(http)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "an edit session needs a user (the sysarch_user cookie or X-Sysarch-User)"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "请先登录：编辑会话属于一个用户"));
     }
 }

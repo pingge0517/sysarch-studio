@@ -233,6 +233,11 @@ public class LockService {
     }
 
     /** Same, by lock id. */
+    /** A held lock by id. */
+    public java.util.Optional<Lock> find(String lockId) {
+        return this.held(lockId);
+    }
+
     public boolean releaseById(String lockId, String actor, boolean force) {
         Optional<Lock> lock = this.held(lockId);
         return lock.isPresent() && this.release(lock.get(), actor, force);

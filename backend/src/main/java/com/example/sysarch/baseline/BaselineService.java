@@ -61,7 +61,16 @@ public class BaselineService {
 
     private final TransactionTemplate transaction;
 
+    private final com.example.sysarch.audit.AuditLog audit;
+
+    /** Without an audit log (tests that never delete). */
     public BaselineService(ProjectModels models, BaselineRepository repository, TransactionTemplate transaction) {
+        this(models, repository, transaction, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public BaselineService(ProjectModels models, BaselineRepository repository, TransactionTemplate transaction, com.example.sysarch.audit.AuditLog audit) {
+        this.audit = audit;
         this.models = Objects.requireNonNull(models);
         this.repository = Objects.requireNonNull(repository);
         this.transaction = Objects.requireNonNull(transaction);
@@ -80,6 +89,43 @@ public class BaselineService {
         StoredBaseline baseline = new StoredBaseline(UUID.randomUUID().toString(), siriusProjectId, label, description, (int) capture.stamp(),
                 capture.elements().size(), actor, OffsetDateTime.now());
         this.transaction.executeWithoutResult(status -> this.repository.insert(baseline, capture.elements().values()));
+        return baseline;
+    }
+
+    /**
+     * A baseline a branch was forked from cannot be deleted: an open branch needs it as its merge base, and a merged or
+     * abandoned one keeps its record (the branch table references the baseline).
+     */
+    public static class InUseException extends RuntimeException {
+
+        private static final long serialVersionUID = 1L;
+
+        public InUseException(String message) {
+            super(message);
+        }
+    }
+
+    public StoredBaseline find(String baselineId) {
+        return this.repository.find(baselineId).orElseThrow(() -> new UnknownBaselineException("no baseline " + baselineId));
+    }
+
+    /**
+     * Deletes a baseline and its element states (P2 T8: administrators only, checked by the controller; audited
+     * {@code BASELINE_DELETE} in the same transaction).
+     */
+    public StoredBaseline delete(String baselineId, String actor) {
+        StoredBaseline baseline = this.find(baselineId);
+        List<String> branches = this.repository.branchesOf(baselineId);
+        if (!branches.isEmpty()) {
+            throw new InUseException("基线「" + baseline.label() + "」是分支 " + String.join("、", branches) + " 的基点，分支记录引用它，不能删除");
+        }
+        this.transaction.executeWithoutResult(status -> {
+            this.repository.delete(baselineId);
+            if (this.audit != null) {
+                this.audit.append(baseline.projectId(), actor, com.example.sysarch.audit.AuditLog.BASELINE_DELETE, null,
+                        "baseline " + baseline.label() + " (" + baselineId + ", " + baseline.elementCount() + " elements)");
+            }
+        });
         return baseline;
     }
 

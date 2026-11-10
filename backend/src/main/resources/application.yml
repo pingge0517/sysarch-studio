@@ -53,6 +53,21 @@ sirius:
 
 # Our own settings. sysarch.view is not read by any code yet.
 sysarch:
+  # P2 T8: identity. polarion = a user is who their Polarion token says (login verifies it with Polarion; the browser
+  # then keeps a signed session cookie; no token is stored anywhere). dev = a typed name (X-Sysarch-User / the
+  # sysarch_user cookie, Polarion roles in X-Sysarch-Roles) for local and load tests only, never in production.
+  auth:
+    mode: ${SYSARCH_AUTH_MODE:polarion}
+    session-secret: ${SYSARCH_SESSION_SECRET:}
+    session-ttl: ${SYSARCH_SESSION_TTL:PT8H}
+    secure-cookie: ${SYSARCH_SECURE_COOKIE:false}
+    cookie-domain: ${SYSARCH_COOKIE_DOMAIN:}
+  # P2 T8 (spec §10 rollback points): switch one feature off without taking the release down.
+  features:
+    locks: ${SYSARCH_FEATURE_LOCKS:true}
+    branches: ${SYSARCH_FEATURE_BRANCHES:true}
+    reports: ${SYSARCH_FEATURE_REPORTS:true}
+    imports: ${SYSARCH_FEATURE_IMPORTS:true}
   polarion:
     # e.g. http://localhost/polarion; the REST API is <base-url>/rest/v1. No token here: each caller's
     # Polarion token is passed through per request (Authorization: Bearer ...) and never stored.

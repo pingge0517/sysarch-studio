@@ -48,8 +48,21 @@ public class MergeController {
 
     private final MergeService merges;
 
-    public MergeController(MergeService merges) {
+    private final BranchService branches;
+
+    private final com.example.sysarch.access.Access access;
+
+    private com.example.sysarch.config.FeatureProperties features = new com.example.sysarch.config.FeatureProperties();
+
+    @org.springframework.beans.factory.annotation.Autowired
+    void features(com.example.sysarch.config.FeatureProperties features) {
+        this.features = features;
+    }
+
+    public MergeController(MergeService merges, BranchService branches, com.example.sysarch.access.Access access) {
         this.merges = Objects.requireNonNull(merges);
+        this.branches = Objects.requireNonNull(branches);
+        this.access = Objects.requireNonNull(access);
     }
 
     @PostMapping("/{branchId}/merge")
@@ -62,15 +75,15 @@ public class MergeController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "strategy must be MODEL_WINS or POLARION_WINS");
         }
         List<Resolution> resolutions = request == null || request.resolutions() == null ? List.of() : request.resolutions();
-        String actor = CurrentUser.of(http).orElse(null);
+        if (!mode.equals("PREVIEW") && !mode.equals("APPLY")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "mode must be PREVIEW or APPLY");
+        }
+        com.example.sysarch.config.FeatureProperties.require(this.features.isBranches(), "分支合并");
+        // P2 T8: merging (and previewing it, which records a run) is for architects and administrators of the trunk
+        String actor = this.access.require(http, this.branches.get(branchId).projectId(), com.example.sysarch.access.Permission.MERGE).user();
         return switch (mode) {
-            case "PREVIEW" -> this.merges.preview(branchId, strategy, resolutions, actor == null ? "anonymous" : actor);
-            case "APPLY" -> {
-                if (actor == null) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "merging writes the trunk: it needs a user (the sysarch_user cookie or X-Sysarch-User)");
-                }
-                yield this.merges.apply(branchId, request.runId(), strategy, resolutions, actor);
-            }
+            case "PREVIEW" -> this.merges.preview(branchId, strategy, resolutions, actor);
+            case "APPLY" -> this.merges.apply(branchId, request.runId(), strategy, resolutions, actor);
             default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "mode must be PREVIEW or APPLY");
         };
     }

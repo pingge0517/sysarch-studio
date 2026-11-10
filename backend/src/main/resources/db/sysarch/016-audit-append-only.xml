@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- P2 T8: audit_log is append-only in the database itself (spec §7.2 "只增不删"; user's decision "数据库禁改删 + 超期归档").
+     UPDATE and TRUNCATE are always refused. DELETE is refused unless the row is older than 365 days (the retention) and the
+     session set sysarch.audit_archive = 'on', which only ops/backup/audit-archive.sh does, after exporting those rows.
+     PostgreSQL only; the tests' H2 has no triggers of this kind. "按项目分区" is the (project_id, created_at) index of 008. -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <changeSet id="sysarch-016-audit-append-only" author="sysarch" dbms="postgresql">
+        <sql splitStatements="false">
+CREATE OR REPLACE FUNCTION audit_log_append_only() RETURNS trigger LANGUAGE plpgsql AS $fn$
+BEGIN
+  IF TG_OP = 'DELETE' AND OLD.created_at &lt; now() - INTERVAL '365 days'
+     AND coalesce(current_setting('sysarch.audit_archive', true), '') = 'on' THEN
+    RETURN OLD;
+  END IF;
+  RAISE EXCEPTION 'audit_log is append-only (P2 §7.2): % refused', TG_OP USING ERRCODE = 'insufficient_privilege';
+END
+$fn$
+        </sql>
+        <sql splitStatements="false">
+CREATE TRIGGER audit_log_no_update_delete BEFORE UPDATE OR DELETE ON audit_log FOR EACH ROW EXECUTE FUNCTION audit_log_append_only()
+        </sql>
+        <sql splitStatements="false">
+CREATE TRIGGER audit_log_no_truncate BEFORE TRUNCATE ON audit_log FOR EACH STATEMENT EXECUTE FUNCTION audit_log_append_only()
+        </sql>
+        <rollback>
+            <sql>DROP TRIGGER IF EXISTS audit_log_no_truncate ON audit_log</sql>
+            <sql>DROP TRIGGER IF EXISTS audit_log_no_update_delete ON audit_log</sql>
+            <sql>DROP FUNCTION IF EXISTS audit_log_append_only()</sql>
+        </rollback>
+    </changeSet>
+</databaseChangeLog>

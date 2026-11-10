@@ -8,7 +8,12 @@ import { randomUUID } from 'node:crypto';
 
 const BASE = (process.argv.find(a => a.startsWith('http')) ?? 'http://localhost:8080').replace(/\/$/, '');
 const KEEP = process.argv.includes('--keep');
-const HEAD = { Origin: 'http://localhost:3000', 'X-Sysarch-User': 'p1-acceptance' };
+// P2 T8: who runs this. Against a backend in dev mode (SYSARCH_AUTH_MODE=dev) a named administrator; against one in
+// polarion mode, set SYSARCH_TOKEN to the Polarion token of a user who administers unbound projects (it creates and
+// deletes its throw-away project).
+const HEAD = process.env.SYSARCH_TOKEN
+  ? { Origin: 'http://localhost:3000', Authorization: 'Bearer ' + process.env.SYSARCH_TOKEN }
+  : { Origin: 'http://localhost:3000', 'X-Sysarch-User': 'p1-acceptance', 'X-Sysarch-Roles': 'global:admin' };
 const results = [];
 
 function check(id, ok, detail) {

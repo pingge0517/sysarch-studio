@@ -76,7 +76,10 @@ class SessionTest {
         this.sessions = new SessionService(this.jdbc, 30, Duration.ofMinutes(30), this.clock);
         TransactionTemplate transaction = new TransactionTemplate(new DataSourceTransactionManager(dataSource));
         this.locks = new LockService(this.jdbc, transaction, new AuditLog(this.jdbc), this.clock);
-        this.admission = new EditAdmission(new LockEnforcement(this.locks, this.jdbc), this.sessions);
+        com.example.sysarch.access.Access access = new com.example.sysarch.access.Access(new com.example.sysarch.access.RoleMappings(this.jdbc),
+                new com.example.sysarch.access.ProjectBindings(new com.example.sysarch.sync.SyncProperties(), this.jdbc,
+                        new com.example.sysarch.branch.BranchWorkspaces(this.jdbc)), new AuditLog(this.jdbc));
+        this.admission = new EditAdmission(new LockEnforcement(this.locks, this.jdbc), this.sessions, access);
     }
 
     @Test
@@ -216,7 +219,8 @@ class SessionTest {
         SessionService.FullException full = assertThrows(SessionService.FullException.class,
                 () -> this.admission.check(PROJECT, new Editor("bob"), rename, null));
         assertEquals(EditAdmission.SESSIONS_FULL, EditAdmission.reasons(full).get(0).code());
-        assertThrows(SessionService.FullException.class, () -> this.admission.check(PROJECT, Editor.ANONYMOUS, rename, null));
+        // P2 T8: an anonymous edit is refused by its role (observer) before any session question
+        assertThrows(com.example.sysarch.access.ForbiddenException.class, () -> this.admission.check(PROJECT, Editor.ANONYMOUS, rename, null));
         assertDoesNotThrow(() -> this.admission.check(PROJECT, new Editor("alice"), rename, null), "alice has her session");
     }
 

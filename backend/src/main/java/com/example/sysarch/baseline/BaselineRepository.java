@@ -74,6 +74,26 @@ public class BaselineRepository {
         }
     }
 
+    /** Deletes a baseline; its elements go with it (ON DELETE CASCADE, and explicitly for databases without it). */
+    public void delete(String baselineId) {
+        this.jdbc.sql("DELETE FROM baseline_element WHERE baseline_id = :b").param("b", baselineId).update();
+        this.jdbc.sql("DELETE FROM baseline WHERE id = :b").param("b", baselineId).update();
+    }
+
+    /**
+     * The branches forked from a baseline, as "name（status）": every one of them, open or not, because the branch
+     * table's verbatim DDL references the baseline (a merged or abandoned branch keeps its record and changeset).
+     */
+    public List<String> branchesOf(String baselineId) {
+        return this.jdbc.sql("SELECT name, status FROM branch WHERE base_baseline = :b ORDER BY name").param("b", baselineId)
+                .query((rs, n) -> rs.getString(1) + "（" + switch (rs.getString(2)) {
+                    case "OPEN" -> "开放";
+                    case "MERGED" -> "已合并";
+                    case "ABANDONED" -> "已放弃";
+                    default -> rs.getString(2);
+                } + "）").list();
+    }
+
     /** The project's baselines, newest first. */
     public List<StoredBaseline> list(String projectId) {
         return this.jdbc.sql("SELECT id, project_id, label, description, model_rev, element_count, created_by, created_at FROM baseline "

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: sysarch-studio
+description: SysArch Studio (P2 §7.3) - backend (Sirius Web + sysarch), frontend shell (nginx), PostgreSQL 16 (or an existing one), daily backups.
+type: application
+version: 0.3.0
+appVersion: "0.3.0"

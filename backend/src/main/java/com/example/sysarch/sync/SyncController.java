@@ -51,7 +51,17 @@ public class SyncController implements SyncApi {
 
     private final SyncStatusStore status;
 
+    /** P2 T8; null only in tests that construct the controller without Spring. */
+    private final com.example.sysarch.access.Access access;
+
     public SyncController(SyncService sync, SyncStore store, ObjectMapper json, HttpServletRequest request, SyncStatusStore status) {
+        this(sync, store, json, request, status, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public SyncController(SyncService sync, SyncStore store, ObjectMapper json, HttpServletRequest request, SyncStatusStore status,
+            com.example.sysarch.access.Access access) {
+        this.access = access;
         this.status = Objects.requireNonNull(status);
         this.sync = Objects.requireNonNull(sync);
         this.store = Objects.requireNonNull(store);
@@ -63,6 +73,7 @@ public class SyncController implements SyncApi {
     public ResponseEntity<SyncResult> syncPushPost(String idempotencyKey, SyncPushPostRequest body) {
         PolarionToken token = this.token();
         String projectId = required(body.getProjectId(), "projectId");
+        this.require(projectId);
         List<String> elementIds = body.getElementIds() == null ? List.of() : body.getElementIds();
         boolean dryRun = Boolean.TRUE.equals(body.getDryRun());
         return this.idempotent(idempotencyKey, "push", () -> {
@@ -78,6 +89,7 @@ public class SyncController implements SyncApi {
     public ResponseEntity<SyncResult> syncPullPost(SyncPullPostRequest body) {
         PolarionToken token = this.token();
         String projectId = required(body.getProjectId(), "projectId");
+        this.require(projectId);
         return this.idempotent(this.request.getHeader(IDEMPOTENCY_HEADER), "pull", () -> {
             SyncService.Outcome outcome = this.sync.pull(projectId, body.getSince(), token, this.actor());
             boolean failed = outcome.status() != 200 || outcome.result().getErrors().stream().anyMatch(e -> ScheduledPull.FAILURES.contains(e.getCode()));
@@ -118,9 +130,16 @@ public class SyncController implements SyncApi {
         return token;
     }
 
+    /** P2 T8: syncing writes the model or Polarion: architects and administrators of the Polarion project. */
+    private void require(String polarionProject) {
+        if (this.access != null) {
+            this.access.requirePolarion(this.request, polarionProject, com.example.sysarch.access.Permission.SYNC);
+        }
+    }
+
+    /** The signed-in user (P2 T8: the session, or the owner of the request's Polarion token), else anonymous. */
     private String actor() {
-        String actor = this.request.getHeader(ACTOR_HEADER);
-        return actor == null || actor.isBlank() ? "anonymous" : actor;
+        return com.example.sysarch.identity.CurrentUser.of(this.request).orElse("anonymous");
     }
 
     private static String required(String value, String field) {

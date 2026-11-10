@@ -1,4 +1,4 @@
-// The lock API of the backend (P2 T1, /api/v1/locks). The user goes along as the sysarch_user cookie.
+// The lock API of the backend (P2 T1, /api/v1/locks). The user goes along as the session cookie (P2 T8).
 
 export interface Lock {
   id: string;

@@ -28,7 +28,8 @@ import org.springframework.web.server.ResponseStatusException;
         com.example.sysarch.project.ElementLocationController.class, com.example.sysarch.export.ExportController.class,
         com.example.sysarch.lock.LockController.class, com.example.sysarch.session.SessionController.class,
         com.example.sysarch.branch.BranchController.class, com.example.sysarch.merge.MergeController.class,
-        com.example.sysarch.report.ReportController.class, com.example.sysarch.sysmlimport.ImportController.class })
+        com.example.sysarch.report.ReportController.class, com.example.sysarch.sysmlimport.ImportController.class,
+        com.example.sysarch.access.Access.class, com.example.sysarch.identity.Identities.class, com.example.sysarch.comment.CommentController.class })
 public class ApiErrorHandler {
 
     @ExceptionHandler(ResponseStatusException.class)
@@ -53,6 +54,16 @@ public class ApiErrorHandler {
     }
 
     /** Polarion failed while a request needed it (e.g. a live consistency report): 429 passed on, else 502. */
+    /** P2 T8: the role does not allow the action (already audited). */
+    @ExceptionHandler(com.example.sysarch.access.ForbiddenException.class)
+    public ResponseEntity<ProblemDetail> forbidden(com.example.sysarch.access.ForbiddenException e) {
+        ResponseEntity<ProblemDetail> response = problem(HttpStatus.FORBIDDEN, e.getMessage());
+        response.getBody().setProperty("code", "FORBIDDEN");
+        response.getBody().setProperty("message", e.getMessage());
+        response.getBody().setProperty("role", e.role() == null ? null : e.role().name());
+        return response;
+    }
+
     @ExceptionHandler(PolarionException.class)
     public ResponseEntity<ProblemDetail> polarion(PolarionException e) {
         if (e instanceof PolarionException.RateLimited limited) {

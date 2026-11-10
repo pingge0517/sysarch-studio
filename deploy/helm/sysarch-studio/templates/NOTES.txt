@@ -1,0 +1,9 @@
+SysArch Studio {{ .Chart.AppVersion }} ({{ .Release.Name }})
+
+Shell:     https://{{ .Values.ingress.host }}
+Sirius:    https://{{ .Values.ingress.siriusHost }}
+Health:    kubectl exec deploy/{{ .Release.Name }}-backend -- wget -qO- http://localhost:8080/actuator/health
+
+Users sign in with their Polarion personal access token (mode {{ .Values.backend.env.SYSARCH_AUTH_MODE }}).
+Backups: {{ if .Values.backup.enabled }}daily at "{{ .Values.backup.schedule }}", kept {{ .Values.backup.retentionDays }} days, in PVC {{ .Release.Name }}-backups{{ else }}OFF{{ end }}.
+Runbook: docs/runbook.md (start, backup, restore, rollback, canary).

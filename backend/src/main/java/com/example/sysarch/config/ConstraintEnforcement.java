@@ -77,6 +77,20 @@ public final class ConstraintEnforcement {
     @Service
     public static class Guard implements IInputPreProcessor, IInputPostProcessor, IChangeDescriptionConsumer {
 
+        /**
+         * Who made an edit. Recorded inputs have their user (GraphQLEditorFilter, ProjectModels). An input of our own
+         * (sync pull, repair, migration, our tasks as the system) that nobody recorded is a system edit: no lock or role
+         * applies. Any other input (Sirius' own, i.e. from a GraphQL client) that was not recorded is anonymous (P2 T8):
+         * otherwise a client could escape locks and roles by sending its input in a form the filter does not recognize.
+         */
+        public static java.util.Optional<Editors.Editor> editorOf(Editors editors, org.eclipse.sirius.components.core.api.IInput input) {
+            var recorded = editors.of(input.id());
+            if (recorded.isPresent() || input.getClass().getName().startsWith("com.example.sysarch.")) {
+                return recorded;
+            }
+            return java.util.Optional.of(Editors.Editor.ANONYMOUS);
+        }
+
         private final Logger logger = LoggerFactory.getLogger(Guard.class);
 
         private final ChangeGuard guard;
@@ -125,12 +139,12 @@ public final class ConstraintEnforcement {
             var change = recorder.endRecording();
             recorder.dispose();
             var edited = ChangeGuard.edited(change); // before check: a rollback reverses the change description
-            var editor = this.editors.of(changeDescription.getInput().id());
+            var editor = editorOf(this.editors, changeDescription.getInput());
             var project = this.locks.projectOf(editingContext.getId());
             if (editor.isPresent() && project.isPresent()) {
                 try {
                     this.admission.check(project.get(), editor.get(), change, "Sirius Web");
-                } catch (LockService.LockedException | SessionService.FullException refusal) {
+                } catch (LockService.LockedException | SessionService.FullException | com.example.sysarch.access.ForbiddenException refusal) {
                     change.applyAndReverse();
                     List<ValidationError> reasons = EditAdmission.reasons(refusal);
                     this.notices.record(resourceSet.get(), edited, reasons);

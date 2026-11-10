@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -33,19 +32,38 @@ public class BaselineController {
 
     private final BaselineService baselines;
 
-    public BaselineController(BaselineService baselines) {
+    private final ProjectModels models;
+
+    private final com.example.sysarch.access.Access access;
+
+    public BaselineController(BaselineService baselines, ProjectModels models, com.example.sysarch.access.Access access) {
         this.baselines = Objects.requireNonNull(baselines);
+        this.models = Objects.requireNonNull(models);
+        this.access = Objects.requireNonNull(access);
     }
 
     @PostMapping
-    public ResponseEntity<Baseline> create(@RequestBody BaselinesPostRequest request,
-            @RequestHeader(value = "X-Sysarch-User", required = false) String user) {
+    public ResponseEntity<Baseline> create(@RequestBody BaselinesPostRequest request, jakarta.servlet.http.HttpServletRequest http) {
         if (request == null || request.getProjectId() == null || request.getProjectId().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "projectId is required");
         }
-        String actor = user == null || user.isBlank() ? "anonymous" : user;
+        String project = this.call(() -> this.models.siriusProjectId(request.getProjectId()));
+        String actor = this.access.require(http, project, com.example.sysarch.access.Permission.BASELINE_CREATE).user();
         StoredBaseline created = this.call(() -> this.baselines.create(request.getProjectId(), request.getLabel(), request.getDescription(), actor));
         return ResponseEntity.status(HttpStatus.CREATED).body(toApi(created));
+    }
+
+    /** P2 T8: deleting a baseline is for administrators and audited ({@code BASELINE_DELETE}); 409 while a branch uses it. */
+    @org.springframework.web.bind.annotation.DeleteMapping("/{baselineId}")
+    public ResponseEntity<Void> delete(@PathVariable String baselineId, jakarta.servlet.http.HttpServletRequest http) {
+        StoredBaseline baseline = this.call(() -> this.baselines.find(baselineId));
+        String actor = this.access.require(http, baseline.projectId(), com.example.sysarch.access.Permission.BASELINE_DELETE).user();
+        try {
+            this.baselines.delete(baselineId, actor);
+        } catch (BaselineService.InUseException e) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
+        }
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping

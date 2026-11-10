@@ -1,0 +1,93 @@
+{{- if .Values.postgres.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "sysarch.name" . }}-postgres-init
+  labels: {{- include "sysarch.labels" . | nindent 4 }}
+data:
+  # runs once, at initdb: lets the base-backup job connect for replication (pg_basebackup)
+  10-replication.sh: |
+    #!/bin/sh
+    echo "host replication all all scram-sha-256" >> "$PGDATA/pg_hba.conf"
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "sysarch.postgresHost" . }}
+  labels: {{- include "sysarch.labels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres
+spec:
+  serviceName: {{ include "sysarch.postgresHost" . }}
+  replicas: 1
+  selector:
+    matchLabels: { app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/component: postgres }
+  template:
+    metadata:
+      labels: {{- include "sysarch.labels" . | nindent 8 }}
+        app.kubernetes.io/component: postgres
+    spec:
+      securityContext: { fsGroup: 999 }
+      containers:
+        - name: postgres
+          image: {{ .Values.image.postgres }}
+          # WAL archiving (spec §7.3), the same settings as files/postgresql-archive.conf
+          args:
+            - "-c"
+            - "wal_level=replica"
+            - "-c"
+            - "archive_mode=on"
+            - "-c"
+            - "archive_command=test ! -f /var/lib/postgresql/wal-archive/%f && cp %p /var/lib/postgresql/wal-archive/%f"
+            - "-c"
+            - "archive_timeout=300"
+          env:
+            - { name: POSTGRES_DB, value: {{ .Values.postgres.database }} }
+            - name: POSTGRES_USER
+              valueFrom: { secretKeyRef: { name: {{ .Values.backend.existingSecret }}, key: POSTGRES_USER } }
+            - name: POSTGRES_PASSWORD
+              valueFrom: { secretKeyRef: { name: {{ .Values.backend.existingSecret }}, key: POSTGRES_PASSWORD } }
+            - { name: PGDATA, value: /var/lib/postgresql/data/pgdata }
+          ports: [{ name: pg, containerPort: 5432 }]
+          readinessProbe:
+            exec: { command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""] }
+            periodSeconds: 5
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/postgresql/data }
+            - { name: wal-archive, mountPath: /var/lib/postgresql/wal-archive }
+            - { name: init, mountPath: /docker-entrypoint-initdb.d }
+        # Archived WAL is kept for the backup retention plus the week between base backups, then removed here (the
+        # archive volume is ReadWriteOnce, so the pruning runs in this pod rather than in a job).
+        - name: wal-pruner
+          image: {{ .Values.image.postgres }}
+          command: ["sh", "-c", "while true; do find /var/lib/postgresql/wal-archive -maxdepth 1 -type f -mtime +{{ add .Values.backup.retentionDays 7 }} -delete; sleep 86400; done"]
+          volumeMounts:
+            - { name: wal-archive, mountPath: /var/lib/postgresql/wal-archive }
+          resources: { requests: { cpu: 10m, memory: 16Mi } }
+      volumes:
+        - name: init
+          configMap: { name: {{ include "sysarch.name" . }}-postgres-init }
+  volumeClaimTemplates:
+    - metadata: { name: data, annotations: { helm.sh/resource-policy: keep } }
+      spec:
+        accessModes: [ReadWriteOnce]
+        {{- with .Values.postgres.storageClass }}
+        storageClassName: {{ . }}
+        {{- end }}
+        resources: { requests: { storage: {{ .Values.postgres.size }} } }
+    - metadata: { name: wal-archive, annotations: { helm.sh/resource-policy: keep } }
+      spec:
+        accessModes: [ReadWriteOnce]
+        {{- with .Values.postgres.storageClass }}
+        storageClassName: {{ . }}
+        {{- end }}
+        resources: { requests: { storage: {{ .Values.postgres.walArchive.size }} } }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "sysarch.postgresHost" . }}
+  labels: {{- include "sysarch.labels" . | nindent 4 }}
+spec:
+  selector: { app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/component: postgres }
+  ports: [{ name: pg, port: 5432, targetPort: pg }]
+{{- end }}

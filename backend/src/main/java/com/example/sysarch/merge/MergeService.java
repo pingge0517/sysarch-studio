@@ -187,7 +187,7 @@ public class MergeService {
         this.jdbc.sql("UPDATE merge_run SET status = 'APPLIED', strategy = :s, result = :r, pre_merge_baseline = :bl, applied_at = :at WHERE id = :id")
                 .param("s", strategy.name()).param("r", this.write(summary(result))).param("bl", baseline).param("at", now).param("id", runId).update();
         this.branches.markMerged(branchId);
-        this.audit.append(trunk, actor, "MERGE", null, "branch " + sides.branch().name() + " (" + branchId + "): " + result.stats() + ", run " + runId
+        this.audit.append(trunk, actor, com.example.sysarch.audit.AuditLog.MERGE, null, "branch " + sides.branch().name() + " (" + branchId + "): " + result.stats() + ", run " + runId
                 + ", pre-merge baseline " + baseline);
         this.logger.info("Merged branch {} into project {} by {}: {}", branchId, trunk, actor, result.stats());
         return view(runId, "APPLY", branchId, "APPLIED", strategy, result, baseline, List.of());

@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sysarch.name" . }}-backend
+  labels: {{- include "sysarch.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  replicas: {{ .Values.backend.replicas }}
+  strategy:
+    type: Recreate   # one instance at a time (P2), and Liquibase migrates on start
+  selector:
+    matchLabels: { app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/component: backend }
+  template:
+    metadata:
+      labels: {{- include "sysarch.labels" . | nindent 8 }}
+        app.kubernetes.io/component: backend
+    spec:
+      securityContext: { runAsNonRoot: true, fsGroup: 1000 }
+      containers:
+        - name: backend
+          image: {{ .Values.image.backend }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports: [{ name: http, containerPort: 8080 }]
+          envFrom:
+            - secretRef: { name: {{ .Values.backend.existingSecret }} }
+          env:
+            - { name: POSTGRES_URL, value: {{ include "sysarch.jdbcUrl" . | quote }} }
+            - { name: SYSARCH_REPORT_DIR, value: /var/lib/sysarch/reports }
+            - { name: JAVA_TOOL_OPTIONS, value: {{ .Values.backend.javaOpts | quote }} }
+            {{- range $name, $value := .Values.backend.env }}
+            - { name: {{ $name }}, value: {{ $value | quote }} }
+            {{- end }}
+          volumeMounts:
+            - { name: reports, mountPath: /var/lib/sysarch/reports }
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: http }
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: http }
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          startupProbe:
+            httpGet: { path: /actuator/health, port: http }
+            failureThreshold: 30
+            periodSeconds: 5
+          resources: {{- toYaml .Values.backend.resources | nindent 12 }}
+      volumes:
+        - name: reports
+          persistentVolumeClaim: { claimName: {{ include "sysarch.name" . }}-reports }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "sysarch.name" . }}-backend
+  labels: {{- include "sysarch.labels" . | nindent 4 }}
+spec:
+  selector: { app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/component: backend }
+  ports: [{ name: http, port: 8080, targetPort: http }]
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "sysarch.name" . }}-reports
+  labels: {{- include "sysarch.labels" . | nindent 4 }}
+  annotations: { helm.sh/resource-policy: keep }
+spec:
+  accessModes: [ReadWriteOnce]
+  {{- with .Values.backend.reports.storageClass }}
+  storageClassName: {{ . }}
+  {{- end }}
+  resources: { requests: { storage: {{ .Values.backend.reports.size }} } }

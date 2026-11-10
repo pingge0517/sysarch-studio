@@ -55,8 +55,21 @@ public class ReportController {
 
     private final ReportService reports;
 
-    public ReportController(ReportService reports) {
+    private final com.example.sysarch.project.ProjectModels models;
+
+    private final com.example.sysarch.access.Access access;
+
+    private com.example.sysarch.config.FeatureProperties features = new com.example.sysarch.config.FeatureProperties();
+
+    @org.springframework.beans.factory.annotation.Autowired
+    void features(com.example.sysarch.config.FeatureProperties features) {
+        this.features = features;
+    }
+
+    public ReportController(ReportService reports, com.example.sysarch.project.ProjectModels models, com.example.sysarch.access.Access access) {
         this.reports = Objects.requireNonNull(reports);
+        this.models = Objects.requireNonNull(models);
+        this.access = Objects.requireNonNull(access);
     }
 
     @GetMapping("/templates")
@@ -69,7 +82,17 @@ public class ReportController {
         if (request == null || request.projectId() == null || request.projectId().isBlank() || request.templateId() == null) {
             throw new ReportService.ReportRequestException(400, "projectId and templateId are required");
         }
-        ReportService.Job job = this.reports.submit(request.projectId(), request.templateId(), request.baselineId(), CurrentUser.of(http).orElse("anonymous"));
+        com.example.sysarch.config.FeatureProperties.require(this.features.isReports(), "报告生成");
+        // P2 T8: every role may generate a report (it reads), but it is an audited action, so it needs a signed-in user
+        String user = CurrentUser.of(http).orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(HttpStatus.UNAUTHORIZED, "请先登录：生成报告会记入审计"));
+        String project;
+        try {
+            project = this.models.siriusProjectId(request.projectId());
+        } catch (com.example.sysarch.project.ProjectModels.UnknownProjectException e) {
+            throw new ReportService.ReportRequestException(404, e.getMessage());
+        }
+        this.access.require(http, project, com.example.sysarch.access.Permission.REPORT);
+        ReportService.Job job = this.reports.submit(request.projectId(), request.templateId(), request.baselineId(), user);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(view(job));
     }
 

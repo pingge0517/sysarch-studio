@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- P2 T8: element comments (spec §7.1 评审人 "只读 + 评论"; user's decision "做最小评论功能"). Outside the model, which
+     is frozen in P2: a comment names its element by element id within a Sirius project. -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <changeSet id="sysarch-017-element-comment" author="sysarch">
+        <createTable tableName="element_comment">
+            <column name="id" type="VARCHAR(64)"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="project_id" type="VARCHAR(64)"><constraints nullable="false"/></column>
+            <column name="element_id" type="VARCHAR(64)"><constraints nullable="false"/></column>
+            <column name="author" type="VARCHAR(128)"><constraints nullable="false"/></column>
+            <column name="body" type="TEXT"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+        </createTable>
+        <createIndex tableName="element_comment" indexName="idx_comment_element">
+            <column name="project_id"/>
+            <column name="element_id"/>
+            <column name="created_at"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>

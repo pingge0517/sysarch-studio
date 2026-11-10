@@ -1,42 +1,57 @@
 package com.example.sysarch.identity;
 
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
- * Who is making a request (P2 T1, user's decision "临时身份，T8 再替换"). Until T8 maps the Polarion login, the user
- * is a name the person types on the :3000 shell, kept in the {@value #COOKIE} cookie. Cookies are per host, not per
- * port, so Sirius Web on :8080 receives it too. API clients may send the {@value #HEADER} header instead (it wins).
- * No password and no token is involved or stored; T8 replaces this with the Polarion identity.
+ * Who is making a request. Since P2 T8 the principal is resolved by {@link IdentityFilter} ({@link Identities}: the
+ * session cookie, a Polarion token, or in dev mode a typed name) and kept on the request. Only when no filter ran (unit
+ * tests that call controllers directly) the old rule applies: the {@value #HEADER} header names the user.
  */
 public final class CurrentUser {
 
+    /** Dev mode, and the fallback without the filter: the user's name. */
     public static final String HEADER = "X-Sysarch-User";
 
+    /** Dev mode: the name typed on the :3000 shell (P2 T1's temporary identity). */
     public static final String COOKIE = "sysarch_user";
+
+    static final String ATTRIBUTE = Principal.class.getName();
 
     private CurrentUser() {
     }
 
+    /** Resolves the principal at most once per request, when first asked (asking Polarion about a token may be slow). */
+    static void attach(HttpServletRequest request, Supplier<Optional<Principal>> resolver) {
+        Optional<Principal>[] memo = new Optional[1];
+        request.setAttribute(ATTRIBUTE, (Supplier<Optional<Principal>>) () -> {
+            if (memo[0] == null) {
+                memo[0] = resolver.get();
+            }
+            return memo[0];
+        });
+    }
+
+    @SuppressWarnings("unchecked")
+    public static Optional<Principal> principal(HttpServletRequest request) {
+        Object attached = request.getAttribute(ATTRIBUTE);
+        if (attached instanceof Supplier<?> supplier) {
+            return (Optional<Principal>) supplier.get();
+        }
+        return Optional.ofNullable(clean(request.getHeader(HEADER))).map(user -> Principal.dev(user, List.of()));
+    }
+
     /** The user of a request, or empty for an anonymous one. */
     public static Optional<String> of(HttpServletRequest request) {
-        String header = clean(request.getHeader(HEADER));
-        if (header != null) {
-            return Optional.of(header);
-        }
-        Cookie[] cookies = request.getCookies();
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if (COOKIE.equals(cookie.getName())) {
-                    return Optional.ofNullable(clean(URLDecoder.decode(cookie.getValue(), StandardCharsets.UTF_8)));
-                }
-            }
-        }
-        return Optional.empty();
+        return principal(request).map(Principal::user);
+    }
+
+    /** The editor of a model change made for this request. */
+    public static Editors.Editor editor(HttpServletRequest request) {
+        return principal(request).map(Editors.Editor::of).orElse(Editors.Editor.ANONYMOUS);
     }
 
     /** Trimmed, at most 128 characters (the lock table's owner column), or null when blank. */
