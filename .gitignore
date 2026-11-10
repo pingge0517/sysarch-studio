@@ -8,3 +8,5 @@ frontend/dist/
 .idea/
 .vscode/
 *.tsbuildinfo
+# P2 T5: generated report files (default sysarch.report.dir when run from the repository root)
+data/

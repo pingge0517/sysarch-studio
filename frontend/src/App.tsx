@@ -10,6 +10,7 @@ import type { Branch } from './branch/api';
 import { leaveBranch, listBranches } from './branch/api';
 import { BranchesPage } from './branch/BranchesPage';
 import { effectiveProject, trunks } from './branch/workspaces';
+import { ReportsPage } from './report/ReportsPage';
 
 // TODO: mount the Sirius Web frontend components and register the BDD/IBD views. Until then the diagrams are
 // edited in Sirius Web's own UI (backend :8080); this shell hosts the P1 matrix pages.
@@ -42,7 +43,7 @@ export function App() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
   const [table, setTable] = useState(param('table') || 'allocation-matrix');
-  const [view, setView] = useState(['baselines', 'locks', 'branches'].includes(param('view')) ? param('view') : 'matrix');
+  const [view, setView] = useState(['baselines', 'locks', 'branches', 'reports'].includes(param('view')) ? param('view') : 'matrix');
   const [user, setUser] = useState(currentUser());
   const [matrix, setMatrix] = useState<Matrix | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -198,6 +199,7 @@ export function App() {
             <option value="baselines">基线与差异</option>
             <option value="locks">编辑锁</option>
             <option value="branches">分支</option>
+            <option value="reports">报告</option>
           </select>
         </label>
         {view === 'matrix' && <label>
@@ -254,6 +256,7 @@ export function App() {
         {!project && <p className="hint">选择一个 Sirius 项目。</p>}
         {project && view === 'baselines' && <BaselinePage project={workspace} />}
         {project && view === 'locks' && <LocksPage project={workspace} user={user} />}
+        {project && view === 'reports' && <ReportsPage project={workspace} />}
         {project && view === 'branches' && <BranchesPage trunk={project} current={branch ? branchId : ''} onSwitch={(id) => void switchTo(id)} />}
         {project && view === 'matrix' && matrix && <MatrixView matrix={matrix} onAction={onAction} />}
         {project && view === 'matrix' && !matrix && !error && <p className="hint">加载中…</p>}

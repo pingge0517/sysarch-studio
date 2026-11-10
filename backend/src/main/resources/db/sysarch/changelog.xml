@@ -15,4 +15,5 @@
     <include file="db/sysarch/010-branch.xml"/>
     <include file="db/sysarch/011-branch-workspace.xml"/>
     <include file="db/sysarch/012-merge-run.xml"/>
+    <include file="db/sysarch/013-report-job.xml"/>
 </databaseChangeLog>

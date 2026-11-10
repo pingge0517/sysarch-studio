@@ -22,6 +22,12 @@ json-schema-validator = "1.5.9"
 # Eclipse OCL 6.19.0 (Pivot 1.19, Dec 2023) from its p2 site, and the Xtext release it was built with.
 ocl-p2 = "1.19.0.v20231129-1236"
 xtext = "2.33.0"
+# P2 T5 reports: HTML (FreeMarker) to Word through docx4j's XHTML import (spec §4.1), and to PDF (user's decision, for
+# the page count) through openhtmltopdf, pinned to the version docx4j-ImportXHTML 17.3.5 is built on (1.1.110 broke its
+# page-break handling: NPE on page-break-after). docx4j 17 is the Jakarta JAXB line, as Spring Boot 3.
+docx4j = "17.3.6"
+docx4j-import-xhtml = "17.3.5"
+openhtmltopdf = "1.1.103"
 
 [libraries]
 spring-boot-bom = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "spring-boot" }
@@ -36,6 +42,9 @@ spring-context = { module = "org.springframework:spring-context" }
 
 snakeyaml = { module = "org.yaml:snakeyaml" }
 freemarker = { module = "org.freemarker:freemarker" }
+docx4j-jaxb = { module = "org.docx4j:docx4j-JAXB-ReferenceImpl", version.ref = "docx4j" }
+docx4j-import-xhtml = { module = "org.docx4j:docx4j-ImportXHTML-core", version.ref = "docx4j-import-xhtml" }
+openhtmltopdf-pdfbox = { module = "io.github.openhtmltopdf:openhtmltopdf-pdfbox", version.ref = "openhtmltopdf" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind" }
 json-schema-validator = { module = "com.networknt:json-schema-validator", version.ref = "json-schema-validator" }
 slf4j-nop = { module = "org.slf4j:slf4j-nop" }

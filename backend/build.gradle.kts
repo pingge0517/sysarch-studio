@@ -53,6 +53,19 @@ dependencies {
     // The Sirius Web UI (projects, explorer, diagrams), so the VSM diagrams can be used in a browser on :8080.
     runtimeOnly(libs.sirius.web.frontend)
     implementation(libs.spring.boot.starter.actuator)
+    // P2 T5: reports (templates, Word, PDF)
+    implementation(libs.freemarker)
+    // docx4j pulls ANTLR 3.5 (and 2.7) for Word field codes, which the XHTML import does not use; ANTLR 3.5 would
+    // replace the 3.2 that Eclipse OCL's Xtext parser needs (NoSuchFieldError Token.EOF_TOKEN in every OCL check).
+    implementation(libs.docx4j.jaxb) {
+        exclude(group = "org.antlr")
+        exclude(group = "antlr")
+    }
+    implementation(libs.docx4j.import.xhtml) {
+        exclude(group = "org.antlr")
+        exclude(group = "antlr")
+    }
+    implementation(libs.openhtmltopdf.pdfbox)
     // Used directly by the generated sysarch model/edit code. Same versions Sirius Web brings.
     implementation(libs.bundles.emf.runtime)
     // Eclipse OCL Pivot for constraint checks (T6): the exact verified jar set, without transitive resolution.
