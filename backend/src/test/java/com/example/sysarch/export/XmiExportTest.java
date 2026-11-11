@@ -131,6 +131,27 @@ class XmiExportTest {
         assertEquals(this.xmi, XmiExporter.export("域控制器演示", List.of(again)));
     }
 
+    /** The UML 2.5 option changes only the uml namespace and the notice; our importer reads it back to the same model. */
+    @Test
+    void umlVersion25ChangesOnlyTheNamespace() throws Exception {
+        Resource again = new ResourceImpl(URI.createURI("memory:/demo3.json"));
+        again.getContents().addAll(DomainControllerDemo.build());
+        String v25 = XmiExporter.export("域控制器演示", List.of(again), XmiExporter.UmlVersion.V2_5);
+        assertTrue(v25.contains("xmlns:uml=\"http://www.omg.org/spec/UML/20131001\"") && !v25.contains("UML/20161101"));
+        List<String> a = List.of(this.xmi.split("\n"));
+        List<String> b = List.of(v25.split("\n"));
+        assertEquals(a.size(), b.size());
+        long differing = java.util.stream.IntStream.range(0, a.size()).filter(i -> !a.get(i).equals(b.get(i))).count();
+        assertEquals(3, differing, "the root line, the XML comment and the documentation line");
+        var read = com.example.sysarch.sysmlimport.XmiImporter.read(v25, com.example.sysarch.model.Layer.LOGICAL);
+        assertEquals(List.of(), read.problems());
+        Resource back = new ResourceImpl(URI.createURI("memory:/back.json"));
+        back.getContents().addAll(read.mapped().roots());
+        assertEquals(com.example.sysarch.baseline.ModelSnapshot.capture(List.of(this.demo)), com.example.sysarch.baseline.ModelSnapshot.capture(List.of(back)));
+        assertEquals(XmiExporter.UmlVersion.V2_5_1, XmiExporter.UmlVersion.of(null));
+        assertEquals(null, XmiExporter.UmlVersion.of("2.4"));
+    }
+
     /** A port of a part lives on the part's type (UML), naming the part; cross-block connections, item flows and odd ids. */
     @Test
     void edgeCasesKeepTheirDataInTheExtension() throws Exception {

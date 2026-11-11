@@ -265,6 +265,54 @@ public final class XmiExporter {
         return new XmiExporter().run(modelName, resources);
     }
 
+    /**
+     * Which UML namespace the file declares. SysML 1.6 is defined on UML 2.5.1 (the default); some importers only know
+     * UML 2.5 (Eclipse UML2 5.5 does, found by the P3-AC-6 proxy check). Everything SysArch writes is the same in both,
+     * so only the {@code xmlns:uml} declaration (and the head notice) differ.
+     */
+    public enum UmlVersion {
+        V2_5_1("2.5.1", UML_NS), V2_5("2.5", "http://www.omg.org/spec/UML/20131001");
+
+        private final String label;
+
+        private final String namespace;
+
+        UmlVersion(String label, String namespace) {
+            this.label = label;
+            this.namespace = namespace;
+        }
+
+        public String label() {
+            return this.label;
+        }
+
+        public String namespace() {
+            return this.namespace;
+        }
+
+        /** "2.5.1" or "2.5" (null or blank = 2.5.1); anything else null. */
+        public static UmlVersion of(String label) {
+            if (label == null || label.isBlank()) {
+                return V2_5_1;
+            }
+            for (UmlVersion v : values()) {
+                if (v.label.equals(label.strip())) {
+                    return v;
+                }
+            }
+            return null;
+        }
+    }
+
+    public static String export(String modelName, Collection<Resource> resources, UmlVersion version) {
+        String xmi = export(modelName, resources);
+        if (version == null || version == UmlVersion.V2_5_1) {
+            return xmi;
+        }
+        return xmi.replace("xmlns:uml=\"" + UML_NS + "\"", "xmlns:uml=\"" + version.namespace() + "\"")
+                .replace("UML 2.5.1 / SysML 1.6", "UML " + version.label() + " / SysML 1.6");
+    }
+
     private String run(String modelName, Collection<Resource> resources) {
         List<EObject> all = new ArrayList<>();
         resources.forEach(r -> r.getAllContents().forEachRemaining(all::add));

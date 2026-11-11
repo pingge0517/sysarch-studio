@@ -13,7 +13,9 @@ curl -X POST http://<host>/api/v1/export/xmi \
      -o project.xmi
 ```
 
-返回 `application/xml`（UTF-8），文件名为"项目名.xmi"。运维可以用 `SYSARCH_FEATURE_XMI=false` 关闭导出入口，此时返回 503。
+返回 `application/xml`（UTF-8），文件名为"项目名.xmi"。
+
+可选参数 `"umlVersion": "2.5"`：文件声明 UML 2.5 命名空间（`http://www.omg.org/spec/UML/20131001`），而不是默认的 UML 2.5.1（`…/20161101`，SysML 1.6 的基础）。只有命名空间声明和文件头说明不同，元素完全相同，供只认识 UML 2.5 的导入器使用（例如 Eclipse UML2 5.5）。如果 Cameo 导入时报告不认识 UML 2.5.1，就改用这个参数。其他取值返回 400。本工具的 XMI 导入两种命名空间都接受。运维可以用 `SYSARCH_FEATURE_XMI=false` 关闭导出入口，此时返回 503。
 
 ## 2. 映射
 
@@ -83,4 +85,4 @@ curl -X POST http://<host>/api/v1/export/xmi \
 - **构造型**：19 个 SysML 构造型应用都有基元素。
 - **UML 校验**：UML2 的校验器没有发现任何问题。唯一的报告是 SysML 配置文件引用无法解析，这是预期的：UML2 本身不带 SysML 配置文件，Cameo 和 Papyrus 会把这个标准 URI 解析到各自内置的 SysML 1.6。
 
-**一项需要在 Cameo 中留意的差异**：本工具按 SysML 1.6 的要求，写的是 UML 2.5.1 命名空间 `http://www.omg.org/spec/UML/20161101`。UML2 5.5 只认识到 UML 2.5（`…/20131001`），所以检查时只把这一个命名空间改成了 2.5。我们用到的类和属性在两个版本中完全相同。如果某个 Cameo 版本的导入器不接受 2.5.1 命名空间，可以采用同样的做法，或者在导出中加一个"UML 2.5 命名空间"选项（需要时再加）。
+**一项需要在 Cameo 中留意的差异**：本工具按 SysML 1.6 的要求，写的是 UML 2.5.1 命名空间 `http://www.omg.org/spec/UML/20161101`。UML2 5.5 只认识到 UML 2.5（`…/20131001`），所以检查时只把这一个命名空间改成了 2.5。我们用到的类和属性在两个版本中完全相同。这个选项现在已经提供（第 1 节的 `umlVersion: "2.5"`）：用它导出的文件，UML2 不经任何改写即可直接读入（2026-11-11 已实测）。如果 Cameo 不接受 2.5.1，请改用它。
