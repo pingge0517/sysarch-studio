@@ -35,6 +35,9 @@ Running the backend locally needs `POSTGRES_URL`, `POSTGRES_USER` and `POSTGRES_
 | `frontend/` | React shell, served by nginx on :3000 |
 | `tests/acceptance/` | Acceptance scripts (spec §9), e.g. `ac1-health.sh` |
 | `docs/` | `metamodel-and-views.md`: metamodel, field tables, view mapping, adding a view (T9) |
+| `docs/param-behavior.md` | P3 user guide (parametric view and solving, state machine / activity / use case, XMI) and the **three external limitations**: XMI round trips do not keep layers, solving needs an external back end, behaviour diagrams are not executed |
+| `docs/probes/` | P3 probes: A (sequence diagrams, No-Go) and B (geometry view, interview guide) |
+| `solver/` | The spec's solver script (verbatim), the remote solver service and its Dockerfile (P3) |
 | `.github/workflows/ci.yml` | CI: tests, VSM determinism (sha256), refresh perf threshold (T9) |
 
 ## Demo data
