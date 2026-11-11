@@ -72,3 +72,15 @@ curl -X POST http://<host>/api/v1/export/xmi \
    - 有三条 «Satisfy»、一条 «Verify»、三条 «Allocate»。
 
    给"域控制器"建一张 IBD，并选择显示已有的部件和连接器，应能看到部件、端口和连线。
+
+### 代替验证：Eclipse UML2（2026-11-11）
+
+在 Cameo 验证之前，先用 **Eclipse UML2 5.5**（UML 元模型的参考实现，Papyrus 的基础）做了一次自动检查。它不能代替 Cameo。工具在 `tools/uml2-check/Uml2Check.java`（不参与构建，运行方式写在文件头），所需 jar 已从 Eclipse 官方 p2 仓库和 Maven Central 下载，并核对了校验和。
+
+**结果**：演示项目和三组 golden 用例全部通过。
+- **能被识别**：UML2 用它的 OMG XMI 加载器读入，没有加载错误，所有引用都能解析。
+- **数量与原模型一致**。以演示项目为例：12 个 Class、3 个部件 Property、6 个 Port、4 个 Connector（8 个端点都指向部件类型上的端口）、7 个 Abstraction。
+- **构造型**：19 个 SysML 构造型应用都有基元素。
+- **UML 校验**：UML2 的校验器没有发现任何问题。唯一的报告是 SysML 配置文件引用无法解析，这是预期的：UML2 本身不带 SysML 配置文件，Cameo 和 Papyrus 会把这个标准 URI 解析到各自内置的 SysML 1.6。
+
+**一项需要在 Cameo 中留意的差异**：本工具按 SysML 1.6 的要求，写的是 UML 2.5.1 命名空间 `http://www.omg.org/spec/UML/20161101`。UML2 5.5 只认识到 UML 2.5（`…/20131001`），所以检查时只把这一个命名空间改成了 2.5。我们用到的类和属性在两个版本中完全相同。如果某个 Cameo 版本的导入器不接受 2.5.1 命名空间，可以采用同样的做法，或者在导出中加一个"UML 2.5 命名空间"选项（需要时再加）。
