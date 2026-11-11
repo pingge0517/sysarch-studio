@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmlns:xmi="http://www.omg.org/spec/XMI/20131001" xmlns:sysml="http://www.omg.org/spec/SysML/20181001/SysML" xmlns:uml="http://www.omg.org/spec/UML/20161101">
+  <!-- 分层信息为扩展注释，标准工具不可见：layer、stereotypes 及 UML 没有对应项的字段写在各元素的 xmi:Extension（extender = SysArch Studio）中，标准工具（Cameo、Papyrus）会忽略它们；元素与关系用标准 UML 2.5.1 / SysML 1.6 表达。XMI 往返不保证分层无损，需要无损时请用 SysML v2 文本导出。 -->
+  <xmi:Documentation exporter="SysArch Studio" exporterVersion="P3">
+    <xmi:longDescription>分层信息为扩展注释，标准工具不可见：layer、stereotypes 及 UML 没有对应项的字段写在各元素的 xmi:Extension（extender = SysArch Studio）中，标准工具（Cameo、Papyrus）会忽略它们；元素与关系用标准 UML 2.5.1 / SysML 1.6 表达。XMI 往返不保证分层无损，需要无损时请用 SysML v2 文本导出。
+导出：Allocate 4；PartDefinition 6；</xmi:longDescription>
+  </xmi:Documentation>
+  <uml:Model name="case-02-layers" xmi:id="model">
+    <profileApplication xmi:id="model_profileApplication" xmi:type="uml:ProfileApplication">
+      <appliedProfile href="http://www.omg.org/spec/SysML/20181001/SysML.xmi#SysML" xmi:type="uml:Profile"/>
+    </profileApplication>
+    <packagedElement name="感知功能" xmi:id="SA-1" xmi:type="uml:Class">
+      <xmi:Extension extender="SysArch Studio">
+        <layer value="SYSTEM"/>
+      </xmi:Extension>
+    </packagedElement>
+    <packagedElement name="规划功能" xmi:id="SA-2" xmi:type="uml:Class">
+      <xmi:Extension extender="SysArch Studio">
+        <layer value="SYSTEM"/>
+        <stereotype value="function"/>
+        <stereotype value="safety"/>
+      </xmi:Extension>
+    </packagedElement>
+    <packagedElement isAbstract="true" name="计算单元" xmi:id="LA-1" xmi:type="uml:Class">
+      <xmi:Extension extender="SysArch Studio">
+        <layer value="LOGICAL"/>
+      </xmi:Extension>
+    </packagedElement>
+    <packagedElement name="规划单元" xmi:id="LA-2" xmi:type="uml:Class">
+      <xmi:Extension extender="SysArch Studio">
+        <layer value="LOGICAL"/>
+      </xmi:Extension>
+      <generalization general="LA-1" xmi:id="LA-2_generalization1" xmi:type="uml:Generalization"/>
+    </packagedElement>
+    <packagedElement name="域控 SoC" xmi:id="PA-1" xmi:type="uml:Class">
+      <xmi:Extension extender="SysArch Studio">
+        <layer value="PHYSICAL"/>
+      </xmi:Extension>
+    </packagedElement>
+    <packagedElement name="安全 MCU" xmi:id="PA-2" xmi:type="uml:Class">
+      <xmi:Extension extender="SysArch Studio">
+        <layer value="PHYSICAL"/>
+      </xmi:Extension>
+    </packagedElement>
+    <packagedElement client="SA-1" name="感知功能 → 计算单元" supplier="LA-1" xmi:id="AL-1" xmi:type="uml:Abstraction">
+      <xmi:Extension extender="SysArch Studio">
+        <rationale value="感知算法在计算单元上"/>
+        <layer value="LOGICAL"/>
+      </xmi:Extension>
+    </packagedElement>
+    <packagedElement client="SA-2" name="规划功能 → 规划单元" supplier="LA-2" xmi:id="AL-2" xmi:type="uml:Abstraction">
+      <xmi:Extension extender="SysArch Studio">
+        <layer value="LOGICAL"/>
+      </xmi:Extension>
+    </packagedElement>
+    <packagedElement client="LA-1" name="计算单元 → 域控 SoC" supplier="PA-1" xmi:id="AL-3" xmi:type="uml:Abstraction">
+      <xmi:Extension extender="SysArch Studio">
+        <rationale value="算力"/>
+        <layer value="PHYSICAL"/>
+      </xmi:Extension>
+    </packagedElement>
+    <packagedElement client="LA-2" name="规划单元 → 安全 MCU" supplier="PA-2" xmi:id="AL-4" xmi:type="uml:Abstraction">
+      <xmi:Extension extender="SysArch Studio">
+        <rationale value="功能安全"/>
+        <layer value="PHYSICAL"/>
+      </xmi:Extension>
+    </packagedElement>
+  </uml:Model>
+  <sysml:Block base_Class="SA-1" xmi:id="SA-1_Block"/>
+  <sysml:Block base_Class="SA-2" xmi:id="SA-2_Block"/>
+  <sysml:Block base_Class="LA-1" xmi:id="LA-1_Block"/>
+  <sysml:Block base_Class="LA-2" xmi:id="LA-2_Block"/>
+  <sysml:Block base_Class="PA-1" xmi:id="PA-1_Block"/>
+  <sysml:Block base_Class="PA-2" xmi:id="PA-2_Block"/>
+  <sysml:Allocate base_Abstraction="AL-1" xmi:id="AL-1_Allocate"/>
+  <sysml:Allocate base_Abstraction="AL-2" xmi:id="AL-2_Allocate"/>
+  <sysml:Allocate base_Abstraction="AL-3" xmi:id="AL-3_Allocate"/>
+  <sysml:Allocate base_Abstraction="AL-4" xmi:id="AL-4_Allocate"/>
+</xmi:XMI>

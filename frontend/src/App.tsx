@@ -216,7 +216,7 @@ export function App() {
             <option value="locks">编辑锁</option>
             <option value="branches">分支</option>
             <option value="reports">报告</option>
-            <option value="import">导入 SysML v2</option>
+            <option value="import">导入（SysML v2 / XMI）</option>
             <option value="comments">评论</option>
             <option value="admin">角色与审计</option>
           </select>

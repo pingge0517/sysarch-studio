@@ -42,13 +42,20 @@ async function json<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export async function submitImport(text: string, options: { projectName?: string; defaultLayer?: string; fileName?: string }): Promise<ImportJob> {
+/** P3 T8: SysML v2 text, or XMI (our own export or a minimal Cameo export). */
+export type ImportFormat = 'sysmlv2' | 'xmi';
+
+export async function submitImport(
+  text: string,
+  options: { projectName?: string; defaultLayer?: string; fileName?: string },
+  format: ImportFormat = 'sysmlv2',
+): Promise<ImportJob> {
   const query = new URLSearchParams();
   Object.entries(options).forEach(([k, v]) => v && query.set(k, v));
   return json(
-    await fetch(`/api/v1/imports/sysmlv2?${query}`, {
+    await fetch(`/api/v1/imports/${format}?${query}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+      headers: { 'Content-Type': format === 'xmi' ? 'application/xml; charset=utf-8' : 'text/plain; charset=utf-8' },
       body: text,
     }),
   );

@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react';
 import { siriusUrl } from '../baseline/api';
-import type { ImportJob } from './api';
+import type { ImportFormat, ImportJob } from './api';
 import { countsText, getImport, importPending, recentImports, submitImport } from './api';
 
 const LAYERS = ['OPERATIONAL', 'SYSTEM', 'LOGICAL', 'PHYSICAL', 'EPBS'];
 
 /**
- * SysML v2 import (P2 T6): paste text or pick a .sysml file; the import creates a new project. Unsupported syntax
- * fails the whole import with every problem and its line; otherwise the report lists what was imported, which
- * elements took the default layer, what could not be placed (UNMAPPED) and the consistency check.
+ * SysML v2 import (P2 T6) and XMI import (P3 T8: our own export or a minimal Cameo export): paste text or pick a file;
+ * the import creates a new project. Unsupported content fails the whole import with every problem listed; otherwise
+ * the report lists what was imported, which elements took the default layer, what could not be placed or was ignored,
+ * and the consistency check.
  */
 export function ImportPage({ onOpen }: { onOpen: (projectId: string) => void }) {
+  const [format, setFormat] = useState<ImportFormat>('sysmlv2');
   const [text, setText] = useState('');
   const [fileName, setFileName] = useState('');
   const [projectName, setProjectName] = useState('');
@@ -35,13 +37,18 @@ export function ImportPage({ onOpen }: { onOpen: (projectId: string) => void }) 
     if (file) {
       setText(await file.text());
       setFileName(file.name);
+      if (/\.(xmi|uml|xml)$/i.test(file.name)) {
+        setFormat('xmi');
+      } else if (/\.sysml$/i.test(file.name)) {
+        setFormat('sysmlv2');
+      }
     }
   };
 
   const submit = async () => {
     setError(null);
     try {
-      setJob(await submitImport(text, { projectName: projectName.trim(), defaultLayer, fileName }));
+      setJob(await submitImport(text, { projectName: projectName.trim(), defaultLayer, fileName }, format));
     } catch (e) {
       setError((e as Error).message);
     }
@@ -51,10 +58,21 @@ export function ImportPage({ onOpen }: { onOpen: (projectId: string) => void }) 
   return (
     <div className="imports">
       <section>
-        <h2>导入 SysML v2 文本</h2>
-        <p className="hint">只收结构：块、部件、接口定义、端口、连接、需求；SysArch 自己导出的元数据和说明会原样还原。遇到参数、动作、状态机等不支持的语法，整批不导入并逐行列出。导入总是新建一个项目，不会创建 Polarion Work Item。</p>
+        <h2>导入模型</h2>
+        {format === 'sysmlv2' ? (
+          <p className="hint">只收结构：块、部件、接口定义、端口、连接、需求；SysArch 自己导出的元数据和说明会原样还原。遇到参数、动作、状态机等不支持的语法，整批不导入并逐行列出。导入总是新建一个项目，不会创建 Polarion Work Item。</p>
+        ) : (
+          <p className="hint">只接受 SysArch 导出的 XMI，或结构极简的 Cameo 导出（«Block» 类、部件、端口、连接器、«Requirement» 及满足/验证/分配）。其他元素类型整批不导入并逐个列出。分层只能从 SysArch 自己的扩展里还原，Cameo 文件里的元素放在默认层。导入总是新建一个项目。</p>
+        )}
         <div className="row">
-          <input type="file" accept=".sysml,.txt,text/plain" onChange={(e) => void pick(e.target.files?.[0])} aria-label="选择文件" />
+          <label>
+            格式
+            <select value={format} onChange={(e) => setFormat(e.target.value as ImportFormat)} aria-label="格式">
+              <option value="sysmlv2">SysML v2 文本</option>
+              <option value="xmi">XMI（SysArch / Cameo）</option>
+            </select>
+          </label>
+          <input type="file" accept={format === 'xmi' ? '.xmi,.uml,.xml' : '.sysml,.txt,text/plain'} onChange={(e) => void pick(e.target.files?.[0])} aria-label="选择文件" />
           <input value={projectName} onChange={(e) => setProjectName(e.target.value)} placeholder="新项目名称（可选）" aria-label="新项目名称" />
           <label title="文本里没有层信息的元素放在这一层">
             默认层
@@ -70,7 +88,7 @@ export function ImportPage({ onOpen }: { onOpen: (projectId: string) => void }) 
             导入
           </button>
         </div>
-        <textarea value={text} onChange={(e) => setText(e.target.value)} rows={14} placeholder="package '…' { … }" aria-label="SysML v2 文本" />
+        <textarea value={text} onChange={(e) => setText(e.target.value)} rows={14} placeholder={format === 'xmi' ? '<xmi:XMI …>' : "package '…' { … }"} aria-label="导入内容" />
       </section>
 
       {error && (

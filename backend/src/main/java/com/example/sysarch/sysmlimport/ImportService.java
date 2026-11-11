@@ -104,7 +104,26 @@ public class ImportService {
         this.clock = Objects.requireNonNull(clock);
     }
 
+    /** P3 T8: what the text is. */
+    public enum Format {
+        SYSMLV2("SysML v2"), XMI("XMI");
+
+        private final String label;
+
+        Format(String label) {
+            this.label = label;
+        }
+
+        public String label() {
+            return this.label;
+        }
+    }
+
     public Job submit(String text, String projectName, String layer, String sourceName, String user) {
+        return this.submit(Format.SYSMLV2, text, projectName, layer, sourceName, user);
+    }
+
+    public Job submit(Format format, String text, String projectName, String layer, String sourceName, String user) {
         if (text == null || text.isBlank()) {
             throw new ImportRequestException(400, "没有要导入的文本");
         }
@@ -118,26 +137,45 @@ public class ImportService {
         String id = UUID.randomUUID().toString();
         this.jdbc.sql("INSERT INTO import_job (id, status, source_name, default_layer, requested_by, created_at) VALUES (:id, 'QUEUED', :s, :l, :u, :at)")
                 .param("id", id).param("s", sourceName).param("l", defaultLayer.getName()).param("u", user).param("at", OffsetDateTime.now(this.clock)).update();
-        this.executor.execute(() -> this.run(id, text, projectName, defaultLayer, user));
+        this.executor.execute(() -> this.run(format, id, text, projectName, defaultLayer, user));
         return this.get(id);
     }
 
     void run(String id, String text, String projectName, Layer defaultLayer, String user) {
+        this.run(Format.SYSMLV2, id, text, projectName, defaultLayer, user);
+    }
+
+    void run(Format format, String id, String text, String projectName, Layer defaultLayer, String user) {
         this.jdbc.sql("UPDATE import_job SET status = 'RUNNING' WHERE id = :id").param("id", id).update();
         String projectId = null;
         try {
-            SysmlParser.Parsed parsed = SysmlParser.parse(text);
-            if (!parsed.problems().isEmpty()) {
-                this.finish(id, "FAILED", null, null, parsed.problems().stream().map(SysmlParser.Problem::toString).toList(), null);
-                return;
-            }
-            SysmlMapper.Mapped mapped = SysmlMapper.map(parsed.root(), defaultLayer);
-            if (mapped.roots().isEmpty()) {
-                this.finish(id, "FAILED", null, null, List.of("文本里没有可导入的元素（part def、part、port def、port、connection、requirement）"), null);
-                return;
+            SysmlMapper.Mapped mapped;
+            if (format == Format.XMI) {
+                // P3 T8: only our own XMI or a minimal Cameo export; anything else fails the whole import, listed
+                XmiImporter.Result read = XmiImporter.read(text, defaultLayer);
+                if (!read.problems().isEmpty()) {
+                    this.finish(id, "FAILED", null, null, read.problems(), null);
+                    return;
+                }
+                mapped = read.mapped();
+                if (mapped.roots().isEmpty()) {
+                    this.finish(id, "FAILED", null, null, List.of("XMI 里没有可导入的元素（«Block»、部件、端口、连接器、«InterfaceBlock»、«Requirement»）"), null);
+                    return;
+                }
+            } else {
+                SysmlParser.Parsed parsed = SysmlParser.parse(text);
+                if (!parsed.problems().isEmpty()) {
+                    this.finish(id, "FAILED", null, null, parsed.problems().stream().map(SysmlParser.Problem::toString).toList(), null);
+                    return;
+                }
+                mapped = SysmlMapper.map(parsed.root(), defaultLayer);
+                if (mapped.roots().isEmpty()) {
+                    this.finish(id, "FAILED", null, null, List.of("文本里没有可导入的元素（part def、part、port def、port、connection、requirement）"), null);
+                    return;
+                }
             }
             String name = this.uniqueName(projectName != null && !projectName.isBlank() ? projectName.strip()
-                    : (mapped.packageName() == null ? "SysML v2 导入" : mapped.packageName()) + "（导入 "
+                    : (mapped.packageName() == null ? format.label() + " 导入" : mapped.packageName()) + "（导入 "
                             + OffsetDateTime.now(this.clock).atZoneSameInstant(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("MM-dd HH:mm")) + "）");
             IPayload created = this.projects.createProject(new CreateProjectInput(UUID.randomUUID(), name, List.of()));
             if (!(created instanceof CreateProjectSuccessPayload success)) {
@@ -147,6 +185,7 @@ public class ImportService {
             List<EObject> roots = mapped.roots();
             this.models.addDocument(projectId, mapped.packageName() == null ? name : mapped.packageName(), () -> roots);
             Map<String, Object> report = new LinkedHashMap<>();
+            report.put("format", format.name());
             report.put("projectId", projectId);
             report.put("projectName", name);
             report.put("packageName", mapped.packageName());
@@ -158,7 +197,7 @@ public class ImportService {
             report.put("unmapped", mapped.unmapped());
             report.put("consistency", this.consistency(projectId));
             this.finish(id, "DONE", projectId, report, List.of(), null);
-            this.audit.append(projectId, user, com.example.sysarch.audit.AuditLog.IMPORT, null, "SysML v2: " + mapped.total() + " elements into new project " + name + " (job " + id + ")");
+            this.audit.append(projectId, user, com.example.sysarch.audit.AuditLog.IMPORT, null, format.label() + ": " + mapped.total() + " elements into new project " + name + " (job " + id + ")");
             this.logger.info("Imported {} elements into new project {} ({}) by {}", mapped.total(), name, projectId, user);
         } catch (RuntimeException e) {
             this.logger.error("Import job {} failed", id, e);

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmlns:xmi="http://www.omg.org/spec/XMI/20131001" xmlns:sysml="http://www.omg.org/spec/SysML/20181001/SysML" xmlns:uml="http://www.omg.org/spec/UML/20161101">
+  <!-- 分层信息为扩展注释，标准工具不可见：layer、stereotypes 及 UML 没有对应项的字段写在各元素的 xmi:Extension（extender = SysArch Studio）中，标准工具（Cameo、Papyrus）会忽略它们；元素与关系用标准 UML 2.5.1 / SysML 1.6 表达。XMI 往返不保证分层无损，需要无损时请用 SysML v2 文本导出。 -->
+  <xmi:Documentation exporter="SysArch Studio" exporterVersion="P3">
+    <xmi:longDescription>分层信息为扩展注释，标准工具不可见：layer、stereotypes 及 UML 没有对应项的字段写在各元素的 xmi:Extension（extender = SysArch Studio）中，标准工具（Cameo、Papyrus）会忽略它们；元素与关系用标准 UML 2.5.1 / SysML 1.6 表达。XMI 往返不保证分层无损，需要无损时请用 SysML v2 文本导出。
+导出：PartDefinition 3；Requirement 5；Satisfy 4；Verify 1；</xmi:longDescription>
+  </xmi:Documentation>
+  <uml:Model name="case-03-requirement" xmi:id="model">
+    <profileApplication xmi:id="model_profileApplication" xmi:type="uml:ProfileApplication">
+      <appliedProfile href="http://www.omg.org/spec/SysML/20181001/SysML.xmi#SysML" xmi:type="uml:Profile"/>
+    </profileApplication>
+    <packagedElement name="感知融合" xmi:id="PD-1" xmi:type="uml:Class">
+      <xmi:Extension extender="SysArch Studio">
+        <layer value="LOGICAL"/>
+      </xmi:Extension>
+    </packagedElement>
+    <packagedElement name="决策规划" xmi:id="PD-2" xmi:type="uml:Class">
+      <xmi:Extension extender="SysArch Studio">
+        <layer value="LOGICAL"/>
+      </xmi:Extension>
+    </packagedElement>
+    <packagedElement name="执行控制" xmi:id="PD-3" xmi:type="uml:Class">
+      <xmi:Extension extender="SysArch Studio">
+        <layer value="LOGICAL"/>
+      </xmi:Extension>
+    </packagedElement>
+    <packagedElement name="目标周期" xmi:id="RQ-1" xmi:type="uml:Class">
+      <xmi:Extension extender="SysArch Studio">
+        <verifyMethod value="TEST"/>
+        <priority value="1"/>
+        <layer value="SYSTEM"/>
+      </xmi:Extension>
+    </packagedElement>
+    <packagedElement name="轨迹时延" xmi:id="RQ-2" xmi:type="uml:Class">
+      <xmi:Extension extender="SysArch Studio">
+        <verifyMethod value="ANALYSIS"/>
+        <priority value="2"/>
+        <layer value="SYSTEM"/>
+      </xmi:Extension>
+    </packagedElement>
+    <packagedElement name="状态反馈" xmi:id="RQ-3" xmi:type="uml:Class">
+      <xmi:Extension extender="SysArch Studio">
+        <verifyMethod value="INSPECTION"/>
+        <layer value="SYSTEM"/>
+      </xmi:Extension>
+    </packagedElement>
+    <packagedElement name="算力余量" xmi:id="RQ-4" xmi:type="uml:Class">
+      <xmi:Extension extender="SysArch Studio">
+        <verifyMethod value="DEMONSTRATION"/>
+        <priority value="2"/>
+        <layer value="SYSTEM"/>
+      </xmi:Extension>
+    </packagedElement>
+    <packagedElement name="功能安全" xmi:id="RQ-5" xmi:type="uml:Class">
+      <xmi:Extension extender="SysArch Studio">
+        <verifyMethod value="TEST"/>
+        <priority value="1"/>
+        <layer value="SYSTEM"/>
+      </xmi:Extension>
+      <ownedComment annotatedElement="RQ-5" body="来自安全目标 SG-01" xmi:id="RQ-5_comment" xmi:type="uml:Comment"/>
+    </packagedElement>
+    <packagedElement client="PD-1" supplier="RQ-1" xmi:id="RQ-1_satisfy_PD-1" xmi:type="uml:Abstraction"/>
+    <packagedElement client="PD-2" supplier="RQ-1" xmi:id="RQ-1_verify_PD-2" xmi:type="uml:Abstraction"/>
+    <packagedElement client="PD-2" supplier="RQ-2" xmi:id="RQ-2_satisfy_PD-2" xmi:type="uml:Abstraction"/>
+    <packagedElement client="PD-1" supplier="RQ-3" xmi:id="RQ-3_satisfy_PD-1" xmi:type="uml:Abstraction"/>
+    <packagedElement client="PD-3" supplier="RQ-3" xmi:id="RQ-3_satisfy_PD-3" xmi:type="uml:Abstraction"/>
+  </uml:Model>
+  <sysml:Block base_Class="PD-1" xmi:id="PD-1_Block"/>
+  <sysml:Block base_Class="PD-2" xmi:id="PD-2_Block"/>
+  <sysml:Block base_Class="PD-3" xmi:id="PD-3_Block"/>
+  <sysml:Requirement base_Class="RQ-1" id="REQ-001" text="每 50 ms 发布一次目标列表。" xmi:id="RQ-1_Requirement"/>
+  <sysml:Requirement base_Class="RQ-2" id="REQ-002" text="100 ms 内输出轨迹。" xmi:id="RQ-2_Requirement"/>
+  <sysml:Requirement base_Class="RQ-3" id="REQ-003" text="反馈自车状态。" xmi:id="RQ-3_Requirement"/>
+  <sysml:Requirement base_Class="RQ-4" id="REQ-004" text="保留 30% 算力。" xmi:id="RQ-4_Requirement"/>
+  <sysml:Requirement base_Class="RQ-5" id="REQ-005" text="满足 ASIL-D。" xmi:id="RQ-5_Requirement"/>
+  <sysml:Satisfy base_Abstraction="RQ-1_satisfy_PD-1" xmi:id="RQ-1_satisfy_PD-1_Satisfy"/>
+  <sysml:Verify base_Abstraction="RQ-1_verify_PD-2" xmi:id="RQ-1_verify_PD-2_Verify"/>
+  <sysml:Satisfy base_Abstraction="RQ-2_satisfy_PD-2" xmi:id="RQ-2_satisfy_PD-2_Satisfy"/>
+  <sysml:Satisfy base_Abstraction="RQ-3_satisfy_PD-1" xmi:id="RQ-3_satisfy_PD-1_Satisfy"/>
+  <sysml:Satisfy base_Abstraction="RQ-3_satisfy_PD-3" xmi:id="RQ-3_satisfy_PD-3_Satisfy"/>
+</xmi:XMI>

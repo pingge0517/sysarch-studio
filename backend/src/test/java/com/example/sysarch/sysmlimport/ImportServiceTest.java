@@ -143,4 +143,33 @@ class ImportServiceTest {
         assertEquals("FAILED", empty.status());
         assertTrue(empty.problems().get(0).contains("没有可导入的元素"));
     }
+
+    /** P3 T8: the demo exported as XMI comes back into a new project with every element (the SysML v2 job, format XMI). */
+    @Test
+    void theDemoXmiIsImportedIntoANewProject() {
+        Resource demo = new ResourceImpl(URI.createURI("memory:/demo.json"));
+        demo.getContents().addAll(DomainControllerDemo.build());
+        String xmi = com.example.sysarch.export.XmiExporter.export("域控演示", List.of(demo));
+
+        ImportService.Job job = this.imports.submit(ImportService.Format.XMI, xmi, null, null, "demo.xmi", "alice");
+
+        assertEquals("DONE", job.status(), job.problems() + " " + job.error());
+        assertEquals("XMI", job.report().get("format"));
+        assertEquals(28, job.report().get("total"), "every element of the demo");
+        assertEquals(List.of(), job.report().get("defaultedLayer"), "layers come back from the extensions");
+        assertTrue(this.jdbc.sql("SELECT COUNT(*) FROM audit_log WHERE action = 'IMPORT' AND detail LIKE 'XMI:%'").query(Integer.class).single() == 1);
+    }
+
+    /** P3 T8: foreign XMI fails as a whole, every refused element listed, nothing created. */
+    @Test
+    void foreignXmiCreatesNothing() {
+        String xmi = "<xmi:XMI xmlns:xmi=\"http://www.omg.org/spec/XMI/20131001\" xmlns:uml=\"http://www.omg.org/spec/UML/20161101\"><uml:Model xmi:id=\"m\" name=\"M\">"
+                + "<packagedElement xmi:type=\"uml:Activity\" xmi:id=\"a\" name=\"Drive\"/><packagedElement xmi:type=\"uml:Interaction\" xmi:id=\"i\" name=\"Seq\"/>"
+                + "</uml:Model></xmi:XMI>";
+        ImportService.Job job = this.imports.submit(ImportService.Format.XMI, xmi, null, null, "x.xmi", "alice");
+        assertEquals("FAILED", job.status());
+        assertEquals(2, job.problems().size(), job.problems().toString());
+        assertTrue(job.problems().get(0).contains("uml:Activity「Drive」") && job.problems().get(1).contains("uml:Interaction「Seq」"));
+        verify(this.projects, never()).createProject(any());
+    }
 }

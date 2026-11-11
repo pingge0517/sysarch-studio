@@ -305,8 +305,10 @@ public final class XmiExporter {
         for (EObject o : all) {
             switch (o) {
                 case Connection connection -> this.connector(connection);
-                case Requirement requirement -> this.requirementRelations(requirement);
-                case Allocate allocate -> this.allocate(allocate);
+                case Requirement r -> {
+                }
+                case Allocate a -> {
+                }
                 case ItemFlow flow -> {
                     if (flow.getConnection() == null) {
                         this.skipped.merge("ItemFlow", 1, Integer::sum);
@@ -329,6 +331,10 @@ public final class XmiExporter {
                 }
             }
         }
+        // relations in a fixed order (P3 T8: export -> import -> export gives the same text): every requirement's
+        // satisfy/verify in requirement order, then the allocations in document order
+        all.stream().filter(Requirement.class::isInstance).map(Requirement.class::cast).forEach(this::requirementRelations);
+        all.stream().filter(Allocate.class::isInstance).map(Allocate.class::cast).forEach(this::allocate);
         this.resource.getContents().add(this.model);
         this.resource.getContents().addAll(this.applications);
         this.ids.forEach(this.resource::setID);
@@ -578,7 +584,7 @@ public final class XmiExporter {
 
     private String serialize() {
         try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newDefaultInstance(); // the JDK's own JAXP: the output must not depend on what else the classpath brings (docx4j)
             factory.setNamespaceAware(true);
             Map<Object, Object> options = new HashMap<>();
             options.put(XMLResource.OPTION_ENCODING, "UTF-8");
@@ -599,15 +605,32 @@ public final class XmiExporter {
             root.insertBefore(documentation, root.getFirstChild());
             root.insertBefore(document.createComment(" " + NOTICE + " "), documentation);
             this.addExtensions(root);
-            var transformer = TransformerFactory.newInstance().newTransformer();
+            dropWhitespace(root); // EMF's own indentation; the transformer indents again
+            document.setXmlStandalone(true); // no standalone="no" in the declaration
+            var transformer = TransformerFactory.newDefaultInstance().newTransformer(); // JDK's own, as above
             transformer.setOutputProperty(OutputKeys.INDENT, "yes");
             transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
             transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
             StringWriter out = new StringWriter();
             transformer.transform(new DOMSource(document), new StreamResult(out));
-            return out.toString().replace("?><", "?>\n<").replaceAll("(?m)^[ \\t]+$\\n", "");
+            // LF on every platform (the JDK transformer writes the system line separator), declaration on its own line
+            return out.toString().replace("\r\n", "\n").replace("?><", "?>\n<");
         } catch (java.io.IOException | org.xml.sax.SAXException | ParserConfigurationException | TransformerException e) {
             throw new IllegalStateException("XMI export failed: " + e.getMessage(), e);
+        }
+    }
+
+    /** Removes whitespace-only text nodes (indentation), keeping text content and comments. */
+    private static void dropWhitespace(Element element) {
+        Node child = element.getFirstChild();
+        while (child != null) {
+            Node next = child.getNextSibling();
+            if (child.getNodeType() == Node.TEXT_NODE && child.getTextContent().isBlank()) {
+                element.removeChild(child);
+            } else if (child instanceof Element e) {
+                dropWhitespace(e);
+            }
+            child = next;
         }
     }
 

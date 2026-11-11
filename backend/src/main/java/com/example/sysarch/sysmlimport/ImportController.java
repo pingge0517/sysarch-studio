@@ -76,6 +76,20 @@ public class ImportController {
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(this.imports.submit(text, projectName, defaultLayer, fileName, user));
     }
 
+    /**
+     * P3 T8: {@code POST /api/v1/imports/xmi}, the same job as SysML v2 (a new project, all or nothing, consistency in the
+     * report), for our own XMI or a minimal Cameo export (spec §5.2). Switch {@code sysarch.features.xmi}.
+     */
+    @PostMapping(value = "/xmi", consumes = { MediaType.APPLICATION_XML_VALUE, MediaType.TEXT_XML_VALUE, MediaType.APPLICATION_OCTET_STREAM_VALUE, "*/*" })
+    public ResponseEntity<ImportService.Job> submitXmi(@RequestBody(required = false) byte[] body, @RequestParam(value = "projectName", required = false) String projectName,
+            @RequestParam(value = "defaultLayer", required = false) String defaultLayer, @RequestParam(value = "fileName", required = false) String fileName,
+            HttpServletRequest http) {
+        String text = body == null ? null : new String(body, java.nio.charset.StandardCharsets.UTF_8);
+        com.example.sysarch.config.FeatureProperties.require(this.features.isXmi(), "XMI 导入");
+        String user = this.access.require(http, null, com.example.sysarch.access.Permission.IMPORT).user();
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(this.imports.submit(ImportService.Format.XMI, text, projectName, defaultLayer, fileName, user));
+    }
+
     @GetMapping("/{jobId}")
     public ImportService.Job get(@PathVariable String jobId) {
         return this.imports.get(jobId);

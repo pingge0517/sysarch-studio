@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmlns:xmi="http://www.omg.org/spec/XMI/20131001" xmlns:sysml="http://www.omg.org/spec/SysML/20181001/SysML" xmlns:uml="http://www.omg.org/spec/UML/20161101">
+  <!-- 分层信息为扩展注释，标准工具不可见：layer、stereotypes 及 UML 没有对应项的字段写在各元素的 xmi:Extension（extender = SysArch Studio）中，标准工具（Cameo、Papyrus）会忽略它们；元素与关系用标准 UML 2.5.1 / SysML 1.6 表达。XMI 往返不保证分层无损，需要无损时请用 SysML v2 文本导出。 -->
+  <xmi:Documentation exporter="SysArch Studio" exporterVersion="P3">
+    <xmi:longDescription>分层信息为扩展注释，标准工具不可见：layer、stereotypes 及 UML 没有对应项的字段写在各元素的 xmi:Extension（extender = SysArch Studio）中，标准工具（Cameo、Papyrus）会忽略它们；元素与关系用标准 UML 2.5.1 / SysML 1.6 表达。XMI 往返不保证分层无损，需要无损时请用 SysML v2 文本导出。
+导出：Connection 2；InterfaceDef 1；ItemFlow 1；Part 2；PartDefinition 3；Port 4；</xmi:longDescription>
+  </xmi:Documentation>
+  <uml:Model name="case-01-basic" xmi:id="model">
+    <profileApplication xmi:id="model_profileApplication" xmi:type="uml:ProfileApplication">
+      <appliedProfile href="http://www.omg.org/spec/SysML/20181001/SysML.xmi#SysML" xmi:type="uml:Profile"/>
+    </profileApplication>
+    <packagedElement name="CAN" xmi:id="IF-1" xmi:type="uml:Class">
+      <xmi:Extension extender="SysArch Studio">
+        <layer value="LOGICAL"/>
+        <protocol value="CAN 2.0B"/>
+        <dataType value="CanFrame"/>
+      </xmi:Extension>
+    </packagedElement>
+    <packagedElement name="整车控制" xmi:id="PD-1" xmi:type="uml:Class">
+      <xmi:Extension extender="SysArch Studio">
+        <layer value="LOGICAL"/>
+        <stereotype value="system"/>
+      </xmi:Extension>
+      <ownedComment annotatedElement="PD-1" body="顶层块：两个控制器经 CAN 互联" xmi:id="PD-1_comment" xmi:type="uml:Comment"/>
+      <ownedAttribute aggregation="composite" name="动力" type="PD-2" xmi:id="PT-1" xmi:type="uml:Property">
+        <xmi:Extension extender="SysArch Studio">
+          <layer value="LOGICAL"/>
+        </xmi:Extension>
+        <lowerValue value="1" xmi:id="PT-1_lower" xmi:type="uml:LiteralInteger"/>
+        <upperValue value="1" xmi:id="PT-1_upper" xmi:type="uml:LiteralUnlimitedNatural"/>
+      </ownedAttribute>
+      <ownedAttribute aggregation="composite" name="车身" type="PD-3" xmi:id="PT-2" xmi:type="uml:Property">
+        <xmi:Extension extender="SysArch Studio">
+          <layer value="LOGICAL"/>
+        </xmi:Extension>
+        <lowerValue value="0" xmi:id="PT-2_lower" xmi:type="uml:LiteralInteger"/>
+        <upperValue value="1" xmi:id="PT-2_upper" xmi:type="uml:LiteralUnlimitedNatural"/>
+      </ownedAttribute>
+      <ownedConnector name="扭矩请求" xmi:id="CO-1" xmi:type="uml:Connector">
+        <xmi:Extension extender="SysArch Studio">
+          <kind value="ASSEMBLY"/>
+          <interfaceType value="IF-1"/>
+          <itemFlow value="IFL-1|扭矩帧|torque|Torque|LOGICAL"/>
+          <layer value="LOGICAL"/>
+        </xmi:Extension>
+        <end partWithPort="PT-1" role="PO-1" xmi:id="CO-1_end1" xmi:type="uml:ConnectorEnd"/>
+        <end partWithPort="PT-2" role="PO-3" xmi:id="CO-1_end2" xmi:type="uml:ConnectorEnd"/>
+      </ownedConnector>
+      <ownedConnector name="车身状态" xmi:id="CO-2" xmi:type="uml:Connector">
+        <xmi:Extension extender="SysArch Studio">
+          <kind value="ASSEMBLY"/>
+          <interfaceType value="IF-1"/>
+          <layer value="LOGICAL"/>
+        </xmi:Extension>
+        <end partWithPort="PT-2" role="PO-4" xmi:id="CO-2_end1" xmi:type="uml:ConnectorEnd"/>
+        <end partWithPort="PT-1" role="PO-2" xmi:id="CO-2_end2" xmi:type="uml:ConnectorEnd"/>
+      </ownedConnector>
+    </packagedElement>
+    <packagedElement name="动力控制器" xmi:id="PD-2" xmi:type="uml:Class">
+      <xmi:Extension extender="SysArch Studio">
+        <layer value="LOGICAL"/>
+      </xmi:Extension>
+      <ownedAttribute aggregation="composite" name="torqueOut" type="IF-1" xmi:id="PO-1" xmi:type="uml:Port">
+        <xmi:Extension extender="SysArch Studio">
+          <direction value="OUT"/>
+          <partOwner value="PT-1"/>
+          <layer value="LOGICAL"/>
+        </xmi:Extension>
+      </ownedAttribute>
+      <ownedAttribute aggregation="composite" name="statusIn" type="IF-1" xmi:id="PO-2" xmi:type="uml:Port">
+        <xmi:Extension extender="SysArch Studio">
+          <direction value="IN"/>
+          <partOwner value="PT-1"/>
+          <layer value="LOGICAL"/>
+        </xmi:Extension>
+      </ownedAttribute>
+    </packagedElement>
+    <packagedElement name="车身控制器" xmi:id="PD-3" xmi:type="uml:Class">
+      <xmi:Extension extender="SysArch Studio">
+        <layer value="LOGICAL"/>
+      </xmi:Extension>
+      <ownedAttribute aggregation="composite" name="torqueIn" type="IF-1" xmi:id="PO-3" xmi:type="uml:Port">
+        <xmi:Extension extender="SysArch Studio">
+          <direction value="IN"/>
+          <partOwner value="PT-2"/>
+          <layer value="LOGICAL"/>
+        </xmi:Extension>
+      </ownedAttribute>
+      <ownedAttribute aggregation="composite" name="statusOut" type="IF-1" xmi:id="PO-4" xmi:type="uml:Port">
+        <xmi:Extension extender="SysArch Studio">
+          <direction value="OUT"/>
+          <partOwner value="PT-2"/>
+          <layer value="LOGICAL"/>
+        </xmi:Extension>
+      </ownedAttribute>
+    </packagedElement>
+  </uml:Model>
+  <sysml:InterfaceBlock base_Class="IF-1" xmi:id="IF-1_InterfaceBlock"/>
+  <sysml:Block base_Class="PD-1" xmi:id="PD-1_Block"/>
+  <sysml:Block base_Class="PD-2" xmi:id="PD-2_Block"/>
+  <sysml:Block base_Class="PD-3" xmi:id="PD-3_Block"/>
+</xmi:XMI>
