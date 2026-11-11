@@ -5,6 +5,7 @@ image:
   backend: registry.example.com/sysarch/backend:0.3.0
   frontend: registry.example.com/sysarch/frontend:0.3.0
   postgres: postgres:16
+  solver: registry.example.com/sysarch/solver:0.4.0   # solver/Dockerfile
   pullPolicy: IfNotPresent
 
 backend:
@@ -34,6 +35,15 @@ backend:
   reports:
     size: 20Gi           # generated reports, kept 90 days by the backend itself
     storageClass: ""
+
+# P3 T4: parametric solving in an isolated pod (no egress, read-only root file system); the backend uses it as the
+# remote solver. false = no remote solver (POST /solve with solver=remote answers 503).
+solver:
+  enabled: true
+  replicas: 1
+  resources:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits: { cpu: "1", memory: 512Mi }
 
 frontend:
   replicas: 2

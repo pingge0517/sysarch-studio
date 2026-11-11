@@ -110,12 +110,17 @@ kubectl create job --from=cronjob/sysarch-backup sysarch-backup-manual
 | `SYSARCH_FEATURE_BRANCHES=false` | 不能新建分支、不能合并，退回主干直接编辑；已有分支保留 | 合并产生脏数据（APPLY 后元素数与预期不符） |
 | `SYSARCH_FEATURE_REPORTS=false` | 不能生成新报告，已生成的仍可下载 | 报告错误或拖慢服务 |
 | `SYSARCH_FEATURE_IMPORTS=false` | SysML v2 导入返回 503 | 导入后元素数少于预期且没有报错（规格 §10："立即禁用导入入口"） |
+| `SYSARCH_FEATURE_SOLVER=false` | 参数求解 `/solve` 返回 503（P3） | 求解的任一安全防线缺失（P3 规格 §9，见 `docs/solver-security-review.md`） |
 
 ### 5.2 版本回滚
 
 1. `helm history sysarch` 找到上一个版本，`helm rollback sysarch <版本>`。
 2. **数据库结构只增不改**：所有变更集都是新增表或列，旧版本能直接跑在新结构上，回滚版本不用回滚数据库。例外要在发布说明里写明，例如 P1 的接口迁移有专门的离线回滚任务 `./gradlew :backend:rollbackInterfaceMigration`（见 CLAUDE.md）。
 3. 回滚后的验证同 2.1 第 3 步。
+
+## 5a. 参数求解服务（P3）
+
+求解在单独的 Pod 里运行（`templates/solver.yaml`，镜像由 `solver/Dockerfile` 构建）：只读根文件系统、非 root、出站网络全部禁止，只允许 backend 连入。`solver.enabled: true` 时 backend 自动通过 `SYSARCH_SOLVER_REMOTE_URL` 调用它。生产环境不要给 backend 配置 `SYSARCH_SOLVER_PYTHON`（那是本机开发用的、没有容器隔离的方式）。安全评审记录见 `docs/solver-security-review.md`。
 
 ## 6. 审计日志
 

@@ -115,6 +115,15 @@ class ParametricViewTest {
         assertTrue(label.contains("IN U : V") && label.contains("OUT P : W"), "compartment: {direction} {name} : {unit} — " + label);
     }
 
+    /** P3 T4: a solved value (written to defaultValue) is shown after the parameter's name; no value, no suffix. */
+    @Test
+    void aParametersValueIsShownOnTheDiagram() {
+        this.param("P-2").setDefaultValue(90.0);
+        this.param("P-6").setDefaultValue(0.0001234567);
+        List<String> labels = this.render(this.power).getNodes().stream().flatMap(b -> b.getBorderNodes().stream()).map(ParametricViewTest::firstLine).toList();
+        assertEquals(List.of("U", "P = 90", "P", "L", "L", "dT = 0.0001235"), labels);
+    }
+
     @Test
     void theDiagramSurvivesSaveAndReload() throws Exception {
         Resource reloaded = this.saveAndReload();

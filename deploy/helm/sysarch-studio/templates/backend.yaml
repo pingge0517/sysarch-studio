@@ -26,6 +26,9 @@ spec:
           env:
             - { name: POSTGRES_URL, value: {{ include "sysarch.jdbcUrl" . | quote }} }
             - { name: SYSARCH_REPORT_DIR, value: /var/lib/sysarch/reports }
+            {{- if .Values.solver.enabled }}
+            - { name: SYSARCH_SOLVER_REMOTE_URL, value: "http://{{ include "sysarch.name" . }}-solver:8091/" }   # P3 T4
+            {{- end }}
             - { name: JAVA_TOOL_OPTIONS, value: {{ .Values.backend.javaOpts | quote }} }
             {{- range $name, $value := .Values.backend.env }}
             - { name: {{ $name }}, value: {{ $value | quote }} }

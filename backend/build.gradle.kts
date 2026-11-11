@@ -183,3 +183,11 @@ tasks.register<JavaExec>("rollbackInterfaceMigration") {
 tasks.named<Test>("test") {
     maxHeapSize = "2g"
 }
+
+// P3 T4: the spec's solver script (solver/python_solver.py, kept verbatim at the repository root) ships with the
+// backend as the classpath resource solver/python_solver.py; PythonSolver extracts it at start-up.
+tasks.named<ProcessResources>("processResources") {
+    from(rootProject.file("solver/python_solver.py")) {
+        into("solver")
+    }
+}

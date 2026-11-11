@@ -335,6 +335,54 @@ paths:
       responses:
         "202": { description: 导入任务已入队，返回 jobId }
 
+  /solve:
+    post:
+      summary: 对一个约束块集合求解
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [projectId, constraintBlockIds, inputs, targets]
+              properties:
+                projectId: { type: string }
+                constraintBlockIds:
+                  type: array
+                  items: { type: string }
+                solver: { type: string, enum: [python, modelica, remote], default: python }
+                inputs:
+                  type: object
+                  additionalProperties: { type: number }
+                targets:
+                  type: array
+                  items: { type: string }
+                options:
+                  type: object
+                  properties:
+                    tolerance: { type: number, default: 1e-6 }
+                    maxIterations: { type: integer, default: 200 }
+      responses:
+        "200":
+          description: 求解结果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  converged: { type: boolean }
+                  residuals:
+                    type: object
+                    additionalProperties: { type: number }
+                  outputs:
+                    type: object
+                    additionalProperties: { type: number }
+                  iterations: { type: integer }
+                  solverLog: { type: string }
+        "422":
+          description: 约束无法求解（欠定、超定、单位不一致），响应体列出原因
+        "504":
+          description: 求解超时（默认 30 秒）
 components:
   schemas:
     Link:

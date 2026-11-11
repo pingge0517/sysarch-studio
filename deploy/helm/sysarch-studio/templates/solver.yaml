@@ -1,0 +1,65 @@
+{{- if .Values.solver.enabled }}
+# P3 T4: the parametric solver in its own pod (spec P3 §3.4: "独立进程、无网络、只读文件系统的容器"). The backend calls it as
+# the remote solver (SYSARCH_SOLVER_REMOTE_URL, set in backend.yaml); only the backend may connect, it may connect nowhere.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sysarch.name" . }}-solver
+  labels: {{- include "sysarch.labels" . | nindent 4 }}
+    app.kubernetes.io/component: solver
+spec:
+  replicas: {{ .Values.solver.replicas }}
+  selector:
+    matchLabels: { app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/component: solver }
+  template:
+    metadata:
+      labels: {{- include "sysarch.labels" . | nindent 8 }}
+        app.kubernetes.io/component: solver
+    spec:
+      automountServiceAccountToken: false
+      securityContext: { runAsNonRoot: true, runAsUser: 65534, runAsGroup: 65534, seccompProfile: { type: RuntimeDefault } }
+      containers:
+        - name: solver
+          image: {{ .Values.image.solver }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports: [{ name: http, containerPort: 8091 }]
+          env:
+            - { name: SOLVER_TIMEOUT_S, value: "25" }
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+          resources: {{- toYaml .Values.solver.resources | nindent 12 }}
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }   # NumPy/SciPy may want a writable temp dir; nothing else is writable
+      volumes:
+        - name: tmp
+          emptyDir: { sizeLimit: 16Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "sysarch.name" . }}-solver
+  labels: {{- include "sysarch.labels" . | nindent 4 }}
+spec:
+  selector: { app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/component: solver }
+  ports: [{ name: http, port: 8091, targetPort: http }]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "sysarch.name" . }}-solver
+  labels: {{- include "sysarch.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels: { app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/component: solver }
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: { app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/component: backend }
+      ports: [{ port: 8091 }]
+  egress: []   # no network at all, not even DNS
+{{- end }}

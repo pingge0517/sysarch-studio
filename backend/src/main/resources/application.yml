@@ -68,6 +68,13 @@ sysarch:
     branches: ${SYSARCH_FEATURE_BRANCHES:true}
     reports: ${SYSARCH_FEATURE_REPORTS:true}
     imports: ${SYSARCH_FEATURE_IMPORTS:true}
+    solver: ${SYSARCH_FEATURE_SOLVER:true}
+  # P3 T4: the solvers behind POST /api/v1/solve; unset = that solver answers 503. The Python needs NumPy and SciPy.
+  solver:
+    python: ${SYSARCH_SOLVER_PYTHON:}
+    remote-url: ${SYSARCH_SOLVER_REMOTE_URL:}
+    omc: ${SYSARCH_SOLVER_OMC:}
+    timeout: PT30S
   polarion:
     # e.g. http://localhost/polarion; the REST API is <base-url>/rest/v1. No token here: each caller's
     # Polarion token is passed through per request (Authorization: Bearer ...) and never stored.

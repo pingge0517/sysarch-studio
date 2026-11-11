@@ -33,6 +33,15 @@ jobs:
       - name: CJK font for report PDFs
         run: sudo apt-get update -q && sudo apt-get install -y -q fonts-droid-fallback
 
+      # P3 T4: the solver tests run the spec's solver/python_solver.py for real (NumPy + SciPy, the versions used locally)
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: NumPy and SciPy for the solver tests
+        run: |
+          python -m pip install --quiet numpy==2.5.4 scipy==1.18.1
+          echo "SYSARCH_SOLVER_PYTHON=$(python -c 'import sys; print(sys.executable)')" >> "$GITHUB_ENV"
+
       - name: "Gate 1: gradle tests"
         run: ./gradlew test --console=plain
 

@@ -214,7 +214,7 @@ public final class DiagramProjector {
                             many(element, c.feature()).stream().map(item -> LabelTemplates.render(c.itemTemplate(), item)).toList()))
                     .toList();
             DiagramSnapshot.Node node = new DiagramSnapshot.Node(id, id, style.id(), parent == null ? null : elementId(parent),
-                    nullToEmpty(LabelTemplates.render(style.labelTemplate(), element)), LabelTemplates.render(style.subLabelTemplate(), element),
+                    nullToEmpty(LabelTemplates.render(style.labelTemplate(), element)) + valueBadge(element), LabelTemplates.render(style.subLabelTemplate(), element),
                     compartments);
             this.nodes.put(element, node);
             this.elementsById.put(id, element);
@@ -385,6 +385,20 @@ public final class DiagramProjector {
             return values.stream().filter(EObject.class::isInstance).map(EObject.class::cast).toList();
         }
         return value instanceof EObject eObject ? List.of(eObject) : List.of();
+    }
+
+    /**
+     * P3 T4: a parameter with a value (a solver's result is written to {@code defaultValue}) shows it after its name,
+     * read-only on the canvas ("以只读徽标显示"): editing the label renames, the value comes from solving or the properties.
+     */
+    static String valueBadge(EObject element) {
+        if (element instanceof com.example.sysarch.model.Parameter parameter && parameter.eIsSet(com.example.sysarch.model.SysarchPackage.Literals.PARAMETER__DEFAULT_VALUE)) {
+            double v = parameter.getDefaultValue();
+            String text = Math.abs(v) >= 1e6 || (v != 0 && Math.abs(v) < 1e-3) ? String.format(java.util.Locale.ROOT, "%.4g", v)
+                    : new java.math.BigDecimal(v).round(new java.math.MathContext(6)).stripTrailingZeros().toPlainString();
+            return " = " + text;
+        }
+        return "";
     }
 
     private static EObject single(EObject element, String featureName) {
