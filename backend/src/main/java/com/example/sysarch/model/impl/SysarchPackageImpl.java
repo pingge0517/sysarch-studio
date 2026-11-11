@@ -1773,6 +1773,12 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 			   "DirectionKnown", "direction.oclIsUndefined() or direction = \'IN\' or direction = \'OUT\' or direction = \'INOUT\'"
 		   });
 		addAnnotation
+		  (bindingConnectorEClass,
+		   source,
+		   new String[] {
+			   "UnitsMatch", "source.unit = target.unit"
+		   });
+		addAnnotation
 		  (stateMachineEClass,
 		   source,
 		   new String[] {

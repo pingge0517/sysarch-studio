@@ -106,6 +106,16 @@ final class ToolFactory {
                 .filter(node -> canContain(typeOf.apply(node), tool))
                 .<IDiagramElementDescription>map(node -> node)
                 .toList();
+        if (tool.containmentFeature() == null) {
+            // P3 T3 (user's decision): a new root of the diagram root's document, offered on the diagram background
+            return SingleClickOnDiagramElementTool.newSingleClickOnDiagramElementTool(id)
+                    .label(tool.label())
+                    .iconURL(List.of())
+                    .targetDescriptions(List.of())
+                    .appliesToDiagramRoot(true)
+                    .handler(vm -> this.createRoot(vm, tool))
+                    .build();
+        }
         return SingleClickOnDiagramElementTool.newSingleClickOnDiagramElementTool(id)
                 .label(tool.label())
                 .iconURL(List.of())
@@ -147,6 +157,24 @@ final class ToolFactory {
         if (layerView) {
             createType(container.get(), child, tool.defaults());
         }
+        return SiriusDiagramDescriptionFactory.semanticChange();
+    }
+
+    /** A create-child tool without containment feature (P3 T3): the element becomes a root of the clicked element's document. */
+    private IStatus createRoot(VariableManager vm, Tool tool) {
+        Optional<EObject> anchor = vm.get(VariableManager.SELF, EObject.class);
+        if (anchor.isEmpty() || anchor.get().eResource() == null) {
+            return new Failure("未找到要添加到的文档");
+        }
+        EClass type = eClassByName(anchor.get().eClass(), tool.targetClass());
+        if (type == null || type.isAbstract()) {
+            return new Failure("「" + tool.label() + "」不能用于这个元素");
+        }
+        EObject element = EcoreUtil.create(type);
+        applyDefaults(element, tool.defaults());
+        var contents = anchor.get().eResource().getContents();
+        setName(element, defaultName(type, (int) contents.stream().filter(type::isInstance).count() + 1));
+        contents.add(element);
         return SiriusDiagramDescriptionFactory.semanticChange();
     }
 
@@ -206,13 +234,19 @@ final class ToolFactory {
         if (from.isEmpty() || to.isEmpty()) {
             return new Failure("未找到连接的两端");
         }
+        List<ValidationError> errors = List.of();
         if (tool.validateOnDrop() && from.get() instanceof Port sourcePort && to.get() instanceof Port targetPort) {
-            List<ValidationError> errors = this.validator.validateEdgeDrop(sourcePort, targetPort, ConnectionKind.ASSEMBLY);
+            errors = this.validator.validateEdgeDrop(sourcePort, targetPort, ConnectionKind.ASSEMBLY);
+        } else if (tool.validateOnDrop() && from.get() instanceof com.example.sysarch.model.Parameter sourceParameter
+                && to.get() instanceof com.example.sysarch.model.Parameter targetParameter) {
+            errors = this.validator.validateBindingDrop(sourceParameter, targetParameter); // P3 T3: units must match
+        }
+        {
             if (!errors.isEmpty()) {
                 // Nothing has been created: a rejected connection never reaches the model (spec AC-5). The two ports are
                 // marked red, and the status is a Success carrying the error messages only because Sirius refreshes the
                 // diagram after a Success and never after a Failure; it changes nothing in the model.
-                this.rejections.reject(sourcePort, targetPort);
+                this.rejections.reject(from.get(), to.get());
                 return new Success(ChangeKind.SEMANTIC_CHANGE, new java.util.HashMap<>(),
                         errors.stream().map(error -> new Message(error.message(), MessageLevel.ERROR)).toList());
             }
@@ -239,6 +273,9 @@ final class ToolFactory {
     // ---- helpers ----
 
     private static boolean canContain(EClass containerType, Tool tool) {
+        if (tool.containmentFeature() == null) {
+            return false;
+        }
         if (!(containerType.getEStructuralFeature(tool.containmentFeature()) instanceof EReference reference) || !reference.isContainment()) {
             return false;
         }

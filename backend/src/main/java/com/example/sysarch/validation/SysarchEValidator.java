@@ -117,6 +117,7 @@ public final class SysarchEValidator implements EValidator {
         features.put("GuardNotEmpty", List.of("guard", "trigger"));
         features.put("UnitConsistent", List.of("parameters"));
         features.put("Reachability", List.of("states"));
+        features.put("UnitsMatch", List.of("source", "target")); // P3 T3
         return Collections.unmodifiableMap(features);
     }
 }

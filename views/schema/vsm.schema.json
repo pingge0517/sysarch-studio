@@ -90,6 +90,7 @@
           }
         },
         "nodeStyles": { "type": "array", "items": { "$ref": "#/$defs/nodeStyle" } },
+        "nodeStylesExtra": { "description": "P3 T3: more node styles, the same as nodeStyles (appended to them)", "type": "array", "items": { "$ref": "#/$defs/nodeStyle" } },
         "edgeStyles": { "type": "array", "items": { "$ref": "#/$defs/edgeStyle" } },
         "tools": { "type": "array", "items": { "$ref": "#/$defs/tool" } },
         "rows": { "$ref": "#/$defs/axis" },
@@ -104,7 +105,7 @@
       },
       "else": {
         "required": ["domainClass", "rows", "columns", "cells"],
-        "properties": { "synchronization": false, "refresh": false, "autoExpand": false, "filters": false, "nodeStyles": false, "edgeStyles": false, "tools": false }
+        "properties": { "synchronization": false, "refresh": false, "autoExpand": false, "filters": false, "nodeStyles": false, "nodeStylesExtra": false, "edgeStyles": false, "tools": false }
       }
     },
     "axis": {
@@ -231,7 +232,7 @@
       "allOf": [
         {
           "if": { "properties": { "action": { "const": "create-child" } } },
-          "then": { "required": ["targetClass", "containmentFeature"] }
+          "then": { "required": ["targetClass"] }
         },
         {
           "if": { "properties": { "action": { "const": "create-edge" } } },

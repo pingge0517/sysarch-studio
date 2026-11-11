@@ -228,7 +228,9 @@ public final class SiriusDiagramDescriptionFactory {
         List<NodeDescription> result = new ArrayList<>();
         for (NodeStyle style : borderStyles) {
             EClass styleType = this.eClass(style.appliesTo());
-            if (styleType.getEStructuralFeature(style.affiliationFeature()) instanceof EReference affiliation
+            boolean onContainer = DiagramProjector.EOBJECT_CONTAINER.equals(style.affiliationFeature())
+                    && parentType.getEAllContainments().stream().anyMatch(r -> r.getEReferenceType().isSuperTypeOf(styleType)); // P3 T3
+            if (onContainer || styleType.getEStructuralFeature(style.affiliationFeature()) instanceof EReference affiliation
                     && affiliation.getEReferenceType().isSuperTypeOf(parentType)) {
                 String id = diagramId + "/node/" + parentStyleId + "/border/" + style.id();
                 NodeDescription description = this.nodeDescription(source, id, style, policy,

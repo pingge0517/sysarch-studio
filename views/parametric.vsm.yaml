@@ -1,0 +1,59 @@
+vsm: "1.0"
+viewpoint:
+  id: "sysarch.core"
+  label: "系统架构建模"
+  metamodelUri: "http://example.com/sysarch/1.0"
+  priority: 10
+
+representations:
+  - id: "parametric"
+    label: "参数图（Parametric）"
+    kind: "diagram"
+    domainClass: "sysarch:ConstraintBlock"
+    synchronization: "auto"
+    refresh:
+      mode: "incremental"
+      budgetMs: 2000
+    autoExpand:
+      - feature: "parameters"
+        maxDepth: 1
+    nodeStyles:
+      - id: "constraintBlock"
+        appliesTo: "sysarch:ConstraintBlock"
+        shape: "rectangle"
+        color: "#FFFFFF"
+        borderColor: "#252525"
+        labelExpression: "{name}"
+        compartments:
+          - feature: "parameters"
+            label: "parameters"
+            itemExpression: "{direction} {name} : {unit}"
+    nodeStylesExtra:
+      - id: "parameter"
+        appliesTo: "sysarch:Parameter"
+        shape: "square"
+        width: 8
+        height: 8
+        isBorderNode: true
+        affiliationFeature: "eContainer"
+        labelPosition: "outside"
+        labelExpression: "{name}"
+    edgeStyles:
+      - id: "binding"
+        domainClass: "sysarch:BindingConnector"
+        sourceEnd: "source"
+        targetEnd: "target"
+        routing: "straight"
+        lineStyle: "solid"
+        color: "#252525"
+        labelExpression: ""
+    tools:
+      - id: "createConstraint"
+        label: "新建约束块"
+        action: "create-child"
+        targetClass: "sysarch:ConstraintBlock"
+      - id: "bind"
+        label: "绑定参数"
+        action: "create-edge"
+        targetClass: "sysarch:BindingConnector"
+        validateOnDrop: true

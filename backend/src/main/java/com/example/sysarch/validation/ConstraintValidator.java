@@ -117,6 +117,19 @@ public final class ConstraintValidator implements AutoCloseable {
         return this.check(candidate, EDGE_DROP_CONSTRAINTS);
     }
 
+    /**
+     * Checks a binding the user is about to drop between two parameters (P3 T3), without adding anything to the model:
+     * only {@code UnitsMatch} runs, on a transient {@code BindingConnector}.
+     */
+    public synchronized List<ValidationError> validateBindingDrop(com.example.sysarch.model.Parameter source, com.example.sysarch.model.Parameter target) {
+        com.example.sysarch.model.BindingConnector candidate = SysarchFactory.eINSTANCE.createBindingConnector(); // never added to a resource
+        candidate.setSource(source); // no opposites: the parameters are not modified
+        candidate.setTarget(target);
+        return this.check(candidate, BINDING_DROP_CONSTRAINTS);
+    }
+
+    static final Set<String> BINDING_DROP_CONSTRAINTS = Set.of("UnitsMatch");
+
     @Override
     public synchronized void close() {
         if (!this.closed) {
@@ -214,6 +227,9 @@ public final class ConstraintValidator implements AutoCloseable {
                     ids(machine));
             case com.example.sysarch.model.Transition transition when code.equals("GuardNotEmpty") -> new ValidationError(code, id,
                     "迁移「" + name(transition) + "」有守卫条件 [" + transition.getGuard() + "] 却没有触发事件；有 guard 必须有 trigger", ids(transition));
+            case com.example.sysarch.model.BindingConnector binding when code.equals("UnitsMatch") -> new ValidationError(code, id,
+                    "单位不一致：" + unitOf(binding.getSource()) + " → " + unitOf(binding.getTarget()) + "；只能绑定单位相同的参数（不做单位换算）",
+                    ids(binding.getSource(), binding.getTarget()));
             case com.example.sysarch.model.Parameter parameter when code.equals("DirectionKnown") -> new ValidationError(code, id,
                     "参数「" + name(parameter) + "」的方向只能是 IN、OUT 或 INOUT，现在是 " + parameter.getDirection(), ids(parameter));
             case Port port when code.equals("InterfaceTypeRequired") -> new ValidationError(code, id,
@@ -221,6 +237,10 @@ public final class ConstraintValidator implements AutoCloseable {
             default -> code.equals("NameNotEmpty") ? new ValidationError(code, id, "名称不能为空", ids(element))
                     : new ValidationError(code, id, "违反约束 " + code, ids(element));
         };
+    }
+
+    private static String unitOf(com.example.sysarch.model.Parameter parameter) {
+        return parameter == null ? "（空）" : name(parameter) + " [" + (parameter.getUnit() == null || parameter.getUnit().isEmpty() ? "无单位" : parameter.getUnit()) + "]";
     }
 
     private static String connectionMessage(String code, Connection connection) {

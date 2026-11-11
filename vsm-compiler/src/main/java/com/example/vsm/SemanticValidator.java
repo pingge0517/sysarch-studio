@@ -24,6 +24,9 @@ import org.eclipse.emf.ecore.EStructuralFeature;
  */
 final class SemanticValidator {
 
+    /** P3 T3: the reserved affiliationFeature value "the element that contains it". */
+    static final String EOBJECT_CONTAINER = "eContainer";
+
     private static final Pattern PLACEHOLDER = Pattern.compile("\\{([^{}]*)}");
 
     private static final Pattern FEATURE_PATH = Pattern.compile("[a-z][A-Za-z0-9_]*(\\.[a-z][A-Za-z0-9_]*)*");
@@ -102,8 +105,11 @@ final class SemanticValidator {
                 layerScopes.add(expr);
             }
         }
-        this.checkUniqueIds(representation.items("nodeStyles"), "node style");
-        for (YamlNode nodeStyle : representation.items("nodeStyles")) {
+        // P3 T3: nodeStylesExtra continues nodeStyles (user's decision), ids unique across both
+        List<YamlNode> nodeStyles = new ArrayList<>(representation.items("nodeStyles"));
+        nodeStyles.addAll(representation.items("nodeStylesExtra"));
+        this.checkUniqueIds(nodeStyles, "node style");
+        for (YamlNode nodeStyle : nodeStyles) {
             this.checkNodeStyle(nodeStyle);
         }
         this.checkUniqueIds(representation.items("edgeStyles"), "edge style");
@@ -221,7 +227,14 @@ final class SemanticValidator {
             } else {
                 // Spec §4.4 / §11.2 #2: a wrong parent reference makes the port float in the middle of the canvas.
                 EReference reference = Metamodel.reference(appliesTo, affiliation.scalar());
-                if (reference == null) {
+                if (EOBJECT_CONTAINER.equals(affiliation.scalar())) {
+                    // P3 T3 (user's decision): the reserved word "eContainer" = the element that contains it, for a
+                    // class without a container reference of its own (Parameter in ConstraintBlock.parameters). It must
+                    // be containable at all, or the node could never be placed.
+                    if (this.metamodel.containmentsOf(appliesTo).isEmpty()) {
+                        this.error(affiliation.line(), "affiliationFeature 'eContainer': no containment reference can hold " + this.metamodel.ref(appliesTo));
+                    }
+                } else if (reference == null) {
                     this.unknownFeature(affiliation.line(), affiliation.scalar(), appliesTo, "");
                 } else if (!reference.isContainer()) {
                     this.error(affiliation.line(), "affiliationFeature '" + affiliation.scalar() + "' on " + this.metamodel.ref(appliesTo)
@@ -273,7 +286,10 @@ final class SemanticValidator {
                         + "' creates layer " + layer + ", which this view's layer filter hides; set defaults.layer to the view's layer");
             }
         }
-        if ("create-child".equals(action)) {
+        if ("create-child".equals(action) && !tool.has("containmentFeature")) {
+            // P3 T3 (user's decision): without containmentFeature the new element becomes a root of the document of
+            // the diagram's root element (a ConstraintBlock next to the others). Nothing to check against the root.
+        } else if ("create-child".equals(action)) {
             YamlNode featureNode = tool.get("containmentFeature");
             EReference reference = Metamodel.reference(domainClass, featureNode.scalar());
             if (reference == null) {

@@ -34,7 +34,8 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
  */
 public final class ChangeGuard {
 
-    public static final Set<String> VETOED = Set.of("LayerAdjacentOnly", "NoSelfAllocate", "PortInterfaceAssignable", "NoSelfLoop", "DirectionCompatible");
+    public static final Set<String> VETOED = Set.of("LayerAdjacentOnly", "NoSelfAllocate", "PortInterfaceAssignable", "NoSelfLoop", "DirectionCompatible",
+            "UnitsMatch"); // P3 T3 (user's decision): a binding between different units is rolled back like a port connection
 
     private final ConstraintValidator constraints;
 

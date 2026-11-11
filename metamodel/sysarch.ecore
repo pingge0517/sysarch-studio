@@ -170,6 +170,10 @@
   </eClassifiers>
 
   <eClassifiers xsi:type="ecore:EClass" name="BindingConnector" eSuperTypes="#//ArchElement">
+    <!-- P3 T3 (spec T3 step 2, user's decision): both ends in the same unit; checked on drop and vetoed on save -->
+    <eAnnotations source="http://www.eclipse.org/emf/2002/Ecore/OCL/Pivot">
+      <details key="UnitsMatch" value="source.unit = target.unit"/>
+    </eAnnotations>
     <eStructuralFeatures xsi:type="ecore:EReference" name="source" lowerBound="1" eType="#//Parameter"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="target" lowerBound="1" eType="#//Parameter"/>
   </eClassifiers>

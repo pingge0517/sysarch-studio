@@ -17,7 +17,7 @@ package com.example.sysarch.model;
  * </ul>
  *
  * @see com.example.sysarch.model.SysarchPackage#getBindingConnector()
- * @model
+ * @model annotation="http://www.eclipse.org/emf/2002/Ecore/OCL/Pivot UnitsMatch='source.unit = target.unit'"
  * @generated
  */
 public interface BindingConnector extends ArchElement {

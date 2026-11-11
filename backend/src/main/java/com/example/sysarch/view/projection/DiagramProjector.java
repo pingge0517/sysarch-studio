@@ -61,6 +61,9 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
  */
 public final class DiagramProjector {
 
+    /** P3 T3: the reserved affiliationFeature "the element that contains it" (vsm-compiler accepts it). */
+    public static final String EOBJECT_CONTAINER = "eContainer";
+
     static final String ABSTRACT_FEATURE = "isAbstract";
 
     static final String TYPE_FEATURE = "typedBy";
@@ -387,6 +390,9 @@ public final class DiagramProjector {
     private static EObject single(EObject element, String featureName) {
         if (element == null || featureName == null) {
             return null;
+        }
+        if (EOBJECT_CONTAINER.equals(featureName)) {
+            return element.eContainer(); // P3 T3: "the element that contains it" (vsm-compiler's reserved word)
         }
         EStructuralFeature feature = element.eClass().getEStructuralFeature(featureName);
         return feature instanceof EReference reference && !reference.isMany() && element.eGet(feature) instanceof EObject value ? value : null;

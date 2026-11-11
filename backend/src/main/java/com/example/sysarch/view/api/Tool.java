@@ -9,7 +9,8 @@ import java.util.Objects;
  * Canvas tool (VSM {@code tools[]}). Only the fields relevant to {@code action} are set; the others are null.
  *
  * @param targetClass element type the tool creates, as {@code nsPrefix::EClass}
- * @param containmentFeature for create-child: the containment reference of the diagram root that receives it
+ * @param containmentFeature for create-child: the containment reference of the diagram root that receives it; null (P3 T3):
+ *        the new element becomes a root of the document that holds the diagram root
  * @param validateOnDrop for create-edge: run constraint checks before the edge is stored (spec AC-5)
  * @param defaults for create-child: attribute values (as their Ecore literal) a new element gets, in YAML order
  *        (spec P1 §3.5 {@code defaults}, e.g. {@code layer = SYSTEM})

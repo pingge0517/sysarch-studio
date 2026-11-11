@@ -194,7 +194,8 @@ class ValidationMatrixTest {
                 "ConstraintBlock", List.of("HasExpression", "ParamsHaveUnit", "NoDuplicateParamName"), // P3 T1–T2, metamodel v1.3
                 "Parameter", List.of("DirectionKnown"),
                 "StateMachine", List.of("SingleInitial"), // P3 T2
-                "Transition", List.of("GuardNotEmpty")), validator.constraintNames());
+                "Transition", List.of("GuardNotEmpty"),
+                "BindingConnector", List.of("UnitsMatch")), validator.constraintNames()); // P3 T3
     }
 
     private Port port(String interfaceType, PortDirection direction) {

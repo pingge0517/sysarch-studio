@@ -63,6 +63,11 @@ class VsmCompilerTest {
     /** sha256 of the spec's [COPY] block P1 §3.2: the SA view must stay verbatim although a template now produces it. */
     private static final String SPEC_SA_SHA256 = "810dba23575cea7c942a8d2b098f2b108781ca51d638295ffeaca2a379134e80";
 
+    /** sha256 of the spec's [COPY] block P3 §3.1 (views/parametric.vsm.yaml stays verbatim). */
+    private static final String SPEC_PARAMETRIC_SHA256 = "1c1bc4c19dd25e2ac3c58cb0d564a430c12655df73006b3a7eface97dfe328ca";
+
+    private static final String PARAMETRIC = "views/parametric.vsm.yaml";
+
     @TempDir
     Path temp;
 
@@ -88,7 +93,8 @@ class VsmCompilerTest {
         assertEquals(VsmCompiler.OK, result.exitCode(), result.err());
         assertEquals(List.of("AllocationMatrixTableDescriptionProvider.java", "BddDiagramDescriptionProvider.java", "IbdDiagramDescriptionProvider.java",
                 "LaArchitectureDiagramDescriptionProvider.java",
-                "PaArchitectureDiagramDescriptionProvider.java", "RequirementTraceTableDescriptionProvider.java", "SaFunctionChainDiagramDescriptionProvider.java",
+                "PaArchitectureDiagramDescriptionProvider.java", "ParametricDiagramDescriptionProvider.java", "RequirementTraceTableDescriptionProvider.java",
+                "SaFunctionChainDiagramDescriptionProvider.java",
                 "ViewpointRegistry.java"),
                 fileNames(this.output("out")));
         String bdd = Files.readString(this.output("out").resolve("BddDiagramDescriptionProvider.java"));
@@ -246,6 +252,35 @@ class VsmCompilerTest {
         String after = Files.readString(this.output("after").resolve("BddDiagramDescriptionProvider.java"));
         assertNotEquals(before, after);
         assertEquals(before.replaceFirst("\\.borderColor\\(\"#1A2B4A\"\\)", ".borderColor(\"#1C3D2E\")"), after);
+    }
+
+    // =========================================================== P3 T3: the parametric view's DSL additions (user's decisions)
+
+    /**
+     * The verbatim YAML compiles: nodeStylesExtra continues nodeStyles, "eContainer" puts the parameters on the block that
+     * contains them, a create-child tool without containmentFeature creates a document root.
+     */
+    @Test
+    void theParametricViewIsVerbatimAndCompiles() throws IOException {
+        assertEquals(SPEC_PARAMETRIC_SHA256, sha256File(REPO.resolve(PARAMETRIC)));
+        Result result = this.compile(this.output("out"));
+        assertEquals(VsmCompiler.OK, result.exitCode(), result.err());
+        String parametric = Files.readString(this.output("out").resolve("ParametricDiagramDescriptionProvider.java"));
+        assertTrue(parametric.contains(".borderNode(\"eContainer\")"), "the extra style is a border node on its container");
+        assertTrue(parametric.contains("Tool.createChild(\"createConstraint\", \"新建约束块\", \"sysarch::ConstraintBlock\", null)"), "no containment feature: a root");
+        assertTrue(parametric.indexOf("\"constraintBlock\"") < parametric.indexOf("\"parameter\""), "nodeStylesExtra after nodeStyles");
+    }
+
+    @Test
+    void nodeStyleIdsAreUniqueAcrossNodeStylesAndNodeStylesExtra() throws IOException {
+        this.edit(PARAMETRIC, "      - id: \"parameter\"", "      - id: \"constraintBlock\"");
+        this.assertFails(PARAMETRIC + ":32 duplicate node style id 'constraintBlock'");
+    }
+
+    @Test
+    void eContainerNeedsAClassSomethingCanContain() throws IOException {
+        this.edit(PARAMETRIC, "        appliesTo: \"sysarch:Parameter\"", "        appliesTo: \"sysarch:BindingConnector\"");
+        this.assertFails(PARAMETRIC + ":38 affiliationFeature 'eContainer': no containment reference can hold sysarch:BindingConnector");
     }
 
     // =========================================================== P1 T3: layer views, filters, defaults, templates

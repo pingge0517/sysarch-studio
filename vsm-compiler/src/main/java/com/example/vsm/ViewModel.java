@@ -144,7 +144,7 @@ public final class ViewModel {
                 constant(r.text("synchronization")), refresh == null ? null : refresh.integer("budgetMs"),
                 r.items("autoExpand").stream().map(a -> new AutoExpand(a.text("feature"), a.integer("maxDepth"))).toList(),
                 r.items("filters").stream().map(f -> new Filter(f.text("id"), f.text("label"), f.text("expression"), layerScope(f.text("expression")))).toList(),
-                r.items("nodeStyles").stream().map(ViewModel::node).toList(),
+                java.util.stream.Stream.concat(r.items("nodeStyles").stream(), r.items("nodeStylesExtra").stream()).map(ViewModel::node).toList(), // P3 T3
                 r.items("edgeStyles").stream().map(ViewModel::edge).toList(),
                 r.items("tools").stream().map(ViewModel::tool).toList());
     }

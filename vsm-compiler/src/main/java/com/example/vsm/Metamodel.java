@@ -68,6 +68,19 @@ final class Metamodel {
         return eClass.getEStructuralFeature(name) instanceof EReference reference ? reference : null;
     }
 
+    /**
+     * The containment references of the package that can hold an {@code eClass} (P3 T3: a border node with
+     * {@code affiliationFeature: eContainer} is drawn on whatever contains its element).
+     */
+    List<EReference> containmentsOf(EClass eClass) {
+        return this.ePackage.getEClassifiers().stream()
+                .filter(EClass.class::isInstance)
+                .map(EClass.class::cast)
+                .flatMap(c -> c.getEReferences().stream())
+                .filter(r -> r.isContainment() && r.getEReferenceType().isSuperTypeOf(eClass))
+                .toList();
+    }
+
     /** {@code eClass} and every class in the package that inherits from it. */
     List<EClass> selfAndSubclasses(EClass eClass) {
         return this.ePackage.getEClassifiers().stream()

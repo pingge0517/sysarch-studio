@@ -100,7 +100,7 @@ public class ${d.className()} implements IDiagramDescriptionProvider {
 </#list>
 <#list d.tools() as t>
 <#if t.action() == "CREATE_CHILD">
-            .addTool(Tool.createChild(${q(t.id())}, ${q(t.label())}, ${q(t.targetClass())}, ${q(t.containmentFeature())})<#list t.defaults() as v>
+            .addTool(Tool.createChild(${q(t.id())}, ${q(t.label())}, ${q(t.targetClass())}, <#if t.containmentFeature()??>${q(t.containmentFeature())}<#else>null</#if>)<#list t.defaults() as v>
                 .withDefault(${q(v.feature())}, ${q(v.value())})</#list>)
 <#elseif t.action() == "CREATE_EDGE">
             .addTool(Tool.createEdge(${q(t.id())}, ${q(t.label())}, ${q(t.targetClass())}, ${t.validateOnDrop()?c}))
