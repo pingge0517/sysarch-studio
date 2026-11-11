@@ -94,7 +94,7 @@ class VsmCompilerTest {
         assertEquals(List.of("AllocationMatrixTableDescriptionProvider.java", "BddDiagramDescriptionProvider.java", "IbdDiagramDescriptionProvider.java",
                 "LaArchitectureDiagramDescriptionProvider.java",
                 "PaArchitectureDiagramDescriptionProvider.java", "ParametricDiagramDescriptionProvider.java", "RequirementTraceTableDescriptionProvider.java",
-                "SaFunctionChainDiagramDescriptionProvider.java",
+                "SaFunctionChainDiagramDescriptionProvider.java", "StateMachineDiagramDescriptionProvider.java",
                 "ViewpointRegistry.java"),
                 fileNames(this.output("out")));
         String bdd = Files.readString(this.output("out").resolve("BddDiagramDescriptionProvider.java"));
@@ -281,6 +281,41 @@ class VsmCompilerTest {
     void eContainerNeedsAClassSomethingCanContain() throws IOException {
         this.edit(PARAMETRIC, "        appliesTo: \"sysarch:Parameter\"", "        appliesTo: \"sysarch:BindingConnector\"");
         this.assertFails(PARAMETRIC + ":38 affiliationFeature 'eContainer': no containment reference can hold sysarch:BindingConnector");
+    }
+
+    // =========================================================== P3 T5: state machine (behaviour template, when, circles)
+
+    private static final String STATE_MACHINE = "views/state-machine.vsm.yaml";
+
+    /** The state machine comes from the behaviour template; when, the circle shapes and the edge containment are generated. */
+    @Test
+    void theStateMachineViewCompilesFromTheBehaviourTemplate() throws IOException {
+        Result result = this.compile(this.output("out"));
+        assertEquals(VsmCompiler.OK, result.exitCode(), result.err());
+        String generated = Files.readString(this.output("out").resolve("StateMachineDiagramDescriptionProvider.java"));
+        assertTrue(generated.contains(".shape(Shape.FILLED_CIRCLE)") && generated.contains(".shape(Shape.DOUBLE_CIRCLE)"), generated);
+        assertTrue(generated.contains(".when(\"isInitial\")") && generated.contains(".when(\"isFinal\")"));
+        assertTrue(generated.contains(".labelTemplate(\"{trigger}[{guard}]/{effect}\")"));
+        assertTrue(generated.contains("Tool.createEdge(\"connect\", \"新建迁移\", \"sysarch::Transition\", true, \"transitions\")"), "stored in the machine");
+        assertTrue(generated.contains(".withDefault(\"isInitial\", \"true\")"));
+    }
+
+    @Test
+    void aWhenMayOnlyNameAttributesOfItsClass() throws IOException {
+        this.edit(STATE_MACHINE, "        when: \"isInitial\"", "        when: \"layer == 'SYSTEM' and source\"");
+        this.assertFails(STATE_MACHINE + ":23 invalid when \"layer == 'SYSTEM' and source\": 'source' is not allowed: it is not an attribute of the element");
+    }
+
+    @Test
+    void aWhenFlagMustBeBoolean() throws IOException {
+        this.edit(STATE_MACHINE, "        when: \"isInitial\"", "        when: \"doBehavior\"");
+        this.assertFails(STATE_MACHINE + ":23 'doBehavior' is not boolean");
+    }
+
+    @Test
+    void anEdgeContainmentMustHoldTheEdge() throws IOException {
+        this.edit(STATE_MACHINE, "        containmentFeature: \"transitions\"", "        containmentFeature: \"states\"");
+        this.assertFails(STATE_MACHINE + ":78 sysarch:Transition cannot be stored in sysarch:StateMachine.states");
     }
 
     // =========================================================== P1 T3: layer views, filters, defaults, templates

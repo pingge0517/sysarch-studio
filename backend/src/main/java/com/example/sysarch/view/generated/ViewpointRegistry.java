@@ -32,6 +32,7 @@ public class ViewpointRegistry {
             new Representation("parametric", "参数图（Parametric）", RepresentationKind.DIAGRAM),
             new Representation("requirement-trace", "需求追溯矩阵", RepresentationKind.TABLE),
             new Representation("sa-function-chain", "系统功能链（SA）", RepresentationKind.DIAGRAM),
+            new Representation("state-machine", "状态机图（State Machine）", RepresentationKind.DIAGRAM),
             new Representation("bdd", "块定义图（BDD）", RepresentationKind.DIAGRAM),
             new Representation("ibd", "内部块图（IBD）", RepresentationKind.DIAGRAM)
         ))
@@ -41,12 +42,13 @@ public class ViewpointRegistry {
 
     private final Map<String, ITableDescriptionProvider> tableProviders;
 
-    public ViewpointRegistry(LaArchitectureDiagramDescriptionProvider laArchitectureProvider, PaArchitectureDiagramDescriptionProvider paArchitectureProvider, ParametricDiagramDescriptionProvider parametricProvider, SaFunctionChainDiagramDescriptionProvider saFunctionChainProvider, BddDiagramDescriptionProvider bddProvider, IbdDiagramDescriptionProvider ibdProvider, AllocationMatrixTableDescriptionProvider allocationMatrixTableProvider, RequirementTraceTableDescriptionProvider requirementTraceTableProvider) {
+    public ViewpointRegistry(LaArchitectureDiagramDescriptionProvider laArchitectureProvider, PaArchitectureDiagramDescriptionProvider paArchitectureProvider, ParametricDiagramDescriptionProvider parametricProvider, SaFunctionChainDiagramDescriptionProvider saFunctionChainProvider, StateMachineDiagramDescriptionProvider stateMachineProvider, BddDiagramDescriptionProvider bddProvider, IbdDiagramDescriptionProvider ibdProvider, AllocationMatrixTableDescriptionProvider allocationMatrixTableProvider, RequirementTraceTableDescriptionProvider requirementTraceTableProvider) {
         Map<String, IDiagramDescriptionProvider> byId = new LinkedHashMap<>();
         byId.put("la-architecture", laArchitectureProvider);
         byId.put("pa-architecture", paArchitectureProvider);
         byId.put("parametric", parametricProvider);
         byId.put("sa-function-chain", saFunctionChainProvider);
+        byId.put("state-machine", stateMachineProvider);
         byId.put("bdd", bddProvider);
         byId.put("ibd", ibdProvider);
         this.providers = Collections.unmodifiableMap(byId);

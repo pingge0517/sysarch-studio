@@ -256,6 +256,18 @@ final class ToolFactory {
         connection.eSet(connectionType.getEStructuralFeature(style.targetEnd()), to.get());
         setName(connection, name(from.get()) + " → " + name(to.get()));
         copyAttribute(from.get(), connection, "interfaceType");
+        if (tool.containmentFeature() != null) {
+            // P3 T5: stored in the diagram root (a Transition in its StateMachine's transitions)
+            Optional<EObject> root = SiriusDiagramDescriptionFactory.diagramRoot(vm);
+            if (root.isEmpty() || !(root.get().eClass().getEStructuralFeature(tool.containmentFeature()) instanceof EReference containment)
+                    || !containment.isContainment() || !containment.getEReferenceType().isInstance(connection)) {
+                return new Failure("无法把 " + connectionType.getName() + " 放进当前图的根元素");
+            }
+            @SuppressWarnings("unchecked")
+            List<EObject> contents = (List<EObject>) root.get().eGet(containment);
+            contents.add(connection);
+            return SiriusDiagramDescriptionFactory.semanticChange();
+        }
         // Connections have no container in the metamodel: they live at the top of the document of the ports.
         from.get().eResource().getContents().add(connection);
         return SiriusDiagramDescriptionFactory.semanticChange();

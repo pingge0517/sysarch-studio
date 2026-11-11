@@ -47,14 +47,14 @@ public final class ViewModel {
     /** @param affiliationFeature non-null exactly for border nodes */
     public record Node(String id, String appliesTo, String shape, String color, String borderColor, Integer borderWidth, boolean headerBold,
             boolean italic, Integer width, Integer height, String affiliationFeature, String labelPosition, String labelTemplate,
-            String subLabelTemplate, List<Compartment> compartments) {
+            String subLabelTemplate, List<Compartment> compartments, String when) {
     }
 
     public record Compartment(String feature, String label, String itemTemplate) {
     }
 
     public record Edge(String id, String domainType, String sourceEnd, String targetEnd, String routing, String arrow, String lineStyle,
-            String color, String labelTemplate) {
+            String color, String labelTemplate, String when) {
     }
 
     /** @param defaults create-child: attribute values a new element gets (P1 {@code defaults}), in YAML order */
@@ -154,13 +154,14 @@ public final class ViewModel {
                 n.text("borderColor"), n.integer("borderWidth"), n.bool("headerBold"), n.bool("italic"), n.integer("width"),
                 n.integer("height"), n.bool("isBorderNode") ? n.text("affiliationFeature") : null, constant(n.text("labelPosition")),
                 n.text("labelExpression"), n.text("subLabelExpression"),
-                n.items("compartments").stream().map(c -> new Compartment(c.text("feature"), c.text("label"), c.text("itemExpression"))).toList());
+                n.items("compartments").stream().map(c -> new Compartment(c.text("feature"), c.text("label"), c.text("itemExpression"))).toList(),
+                n.text("when"));
     }
 
     private static Edge edge(YamlNode e) {
         String label = e.has("labelExpression") ? e.text("labelExpression") : e.text("label");
         return new Edge(e.text("id"), Metamodel.domainType(e.text("domainClass")), e.text("sourceEnd"), e.text("targetEnd"),
-                constant(e.text("routing")), constant(e.text("arrow")), constant(e.text("lineStyle")), e.text("color"), label);
+                constant(e.text("routing")), constant(e.text("arrow")), constant(e.text("lineStyle")), e.text("color"), label, e.text("when"));
     }
 
     private static Tool tool(YamlNode t) {

@@ -126,13 +126,24 @@ final class FilterSyntax {
 
     private final List<String> tokens;
 
+    private final Set<String> allowed;
+
     private int position;
 
-    private FilterSyntax(List<String> tokens) {
+    private FilterSyntax(List<String> tokens, Set<String> allowed) {
         this.tokens = tokens;
+        this.allowed = allowed;
     }
 
     static Expr parse(String expression) throws FilterSyntaxException {
+        return parse(expression, FIELDS);
+    }
+
+    /**
+     * P3 T5: the same grammar over another set of fields. A style's {@code when} may name any single-valued attribute of
+     * the class it applies to (and {@code stereotypes}), e.g. {@code isInitial}; still nothing beyond the element itself.
+     */
+    static Expr parse(String expression, Set<String> allowed) throws FilterSyntaxException {
         List<String> tokens = new ArrayList<>();
         Matcher matcher = TOKEN.matcher(expression);
         int end = 0;
@@ -143,7 +154,7 @@ final class FilterSyntax {
         if (!expression.substring(end).isBlank()) {
             throw new FilterSyntaxException("cannot read '" + expression.substring(end).trim() + "'");
         }
-        FilterSyntax parser = new FilterSyntax(tokens);
+        FilterSyntax parser = new FilterSyntax(tokens, allowed);
         Expr result = parser.or();
         if (parser.position < tokens.size()) {
             throw new FilterSyntaxException("unexpected '" + tokens.get(parser.position) + "'");
@@ -185,9 +196,10 @@ final class FilterSyntax {
         if (token.equals("true") || token.equals("false")) {
             return new Constant(token.equals("true"));
         }
-        if (!FIELDS.contains(token)) {
+        if (!this.allowed.contains(token)) {
             throw new FilterSyntaxException(KEYWORDS.contains(token) || !Character.isLetter(token.charAt(0)) ? "unexpected '" + token + "'"
-                    : "'" + token + "' is not allowed: filter expressions may only use " + String.join(", ", List.of("layer", "isAbstract", "stereotypes")));
+                    : "'" + token + "' is not allowed: " + (this.allowed == FIELDS ? "filter expressions may only use " + String.join(", ", List.of("layer", "isAbstract", "stereotypes"))
+                            : "it is not an attribute of the element (allowed: " + String.join(", ", new java.util.TreeSet<>(this.allowed)) + ")"));
         }
         boolean equal = this.accept("==");
         if (equal || this.accept("!=")) {

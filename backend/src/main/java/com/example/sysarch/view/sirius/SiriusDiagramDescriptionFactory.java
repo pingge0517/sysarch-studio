@@ -169,13 +169,12 @@ public final class SiriusDiagramDescriptionFactory {
             Function<VariableManager, List<?>> semanticElements, List<NodeDescription> borders) {
         var builder = NodeDescription.newNodeDescription(id)
                 .synchronizationPolicy(policy)
-                .typeProvider(vm -> NodeType.NODE_RECTANGLE)
+                .typeProvider(vm -> nodeType(style))
                 .targetObjectIdProvider(vm -> self(vm).map(this.identityService::getId).orElse(null))
                 .targetObjectKindProvider(vm -> self(vm).map(this::kind).orElse(""))
                 .targetObjectLabelProvider(vm -> this.node(source, vm).map(DiagramSnapshot.Node::label).orElse(""))
                 .semanticElementsProvider(semanticElements)
-                .styleProvider(vm -> this.rejected(vm) ? rectangle(style.color(), DropRejections.REJECTED_BORDER_COLOR, 2, radius(style))
-                        : rectangle(style.color(), style.borderColor(), style.borderWidth(), radius(style)))
+                .styleProvider(vm -> nodeStyle(style, this.rejected(vm)))
                 .borderNodeDescriptions(borders)
                 .deleteHandler(this::deleteElement)
                 .labelEditHandler(this::rename)
@@ -460,6 +459,52 @@ public final class SiriusDiagramDescriptionFactory {
             return value == null ? "" : value.toString();
         }
         return "";
+    }
+
+/** Image path of the final-state picture (P3 T5); Sirius prefixes /api/images and serves it ({@link SysarchImages}). */
+    static final String DOUBLE_CIRCLE_IMAGE = SysarchImages.PATH + "double-circle.svg"; // Sirius serves it under /api/images
+
+    /** Sirius Web's own ellipse node (its frontend draws type {@code customnode:ellipse}). */
+    static final String ELLIPSE_NODE_TYPE = "customnode:ellipse";
+
+    /** P3 T5: the Sirius node type of a VSM shape. */
+    static String nodeType(NodeStyle style) {
+        if (style.shape() == Shape.FILLED_CIRCLE) {
+            return ELLIPSE_NODE_TYPE;
+        }
+        return style.shape() == Shape.DOUBLE_CIRCLE ? NodeType.NODE_IMAGE : NodeType.NODE_RECTANGLE;
+    }
+
+    /**
+     * P3 T5: {@code filled-circle} = an ellipse filled with the style's colour (default the text colour: a black disc),
+     * {@code double-circle} = the served SVG of a ring around a disc; everything else a (rounded) rectangle. A rejected
+     * drop (AC-5) only marks rectangles: circles are never ends of a validated connection.
+     */
+    static org.eclipse.sirius.components.diagrams.INodeStyle nodeStyle(NodeStyle style, boolean rejected) {
+        if (style.shape() == Shape.FILLED_CIRCLE) {
+            String fill = Optional.ofNullable(style.color()).orElse(TEXT_COLOR);
+            return org.eclipse.sirius.web.application.diagram.EllipseNodeStyle.newEllipseNodeStyle()
+                    .background(fill)
+                    .borderColor(Optional.ofNullable(style.borderColor()).orElse(fill))
+                    .borderSize(Optional.ofNullable(style.borderWidth()).orElse(1))
+                    .borderStyle(org.eclipse.sirius.components.diagrams.LineStyle.Solid)
+                    .childrenLayoutStrategy(new FreeFormLayoutStrategy())
+                    .build();
+        }
+        if (style.shape() == Shape.DOUBLE_CIRCLE) {
+            return org.eclipse.sirius.components.diagrams.ImageNodeStyle.newImageNodeStyle()
+                    .imageURL(DOUBLE_CIRCLE_IMAGE)
+                    .scalingFactor(1)
+                    .borderColor("transparent")
+                    .borderSize(0)
+                    .borderRadius(0)
+                    .borderStyle(org.eclipse.sirius.components.diagrams.LineStyle.Solid)
+                    .positionDependentRotation(false)
+                    .childrenLayoutStrategy(new FreeFormLayoutStrategy())
+                    .build();
+        }
+        return rejected ? rectangle(style.color(), DropRejections.REJECTED_BORDER_COLOR, 2, radius(style))
+                : rectangle(style.color(), style.borderColor(), style.borderWidth(), radius(style));
     }
 
     /** VSM {@code rounded-rectangle} (P1 layer views) is a rectangle with rounded corners. */

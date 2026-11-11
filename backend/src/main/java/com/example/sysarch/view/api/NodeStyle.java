@@ -10,6 +10,8 @@ import java.util.Objects;
  *
  * @param appliesTo element type, as {@code nsPrefix::EClass}
  * @param affiliationFeature for border nodes, the container reference to the parent node's element
+ * @param when P3 T5: null, or a filter expression over the element's attributes; among the styles that apply to an
+ *        element, the first whose {@code when} holds is chosen, and a style whose {@code when} fails is never chosen
  */
 public record NodeStyle(
         String id,
@@ -27,7 +29,8 @@ public record NodeStyle(
         LabelPosition labelPosition,
         String labelTemplate,
         String subLabelTemplate,
-        List<Compartment> compartments) {
+        List<Compartment> compartments,
+        String when) {
 
     public NodeStyle {
         Objects.requireNonNull(id);
@@ -61,6 +64,7 @@ public record NodeStyle(
         private String labelTemplate;
         private String subLabelTemplate;
         private final List<Compartment> compartments = new ArrayList<>();
+        private String when;
 
         private Builder(String id) {
             this.id = id;
@@ -143,10 +147,15 @@ public record NodeStyle(
             return this;
         }
 
+        public Builder when(String when) {
+            this.when = when;
+            return this;
+        }
+
         public NodeStyle build() {
             return new NodeStyle(this.id, this.appliesTo, this.shape, this.color, this.borderColor, this.borderWidth, this.headerBold,
                     this.italic, this.width, this.height, this.borderNode, this.affiliationFeature, this.labelPosition, this.labelTemplate,
-                    this.subLabelTemplate, this.compartments);
+                    this.subLabelTemplate, this.compartments, this.when);
         }
     }
 }

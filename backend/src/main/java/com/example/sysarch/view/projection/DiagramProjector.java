@@ -44,10 +44,13 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
  * when that value is the root. Without such a parent they are not shown.</li>
  * <li><b>One node per element.</b> When several styles apply to an element, an element with
  * {@code isAbstract = true} gets the last one and every other element gets the first (BDD
- * {@code block}/{@code abstractBlock}).</li>
+ * {@code block}/{@code abstractBlock}). (P3 T5) A style with a {@code when} applies only where it holds, and the first
+ * such style that holds wins before the rule above (state machine: {@code isInitial} → filled circle, {@code isFinal}
+ * → double circle, the rest the plain state style).</li>
  * <li><b>Edges</b>: one per (source end value, target end value) of each element of the edge's type, drawn only
- * when both ends have nodes. Styles with the same type and the same ends are alternatives: the element gets the
- * one whose id matches its {@code kind} literal (IBD {@code assembly}/{@code delegation} by {@code Connection.kind}),
+ * when both ends have nodes; (P3 T5) a further element between the same two nodes gets its own edge, id suffixed with
+ * {@code #<element id>}. Styles with the same type and the same ends are alternatives: the element gets the
+ * first whose {@code when} holds (P3 T5), else the one whose id matches its {@code kind} literal (IBD {@code assembly}/{@code delegation} by {@code Connection.kind}),
  * otherwise the first. Switching style keeps the edge id.
  * An end element without a node of its own is drawn to the node of its {@code typedBy}, and the edge label is
  * then read from that end element. For example, a BDD composition runs from the owner block to the part's type
@@ -140,6 +143,9 @@ public final class DiagramProjector {
 
         private final Map<String, EdgeEnds> edgeEnds = new HashMap<>();
 
+        /** Which element an edge id was first given to (P3 T5: a second element between the same ends gets its own edge). */
+        private final Map<String, EObject> edgeOwners = new HashMap<>();
+
         Projection(DiagramDescription description, EObject root, Set<String> activeFilterIds) {
             this.description = description;
             this.root = root;
@@ -202,7 +208,22 @@ public final class DiagramProjector {
             if (candidates.isEmpty()) {
                 return;
             }
-            int chosen = candidates.size() > 1 && isTrue(element, ABSTRACT_FEATURE) ? candidates.size() - 1 : 0;
+            int chosen = -1;
+            List<Integer> plain = new ArrayList<>();
+            for (int i = 0; i < candidates.size(); i++) {
+                String when = candidates.get(i).when();
+                if (when == null) {
+                    plain.add(i);
+                } else if (chosen < 0 && condition(when).test(element)) {
+                    chosen = i; // P3 T5: the first style whose when holds
+                }
+            }
+            if (chosen < 0) {
+                if (plain.isEmpty()) {
+                    return;
+                }
+                chosen = plain.size() > 1 && isTrue(element, ABSTRACT_FEATURE) ? plain.get(plain.size() - 1) : plain.get(0);
+            }
             NodeStyle style = candidates.get(chosen);
             EObject parent = parents.get(chosen);
             String id = elementId(element);
@@ -268,6 +289,12 @@ public final class DiagramProjector {
                 return Optional.empty();
             }
             String id = idPrefix + ":" + elementId(source) + "->" + elementId(target);
+            EObject owner = this.edgeOwners.putIfAbsent(id, element);
+            if (owner != null && owner != element) {
+                // P3 T5: two transitions between the same states are two edges; the first keeps the plain id (saved layouts)
+                id = id + "#" + elementId(element);
+                this.edgeOwners.putIfAbsent(id, element);
+            }
             this.elementsById.put(elementId(labelElement), labelElement);
             this.edgeEnds.putIfAbsent(id, new EdgeEnds(element, source, target));
             return Optional.of(new DiagramSnapshot.Edge(id, elementId(labelElement), style.id(), sourceNode.id(), targetNode.id(),
@@ -354,7 +381,21 @@ public final class DiagramProjector {
      * Among alternative styles, the one whose id matches the element's {@code kind} literal, ignoring case and
      * underscores ({@code DELEGATION} picks {@code delegation}); otherwise the first.
      */
+    /** P3 T5: a style's {@code when}, parsed once per expression (vsm-compiler has checked it). */
+    private static final java.util.Map<String, FilterExpression> CONDITIONS = new java.util.concurrent.ConcurrentHashMap<>();
+
+    static FilterExpression condition(String when) {
+        return CONDITIONS.computeIfAbsent(when, FilterExpression::parse);
+    }
+
     private static EdgeStyle chooseByKind(List<EdgeStyle> alternatives, EObject element) {
+        for (EdgeStyle style : alternatives) {
+            if (style.when() != null && condition(style.when()).test(element)) {
+                return style; // P3 T5
+            }
+        }
+        alternatives = alternatives.stream().filter(s -> s.when() == null).toList().isEmpty() ? alternatives
+                : alternatives.stream().filter(s -> s.when() == null).toList();
         if (alternatives.size() > 1 && element.eClass().getEStructuralFeature(KIND_FEATURE) instanceof EStructuralFeature kind
                 && element.eGet(kind) instanceof Enumerator literal) {
             String wanted = normalize(literal.getLiteral());

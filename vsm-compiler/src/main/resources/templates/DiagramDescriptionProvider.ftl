@@ -75,6 +75,9 @@ public class ${d.className()} implements IDiagramDescriptionProvider {
 <#list n.compartments() as c>
                 .compartment(${q(c.feature())}, ${q(c.label())}, ${q(c.itemTemplate())})
 </#list>
+<#if n.when()??>
+                .when(${q(n.when())})
+</#if>
                 .build())
 </#list>
 <#list d.edges() as e>
@@ -96,6 +99,9 @@ public class ${d.className()} implements IDiagramDescriptionProvider {
 <#if e.labelTemplate()??>
                 .labelTemplate(${q(e.labelTemplate())})
 </#if>
+<#if e.when()??>
+                .when(${q(e.when())})
+</#if>
                 .build())
 </#list>
 <#list d.tools() as t>
@@ -103,7 +109,7 @@ public class ${d.className()} implements IDiagramDescriptionProvider {
             .addTool(Tool.createChild(${q(t.id())}, ${q(t.label())}, ${q(t.targetClass())}, <#if t.containmentFeature()??>${q(t.containmentFeature())}<#else>null</#if>)<#list t.defaults() as v>
                 .withDefault(${q(v.feature())}, ${q(v.value())})</#list>)
 <#elseif t.action() == "CREATE_EDGE">
-            .addTool(Tool.createEdge(${q(t.id())}, ${q(t.label())}, ${q(t.targetClass())}, ${t.validateOnDrop()?c}))
+            .addTool(Tool.createEdge(${q(t.id())}, ${q(t.label())}, ${q(t.targetClass())}, ${t.validateOnDrop()?c}<#if t.containmentFeature()??>, ${q(t.containmentFeature())}</#if>))
 <#else>
             .addTool(Tool.externalLink(${q(t.id())}, ${q(t.label())}, ${q(t.linkType())}))
 </#if>

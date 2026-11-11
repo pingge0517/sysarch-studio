@@ -1,0 +1,80 @@
+vsm: "1.0"
+viewpoint:
+  id: "sysarch.core"
+  label: "系统架构建模"
+  metamodelUri: "http://example.com/sysarch/1.0"
+  priority: 10
+
+representations:
+  - id: "${id}"
+    label: "${label}"
+    kind: "diagram"
+    domainClass: "sysarch:${rootClass}"
+    synchronization: "auto"
+    refresh:
+      mode: "incremental"
+      budgetMs: 2000
+    autoExpand:
+      - feature: "${nodesFeature}"
+        maxDepth: 1
+    nodeStyles:
+      - id: "${startStyle}"
+        appliesTo: "sysarch:${nodeClass}"
+        when: "${startFlag}"
+        shape: "${startShape}"
+        width: 20
+        height: 20
+        color: "${lineColor}"
+        labelPosition: "outside"
+        labelExpression: ""
+      - id: "${endStyle}"
+        appliesTo: "sysarch:${nodeClass}"
+        when: "${endFlag}"
+        shape: "${endShape}"
+        width: 24
+        height: 24
+        labelPosition: "outside"
+        labelExpression: ""
+      - id: "${nodeStyle}"
+        appliesTo: "sysarch:${nodeClass}"
+        shape: "${nodeShape}"
+        color: "${nodeColor}"
+        borderColor: "${lineColor}"
+        labelExpression: "{name}"
+        subLabelExpression: "${nodeDetail}"
+    edgeStyles:
+      - id: "${edgeStyle}"
+        domainClass: "sysarch:${edgeClass}"
+        sourceEnd: "source"
+        targetEnd: "target"
+        routing: "straight"
+        arrow: "open"
+        lineStyle: "solid"
+        color: "${lineColor}"
+        labelExpression: "${edgeLabel}"
+    tools:
+      - id: "${createNodeTool}"
+        label: "${createNodeLabel}"
+        action: "create-child"
+        targetClass: "sysarch:${nodeClass}"
+        containmentFeature: "${nodesFeature}"
+      - id: "${createStartTool}"
+        label: "${createStartLabel}"
+        action: "create-child"
+        targetClass: "sysarch:${nodeClass}"
+        containmentFeature: "${nodesFeature}"
+        defaults:
+          ${startFlag}: true
+      - id: "${createEndTool}"
+        label: "${createEndLabel}"
+        action: "create-child"
+        targetClass: "sysarch:${nodeClass}"
+        containmentFeature: "${nodesFeature}"
+        defaults:
+          ${endFlag}: true
+      - id: "${connectTool}"
+        label: "${connectLabel}"
+        action: "create-edge"
+        targetClass: "sysarch:${edgeClass}"
+        containmentFeature: "${edgesFeature}"
+        validateOnDrop: true

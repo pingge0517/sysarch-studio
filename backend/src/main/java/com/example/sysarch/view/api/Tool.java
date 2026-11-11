@@ -11,6 +11,8 @@ import java.util.Objects;
  * @param targetClass element type the tool creates, as {@code nsPrefix::EClass}
  * @param containmentFeature for create-child: the containment reference of the diagram root that receives it; null (P3 T3):
  *        the new element becomes a root of the document that holds the diagram root
+ *        For create-edge (P3 T5): null = the edge element goes to the top of the document of its source end; else the
+ *        containment reference of the diagram root that receives it (a Transition in its StateMachine's {@code transitions})
  * @param validateOnDrop for create-edge: run constraint checks before the edge is stored (spec AC-5)
  * @param defaults for create-child: attribute values (as their Ecore literal) a new element gets, in YAML order
  *        (spec P1 §3.5 {@code defaults}, e.g. {@code layer = SYSTEM})
@@ -37,6 +39,11 @@ public record Tool(
 
     public static Tool createEdge(String id, String label, String targetClass, boolean validateOnDrop) {
         return new Tool(id, label, ToolAction.CREATE_EDGE, targetClass, null, null, validateOnDrop, Map.of());
+    }
+
+    /** P3 T5: an edge tool whose element is stored in the diagram root's {@code containmentFeature}. */
+    public static Tool createEdge(String id, String label, String targetClass, boolean validateOnDrop, String containmentFeature) {
+        return new Tool(id, label, ToolAction.CREATE_EDGE, targetClass, containmentFeature, null, validateOnDrop, Map.of());
     }
 
     public static Tool externalLink(String id, String label, String linkType) {

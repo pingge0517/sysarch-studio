@@ -8,6 +8,8 @@ import java.util.Objects;
  *
  * @param sourceEnd {@code "self"} or a reference of {@code domainType}
  * @param targetEnd {@code "self"} or a reference of {@code domainType}
+ * @param when P3 T5: null, or a filter expression over the element's attributes; among alternative styles (same type
+ *        and ends) the first whose {@code when} holds wins, before the {@code kind} rule
  */
 public record EdgeStyle(
         String id,
@@ -18,7 +20,8 @@ public record EdgeStyle(
         Arrow arrow,
         LineStyle lineStyle,
         String color,
-        String labelTemplate) {
+        String labelTemplate,
+        String when) {
 
     public static final String SELF = "self";
 
@@ -44,6 +47,7 @@ public record EdgeStyle(
         private LineStyle lineStyle = LineStyle.SOLID;
         private String color;
         private String labelTemplate;
+        private String when;
 
         private Builder(String id) {
             this.id = id;
@@ -89,9 +93,14 @@ public record EdgeStyle(
             return this;
         }
 
+        public Builder when(String when) {
+            this.when = when;
+            return this;
+        }
+
         public EdgeStyle build() {
             return new EdgeStyle(this.id, this.domainType, this.sourceEnd, this.targetEnd, this.routing, this.arrow, this.lineStyle,
-                    this.color, this.labelTemplate);
+                    this.color, this.labelTemplate, this.when);
         }
     }
 }

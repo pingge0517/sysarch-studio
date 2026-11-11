@@ -1,0 +1,80 @@
+vsm: "1.0"
+viewpoint:
+  id: "sysarch.core"
+  label: "系统架构建模"
+  metamodelUri: "http://example.com/sysarch/1.0"
+  priority: 10
+
+representations:
+  - id: "state-machine"
+    label: "状态机图（State Machine）"
+    kind: "diagram"
+    domainClass: "sysarch:StateMachine"
+    synchronization: "auto"
+    refresh:
+      mode: "incremental"
+      budgetMs: 2000
+    autoExpand:
+      - feature: "states"
+        maxDepth: 1
+    nodeStyles:
+      - id: "initial"
+        appliesTo: "sysarch:State"
+        when: "isInitial"
+        shape: "filled-circle"
+        width: 20
+        height: 20
+        color: "#1A2B4A"
+        labelPosition: "outside"
+        labelExpression: ""
+      - id: "final"
+        appliesTo: "sysarch:State"
+        when: "isFinal"
+        shape: "double-circle"
+        width: 24
+        height: 24
+        labelPosition: "outside"
+        labelExpression: ""
+      - id: "state"
+        appliesTo: "sysarch:State"
+        shape: "rounded-rectangle"
+        color: "#FFFFFF"
+        borderColor: "#1A2B4A"
+        labelExpression: "{name}"
+        subLabelExpression: "entry/{entryBehavior}\ndo/{doBehavior}\nexit/{exitBehavior}"
+    edgeStyles:
+      - id: "transition"
+        domainClass: "sysarch:Transition"
+        sourceEnd: "source"
+        targetEnd: "target"
+        routing: "straight"
+        arrow: "open"
+        lineStyle: "solid"
+        color: "#1A2B4A"
+        labelExpression: "{trigger}[{guard}]/{effect}"
+    tools:
+      - id: "createState"
+        label: "新建状态"
+        action: "create-child"
+        targetClass: "sysarch:State"
+        containmentFeature: "states"
+      - id: "createInitial"
+        label: "新建初始状态"
+        action: "create-child"
+        targetClass: "sysarch:State"
+        containmentFeature: "states"
+        defaults:
+          isInitial: true
+      - id: "createFinal"
+        label: "新建终止状态"
+        action: "create-child"
+        targetClass: "sysarch:State"
+        containmentFeature: "states"
+        defaults:
+          isFinal: true
+      - id: "connect"
+        label: "新建迁移"
+        action: "create-edge"
+        targetClass: "sysarch:Transition"
+        containmentFeature: "transitions"
+        validateOnDrop: true

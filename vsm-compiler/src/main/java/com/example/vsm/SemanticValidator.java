@@ -141,14 +141,35 @@ final class SemanticValidator {
         }
     }
 
+    /**
+     * P3 T5: a style's {@code when}, the filter grammar over the attributes of the class the style applies to
+     * (single-valued attributes, and {@code stereotypes}); enum literals and bare booleans checked as for filters.
+     */
+    private void checkWhen(EClass type, YamlNode style) {
+        if (type == null || !style.has("when")) {
+            return;
+        }
+        Set<String> attributes = new HashSet<>();
+        for (org.eclipse.emf.ecore.EAttribute attribute : type.getEAllAttributes()) {
+            if (!attribute.isMany() || attribute.getName().equals("stereotypes")) {
+                attributes.add(attribute.getName());
+            }
+        }
+        this.checkFilter(type, style.get("when"), attributes, "when");
+    }
+
     /** Grammar, whitelist (spec P1 §3.5), features of the root type, and enum literals. Returns null on an error. */
     private FilterSyntax.Expr checkFilter(EClass domainClass, YamlNode expression) {
+        return this.checkFilter(domainClass, expression, FilterSyntax.FIELDS, "filter expression");
+    }
+
+    private FilterSyntax.Expr checkFilter(EClass domainClass, YamlNode expression, Set<String> allowed, String what) {
         String text = expression.scalar();
         FilterSyntax.Expr expr;
         try {
-            expr = FilterSyntax.parse(text);
+            expr = FilterSyntax.parse(text, allowed);
         } catch (FilterSyntax.FilterSyntaxException e) {
-            this.error(expression.line(), "invalid filter expression \"" + text + "\": " + e.getMessage());
+            this.error(expression.line(), "invalid " + what + " \"" + text + "\": " + e.getMessage());
             return null;
         }
         Set<String> fields = new java.util.TreeSet<>();
@@ -157,7 +178,7 @@ final class SemanticValidator {
         for (String field : fields) {
             EStructuralFeature feature = Metamodel.feature(domainClass, field);
             if (feature == null) {
-                this.unknownFeature(expression.line(), field, domainClass, " in filter expression \"" + text + "\"");
+                this.unknownFeature(expression.line(), field, domainClass, " in " + what + " \"" + text + "\"");
                 ok = false;
             }
         }
@@ -166,7 +187,7 @@ final class SemanticValidator {
         for (FilterSyntax.Comparison comparison : comparisons) {
             EStructuralFeature feature = Metamodel.feature(domainClass, comparison.field());
             if (feature != null && feature.getEType() instanceof EEnum eEnum && eEnum.getEEnumLiteral(comparison.literal()) == null) {
-                this.error(expression.line(), "'" + comparison.literal() + "' is not a literal of " + eEnum.getName() + " in filter expression \""
+                this.error(expression.line(), "'" + comparison.literal() + "' is not a literal of " + eEnum.getName() + " in " + what + " \""
                         + text + "\" (expected one of " + eEnum.getELiterals().stream().map(l -> l.getName()).toList() + ")");
                 ok = false;
             }
@@ -176,7 +197,7 @@ final class SemanticValidator {
             if (feature != null && (feature.isMany() || feature.getEType().getInstanceClass() != boolean.class
                     && feature.getEType().getInstanceClass() != Boolean.class)) {
                 this.error(expression.line(), "'" + ((FilterSyntax.Flag) flag).field() + "' is not boolean; compare it, e.g. "
-                        + ((FilterSyntax.Flag) flag).field() + " == '...', in filter expression \"" + text + "\"");
+                        + ((FilterSyntax.Flag) flag).field() + " == '...', in " + what + " \"" + text + "\"");
                 ok = false;
             }
         }
@@ -209,6 +230,7 @@ final class SemanticValidator {
         }
         this.checkTemplate(appliesTo, nodeStyle.get("labelExpression"));
         this.checkTemplate(appliesTo, nodeStyle.get("subLabelExpression"));
+        this.checkWhen(appliesTo, nodeStyle); // P3 T5
         for (YamlNode compartment : nodeStyle.items("compartments")) {
             YamlNode featureNode = compartment.get("feature");
             EReference reference = Metamodel.reference(appliesTo, featureNode.scalar());
@@ -251,6 +273,7 @@ final class SemanticValidator {
         if (domainClass == null) {
             return;
         }
+        this.checkWhen(domainClass, edgeStyle); // P3 T5
         for (String end : List.of("sourceEnd", "targetEnd")) {
             YamlNode endNode = edgeStyle.get(end);
             String name = endNode.scalar();
@@ -302,9 +325,28 @@ final class SemanticValidator {
                         + this.metamodel.ref(domainClass) + "." + featureNode.scalar() + " (expects "
                         + this.metamodel.ref(reference.getEReferenceType()) + ")");
             }
+        } else if ("create-edge".equals(action) && tool.has("containmentFeature")) {
+            this.checkEdgeContainment(domainClass, tool, targetClass); // P3 T5: a Transition is stored in its StateMachine's transitions
         } else if ("create-edge".equals(action) && !tool.bool("validateOnDrop")) {
             // Spec §4.4: without validation on drop, AC-5 cannot reject an edge before it is stored.
             this.error(tool.keyLine("validateOnDrop"), "create-edge tool '" + tool.text("id") + "' must set validateOnDrop: true");
+        }
+    }
+
+    /** P3 T5: create-edge's containmentFeature, a containment of the diagram root that can hold the edge type. */
+    private void checkEdgeContainment(EClass domainClass, YamlNode tool, EClass targetClass) {
+        if (!tool.bool("validateOnDrop")) {
+            this.error(tool.keyLine("validateOnDrop"), "create-edge tool '" + tool.text("id") + "' must set validateOnDrop: true");
+        }
+        YamlNode featureNode = tool.get("containmentFeature");
+        EReference reference = Metamodel.reference(domainClass, featureNode.scalar());
+        if (reference == null) {
+            this.unknownFeature(featureNode.line(), featureNode.scalar(), domainClass, "");
+        } else if (!reference.isContainment()) {
+            this.error(featureNode.line(), "containmentFeature '" + featureNode.scalar() + "' on " + this.metamodel.ref(domainClass) + " is not a containment reference");
+        } else if (targetClass != null && !reference.getEReferenceType().isSuperTypeOf(targetClass)) {
+            this.error(tool.get("targetClass").line(), this.metamodel.ref(targetClass) + " cannot be stored in " + this.metamodel.ref(domainClass) + "."
+                    + featureNode.scalar() + " (expects " + this.metamodel.ref(reference.getEReferenceType()) + ")");
         }
     }
 
