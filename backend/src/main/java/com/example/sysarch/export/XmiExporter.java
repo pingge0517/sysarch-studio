@@ -304,6 +304,89 @@ public final class XmiExporter {
         }
     }
 
+    /**
+     * Who reads the file. {@code OMG} (default): canonical XMI 2.5.1 with the OMG SysML namespace, as Cameo reads and
+     * writes it. {@code PAPYRUS}: the form Eclipse Papyrus (SysML 1.6) stores, found by letting Papyrus' own API save a
+     * model: Eclipse UML2's UML namespace, the SysML stereotypes in Papyrus' per-package namespaces with the extra base
+     * references Papyrus' static profile has, and one profile application per SysML sub-profile pointing at Papyrus'
+     * profile ({@code pathmap://SysML16_PROFILES/…}). Same elements, ids and extensions; Papyrus opens it as a model.
+     */
+    public enum Flavour {
+        OMG, PAPYRUS;
+
+        /** "omg" or "papyrus" (null or blank = omg); anything else null. */
+        public static Flavour of(String name) {
+            if (name == null || name.isBlank()) {
+                return OMG;
+            }
+            for (Flavour f : values()) {
+                if (f.name().equalsIgnoreCase(name.strip())) {
+                    return f;
+                }
+            }
+            return null;
+        }
+    }
+
+    static final String ECLIPSE_UML_NS = "http://www.eclipse.org/uml2/5.0.0/UML";
+
+    static final String PAPYRUS_SYSML = "http://www.eclipse.org/papyrus/sysml/1.6/SysML";
+
+    /** Papyrus' sub-profiles we use: prefix, namespace suffix, profile id in SysML.profile.uml, EPackage fragment. */
+    private static final String[][] PAPYRUS_PROFILES = { { "Allocations", "/Allocations", "SysML.package_packagedElement_Allocations", "//allocations" },
+            { "Blocks", "/Blocks", "SysML.package_packagedElement_Blocks", "//blocks" },
+            { "PortsAndFlows", "/PortsAndFlows", "SysML.package_packagedElement_Ports_u0026Flows", "//portsandflows" },
+            { "Requirements", "/Requirements", "SysML.package_packagedElement_Requirements", "//requirements" } };
+
+    public static String export(String modelName, Collection<Resource> resources, UmlVersion version, Flavour flavour) {
+        if (flavour == Flavour.PAPYRUS) {
+            return papyrus(export(modelName, resources));
+        }
+        return export(modelName, resources, version);
+    }
+
+    /** Our canonical output (fixed format, attributes in alphabetical order) rewritten into Papyrus' form. */
+    static String papyrus(String xmi) {
+        StringBuilder namespaces = new StringBuilder("xmlns:ecore=\"http://www.eclipse.org/emf/2002/Ecore\"");
+        StringBuilder schemaLocation = new StringBuilder();
+        for (String[] p : PAPYRUS_PROFILES) {
+            namespaces.append(" xmlns:").append(p[0]).append("=\"").append(PAPYRUS_SYSML).append(p[1]).append('"');
+            schemaLocation.append(schemaLocation.isEmpty() ? "" : " ").append(PAPYRUS_SYSML).append(p[1]).append(' ').append(PAPYRUS_SYSML).append('#').append(p[3]);
+        }
+        String out = xmi
+                .replace("<xmi:XMI xmlns:xmi=\"" + XMI_NS + "\"", "<xmi:XMI xmi:version=\"20131001\" xmlns:xmi=\"" + XMI_NS + "\"")
+                .replace("xmlns:sysml=\"" + SYSML_NS + "\"", namespaces + " xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"")
+                .replace("xmlns:uml=\"" + UML_NS + "\"", "xmlns:uml=\"" + ECLIPSE_UML_NS + "\" xsi:schemaLocation=\"" + schemaLocation + "\"")
+                .replace("UML 2.5.1 / SysML 1.6", "Eclipse UML2 / Papyrus SysML 1.6")
+                .replaceAll("<sysml:Block ", "<Blocks:Block ")
+                .replaceAll("<sysml:InterfaceBlock ", "<PortsAndFlows:InterfaceBlock ")
+                .replaceAll("<sysml:Requirement base_Class=\"([^\"]*)\"", "<Requirements:Requirement base_Class=\"$1\" base_NamedElement=\"$1\"")
+                .replaceAll("<sysml:(Satisfy|Verify) base_Abstraction=\"([^\"]*)\"", "<Requirements:$1 base_Abstraction=\"$2\" base_DirectedRelationship=\"$2\"")
+                .replaceAll("<sysml:Allocate base_Abstraction=\"([^\"]*)\"", "<Allocations:Allocate base_Abstraction=\"$1\" base_DirectedRelationship=\"$1\"");
+        // one profile application per profile, as Papyrus writes them (the root SysML profile plus the sub-profiles used)
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("( *)<profileApplication xmi:id=\"([^\"]*)\" xmi:type=\"uml:ProfileApplication\">\\n[\\s\\S]*?</profileApplication>\\n").matcher(out);
+        if (m.find()) {
+            String indent = m.group(1);
+            String id = m.group(2);
+            StringBuilder applications = new StringBuilder();
+            applications.append(profileApplication(indent, id, "SysML", "/"));
+            for (String[] p : PAPYRUS_PROFILES) {
+                applications.append(profileApplication(indent, id + "_" + p[0], p[2], p[3]));
+            }
+            out = out.substring(0, m.start()) + applications + out.substring(m.end());
+        }
+        return out;
+    }
+
+    private static String profileApplication(String indent, String id, String profileId, String ePackageFragment) {
+        return indent + "<profileApplication xmi:id=\"" + id + "\" xmi:type=\"uml:ProfileApplication\">\n"
+                + indent + "  <eAnnotations source=\"http://www.eclipse.org/uml2/2.0.0/UML\" xmi:id=\"" + id + "_annotation\">\n"
+                + indent + "    <references href=\"" + PAPYRUS_SYSML + "#" + ePackageFragment + "\" xmi:type=\"ecore:EPackage\"/>\n"
+                + indent + "  </eAnnotations>\n"
+                + indent + "  <appliedProfile href=\"pathmap://SysML16_PROFILES/SysML.profile.uml#" + profileId + "\"/>\n"
+                + indent + "</profileApplication>\n";
+    }
+
     public static String export(String modelName, Collection<Resource> resources, UmlVersion version) {
         String xmi = export(modelName, resources);
         if (version == null || version == UmlVersion.V2_5_1) {

@@ -15,7 +15,14 @@ curl -X POST http://<host>/api/v1/export/xmi \
 
 返回 `application/xml`（UTF-8），文件名为"项目名.xmi"。
 
-可选参数 `"umlVersion": "2.5"`：文件声明 UML 2.5 命名空间（`http://www.omg.org/spec/UML/20131001`），而不是默认的 UML 2.5.1（`…/20161101`，SysML 1.6 的基础）。只有命名空间声明和文件头说明不同，元素完全相同，供只认识 UML 2.5 的导入器使用（例如 Eclipse UML2 5.5）。如果 Cameo 导入时报告不认识 UML 2.5.1，就改用这个参数。其他取值返回 400。本工具的 XMI 导入两种命名空间都接受。运维可以用 `SYSARCH_FEATURE_XMI=false` 关闭导出入口，此时返回 503。
+可选参数 `"umlVersion": "2.5"`：文件声明 UML 2.5 命名空间（`http://www.omg.org/spec/UML/20131001`），而不是默认的 UML 2.5.1（`…/20161101`，SysML 1.6 的基础）。只有命名空间声明和文件头说明不同，元素完全相同，供只认识 UML 2.5 的导入器使用（例如 Eclipse UML2 5.5）。如果 Cameo 导入时报告不认识 UML 2.5.1，就改用这个参数。其他取值返回 400。本工具的 XMI 导入两种命名空间都接受。
+
+可选参数 `"flavour": "papyrus"`：按 Eclipse Papyrus（SysML 1.6）自己保存模型的格式输出，下载文件名为"项目名.uml"。这个格式是让 Papyrus 自己的 API 保存一个小模型后对照出来的：
+- 使用 Eclipse UML2 的 UML 命名空间；
+- 构造型放在 Papyrus 按包拆分的命名空间里（`Blocks:Block`、`PortsAndFlows:InterfaceBlock`、`Requirements:Requirement/Satisfy/Verify`、`Allocations:Allocate`），并带上 Papyrus 需要的额外基引用；
+- 每个 SysML 子配置文件各有一个 profileApplication，指向 Papyrus 的 `pathmap://SysML16_PROFILES/SysML.profile.uml`。
+
+元素、id 和扩展与默认格式完全相同。默认的 `omg` 格式给 Cameo 和其他遵循 OMG 标准的工具使用。其他取值返回 400。本工具的 XMI 导入只接受 OMG 格式。运维可以用 `SYSARCH_FEATURE_XMI=false` 关闭导出入口，此时返回 503。
 
 ## 2. 映射
 
@@ -101,6 +108,11 @@ curl -X POST http://<host>/api/v1/export/xmi \
 **结论**：
 - **Papyrus 部分通过**：结构可以读入（需用 `umlVersion: "2.5"`），SysML 构造型需要 Papyrus 专用命名空间才能识别。
 - **Cameo 仍待验证**：Cameo 读写的是 OMG 标准命名空间，所以本工具当前的写法正是为 Cameo 准备的。
-- 如需在 Papyrus 中直接看到构造型，可以增加一个"Papyrus 风格"导出选项（按 Papyrus 的分包命名空间写构造型）。目前没有做。
+- **后续已补上 `"flavour": "papyrus"`（第 1 节）**。用 Papyrus 自己的 UML2 和 SysML 1.6 配置文件加载演示项目的 Papyrus 格式导出（`tools/uml2-check/PapyrusCheck.java`），结果：
+  - SysML 及 4 个子配置文件都已应用；
+  - 12 个类、6 个端口、4 个连接器、7 个关系；
+  - **每个元素都带有它的构造型**：6 个 «Block»、1 个 «InterfaceBlock»、5 个 «Requirement»（编号和文本都能读出）、3 个 «Satisfy»、1 个 «Verify»、3 个 «Allocate»。
 
-如果要在 Papyrus 界面里亲自看：运行 `C:\PapyrusCheck\app\papyrusSysML16\papyrusSysML.exe`，把 `C:\PapyrusCheck\files\domain-controller-uml25.xmi` 拖进一个工程，右键用 UML 模型编辑器打开。
+  因此 Papyrus 一项通过。
+
+如果要在 Papyrus 界面里亲自看：运行 `C:\PapyrusCheck\app\papyrusSysML16\papyrusSysML.exe`，新建一个工程，把 `C:\PapyrusCheck\files\domain-controller.uml`（Papyrus 格式）复制进去，在新建 Papyrus 模型时选择已有的 .uml 文件（或用导入 Papyrus 模型的向导）生成图文件，然后就能在模型浏览器中看到各元素及其构造型。

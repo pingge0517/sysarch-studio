@@ -152,6 +152,40 @@ class XmiExportTest {
         assertEquals(null, XmiExporter.UmlVersion.of("2.4"));
     }
 
+    /**
+     * The Papyrus flavour: Eclipse UML2 namespace, stereotypes in Papyrus' per-package namespaces with the extra base
+     * references, one profile application per sub-profile; same elements. Writes build/xmi-export/domain-controller.uml
+     * (checked with Papyrus' own API by tools/uml2-check/PapyrusCheck.java).
+     */
+    @Test
+    void thePapyrusFlavourIsWhatPapyrusStores() throws Exception {
+        Resource again = new ResourceImpl(URI.createURI("memory:/demo4.json"));
+        again.getContents().addAll(DomainControllerDemo.build());
+        String uml = XmiExporter.export("域控制器演示", List.of(again), null, XmiExporter.Flavour.PAPYRUS);
+        Files.writeString(Path.of("build/xmi-export/domain-controller.uml"), uml, StandardCharsets.UTF_8);
+        assertTrue(uml.contains("xmlns:uml=\"http://www.eclipse.org/uml2/5.0.0/UML\"") && uml.contains("xmi:version=\"20131001\""));
+        assertFalse(uml.contains("sysml:") || uml.contains(XmiExporter.SYSML_NS), "no OMG SysML left");
+        assertEquals(6, count(uml, "<Blocks:Block "));
+        assertEquals(1, count(uml, "<PortsAndFlows:InterfaceBlock "));
+        assertEquals(5, count(uml, "<Requirements:Requirement base_Class=\""));
+        assertEquals(5, count(uml, "base_NamedElement=\""));
+        assertEquals(3, count(uml, "<Requirements:Satisfy "));
+        assertEquals(1, count(uml, "<Requirements:Verify "));
+        assertEquals(3, count(uml, "<Allocations:Allocate "));
+        assertEquals(7, count(uml, "base_DirectedRelationship=\""));
+        assertEquals(5, count(uml, "<appliedProfile href=\"pathmap://SysML16_PROFILES/SysML.profile.uml#"), "SysML + 4 sub-profiles");
+        assertEquals(count(this.xmi, "<packagedElement "), count(uml, "<packagedElement "), "the same elements");
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setNamespaceAware(true);
+        factory.newDocumentBuilder().parse(new ByteArrayInputStream(uml.getBytes(StandardCharsets.UTF_8))); // well-formed, every prefix declared
+        assertEquals(XmiExporter.Flavour.OMG, XmiExporter.Flavour.of(null));
+        assertEquals(null, XmiExporter.Flavour.of("rhapsody"));
+    }
+
+    private static int count(String text, String what) {
+        return text.split(java.util.regex.Pattern.quote(what), -1).length - 1;
+    }
+
     /** A port of a part lives on the part's type (UML), naming the part; cross-block connections, item flows and odd ids. */
     @Test
     void edgeCasesKeepTheirDataInTheExtension() throws Exception {
