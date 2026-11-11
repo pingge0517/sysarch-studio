@@ -69,6 +69,7 @@ sysarch:
     reports: ${SYSARCH_FEATURE_REPORTS:true}
     imports: ${SYSARCH_FEATURE_IMPORTS:true}
     solver: ${SYSARCH_FEATURE_SOLVER:true}
+    xmi: ${SYSARCH_FEATURE_XMI:true}
   # P3 T4: the solvers behind POST /api/v1/solve; unset = that solver answers 503. The Python needs NumPy and SciPy.
   solver:
     python: ${SYSARCH_SOLVER_PYTHON:}

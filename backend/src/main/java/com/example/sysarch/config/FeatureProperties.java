@@ -23,6 +23,17 @@ public class FeatureProperties {
 
     private boolean imports = true;
 
+    /** P3 T7 (spec P3 §9 "XMI（关导出入口）"): the XMI export. */
+    private boolean xmi = true;
+
+    public boolean isXmi() {
+        return this.xmi;
+    }
+
+    public void setXmi(boolean xmi) {
+        this.xmi = xmi;
+    }
+
     /** P3 T4 (spec P3 §9 "关掉 /solve 与求解菜单即可"): parameter solving. */
     private boolean solver = true;
 

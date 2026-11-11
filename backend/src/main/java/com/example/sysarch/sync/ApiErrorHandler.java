@@ -30,7 +30,7 @@ import org.springframework.web.server.ResponseStatusException;
         com.example.sysarch.branch.BranchController.class, com.example.sysarch.merge.MergeController.class,
         com.example.sysarch.report.ReportController.class, com.example.sysarch.sysmlimport.ImportController.class,
         com.example.sysarch.access.Access.class, com.example.sysarch.identity.Identities.class, com.example.sysarch.comment.CommentController.class,
-        com.example.sysarch.solver.SolveController.class })
+        com.example.sysarch.solver.SolveController.class, com.example.sysarch.export.XmiExportController.class })
 public class ApiErrorHandler {
 
     @ExceptionHandler(ResponseStatusException.class)

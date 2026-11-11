@@ -110,6 +110,7 @@ kubectl create job --from=cronjob/sysarch-backup sysarch-backup-manual
 | `SYSARCH_FEATURE_BRANCHES=false` | 不能新建分支、不能合并，退回主干直接编辑；已有分支保留 | 合并产生脏数据（APPLY 后元素数与预期不符） |
 | `SYSARCH_FEATURE_REPORTS=false` | 不能生成新报告，已生成的仍可下载 | 报告错误或拖慢服务 |
 | `SYSARCH_FEATURE_IMPORTS=false` | SysML v2 导入返回 503 | 导入后元素数少于预期且没有报错（规格 §10："立即禁用导入入口"） |
+| `SYSARCH_FEATURE_XMI=false` | XMI 导出 `/export/xmi` 返回 503（P3） | 对方把 XMI 当作无损往返使用，或导出文件在目标工具里出错（P3 规格 §9） |
 | `SYSARCH_FEATURE_SOLVER=false` | 参数求解 `/solve` 返回 503（P3） | 求解的任一安全防线缺失（P3 规格 §9，见 `docs/solver-security-review.md`） |
 
 ### 5.2 版本回滚

@@ -32,6 +32,8 @@ backend:
     SYSARCH_FEATURE_BRANCHES: "true"
     SYSARCH_FEATURE_REPORTS: "true"
     SYSARCH_FEATURE_IMPORTS: "true"
+    SYSARCH_FEATURE_SOLVER: "true"   # P3: parametric solving
+    SYSARCH_FEATURE_XMI: "true"      # P3: XMI export
   reports:
     size: 20Gi           # generated reports, kept 90 days by the backend itself
     storageClass: ""
