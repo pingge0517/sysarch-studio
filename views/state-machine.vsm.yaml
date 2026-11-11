@@ -18,6 +18,13 @@ representations:
       - feature: "states"
         maxDepth: 1
     nodeStyles:
+      - id: "state"
+        appliesTo: "sysarch:State"
+        shape: "rounded-rectangle"
+        color: "#FFFFFF"
+        borderColor: "#1A2B4A"
+        labelExpression: "{name}"
+        subLabelExpression: "entry/{entryBehavior}\ndo/{doBehavior}\nexit/{exitBehavior}"
       - id: "initial"
         appliesTo: "sysarch:State"
         when: "isInitial"
@@ -35,13 +42,6 @@ representations:
         height: 24
         labelPosition: "outside"
         labelExpression: ""
-      - id: "state"
-        appliesTo: "sysarch:State"
-        shape: "rounded-rectangle"
-        color: "#FFFFFF"
-        borderColor: "#1A2B4A"
-        labelExpression: "{name}"
-        subLabelExpression: "entry/{entryBehavior}\ndo/{doBehavior}\nexit/{exitBehavior}"
     edgeStyles:
       - id: "transition"
         domainClass: "sysarch:Transition"

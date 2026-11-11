@@ -38,7 +38,8 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
  * <ol>
  * <li><b>Scope</b>: all elements of the diagram root's resource, in document order.</li>
  * <li><b>Peer nodes</b>: a node style whose type is the diagram root's type (or a super/subtype of it) shows
- * every such element in scope. This is how a BDD shows all blocks, including newly created ones. Any other
+ * every such element in scope. This is how a BDD shows all blocks, including newly created ones. (P3 T6) So does a style of a
+ * class that can only be a document root (no containment holds it: Actor). Any other
  * node style shows only elements reachable from the root through {@code autoExpand} (feature, depth).</li>
  * <li><b>Border nodes</b> sit on the node of their {@code affiliationFeature} value, or on the diagram frame
  * when that value is the root. Without such a parent they are not shown.</li>
@@ -320,7 +321,7 @@ public final class DiagramProjector {
         }
 
         private boolean isPeer(EClass type) {
-            return type.isSuperTypeOf(this.domainClass) || this.domainClass.isSuperTypeOf(type);
+            return type.isSuperTypeOf(this.domainClass) || this.domainClass.isSuperTypeOf(type) || documentRootOnly(type);
         }
 
         /** Root plus everything reached by following each autoExpand feature up to its depth. */
@@ -381,6 +382,18 @@ public final class DiagramProjector {
      * Among alternative styles, the one whose id matches the element's {@code kind} literal, ignoring case and
      * underscores ({@code DELEGATION} picks {@code delegation}); otherwise the first.
      */
+    /**
+     * P3 T6: a class that no containment reference of its package can hold (Actor, like Requirement) only exists as a
+     * document root, so nothing reaches it through autoExpand; its node style shows every such element in the document,
+     * as peers do. A use-case diagram therefore shows its actors before any use case is linked to them.
+     */
+    static boolean documentRootOnly(EClass type) {
+        return ROOT_ONLY.computeIfAbsent(type, t -> t.getEPackage().getEClassifiers().stream().filter(EClass.class::isInstance).map(EClass.class::cast)
+                .flatMap(c -> c.getEReferences().stream()).filter(EReference::isContainment).noneMatch(r -> r.getEReferenceType().isSuperTypeOf(t)));
+    }
+
+    private static final java.util.Map<EClass, Boolean> ROOT_ONLY = new java.util.concurrent.ConcurrentHashMap<>();
+
     /** P3 T5: a style's {@code when}, parsed once per expression (vsm-compiler has checked it). */
     private static final java.util.Map<String, FilterExpression> CONDITIONS = new java.util.concurrent.ConcurrentHashMap<>();
 

@@ -464,15 +464,25 @@ public final class SiriusDiagramDescriptionFactory {
 /** Image path of the final-state picture (P3 T5); Sirius prefixes /api/images and serves it ({@link SysarchImages}). */
     static final String DOUBLE_CIRCLE_IMAGE = SysarchImages.PATH + "double-circle.svg"; // Sirius serves it under /api/images
 
+    /** P3 T6: the image of each picture shape (decision diamond, actor stick figure, final state). */
+    static String image(Shape shape) {
+        return switch (shape) {
+            case DOUBLE_CIRCLE -> DOUBLE_CIRCLE_IMAGE;
+            case DIAMOND -> SysarchImages.PATH + "diamond.svg";
+            case STICK_FIGURE -> SysarchImages.PATH + "stick-figure.svg";
+            default -> null;
+        };
+    }
+
     /** Sirius Web's own ellipse node (its frontend draws type {@code customnode:ellipse}). */
     static final String ELLIPSE_NODE_TYPE = "customnode:ellipse";
 
     /** P3 T5: the Sirius node type of a VSM shape. */
     static String nodeType(NodeStyle style) {
-        if (style.shape() == Shape.FILLED_CIRCLE) {
+        if (style.shape() == Shape.FILLED_CIRCLE || style.shape() == Shape.ELLIPSE) {
             return ELLIPSE_NODE_TYPE;
         }
-        return style.shape() == Shape.DOUBLE_CIRCLE ? NodeType.NODE_IMAGE : NodeType.NODE_RECTANGLE;
+        return style.shape() != null && image(style.shape()) != null ? NodeType.NODE_IMAGE : NodeType.NODE_RECTANGLE;
     }
 
     /**
@@ -481,6 +491,15 @@ public final class SiriusDiagramDescriptionFactory {
      * drop (AC-5) only marks rectangles: circles are never ends of a validated connection.
      */
     static org.eclipse.sirius.components.diagrams.INodeStyle nodeStyle(NodeStyle style, boolean rejected) {
+        if (style.shape() == Shape.ELLIPSE) {
+            return org.eclipse.sirius.web.application.diagram.EllipseNodeStyle.newEllipseNodeStyle()
+                    .background(Optional.ofNullable(style.color()).orElse(DEFAULT_COLOR))
+                    .borderColor(rejected ? DropRejections.REJECTED_BORDER_COLOR : Optional.ofNullable(style.borderColor()).orElse(DEFAULT_BORDER_COLOR))
+                    .borderSize(rejected ? 2 : Optional.ofNullable(style.borderWidth()).orElse(1))
+                    .borderStyle(org.eclipse.sirius.components.diagrams.LineStyle.Solid)
+                    .childrenLayoutStrategy(new FreeFormLayoutStrategy())
+                    .build();
+        }
         if (style.shape() == Shape.FILLED_CIRCLE) {
             String fill = Optional.ofNullable(style.color()).orElse(TEXT_COLOR);
             return org.eclipse.sirius.web.application.diagram.EllipseNodeStyle.newEllipseNodeStyle()
@@ -491,9 +510,9 @@ public final class SiriusDiagramDescriptionFactory {
                     .childrenLayoutStrategy(new FreeFormLayoutStrategy())
                     .build();
         }
-        if (style.shape() == Shape.DOUBLE_CIRCLE) {
+        if (style.shape() != null && image(style.shape()) != null) {
             return org.eclipse.sirius.components.diagrams.ImageNodeStyle.newImageNodeStyle()
-                    .imageURL(DOUBLE_CIRCLE_IMAGE)
+                    .imageURL(image(style.shape()))
                     .scalingFactor(1)
                     .borderColor("transparent")
                     .borderSize(0)

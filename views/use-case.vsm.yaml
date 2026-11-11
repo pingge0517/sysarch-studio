@@ -1,0 +1,58 @@
+vsm: "1.0"
+viewpoint:
+  id: "sysarch.core"
+  label: "系统架构建模"
+  metamodelUri: "http://example.com/sysarch/1.0"
+  priority: 10
+
+representations:
+  - id: "use-case"
+    label: "用例图（Use Case）"
+    kind: "diagram"
+    domainClass: "sysarch:UseCase"
+    synchronization: "auto"
+    refresh:
+      mode: "incremental"
+      budgetMs: 2000
+    autoExpand:
+      - feature: "actors"
+        maxDepth: 1
+    nodeStyles:
+      - id: "useCase"
+        appliesTo: "sysarch:UseCase"
+        shape: "ellipse"
+        color: "#FFFFFF"
+        borderColor: "#1A2B4A"
+        labelExpression: "{name}"
+        subLabelExpression: ""
+      - id: "actor"
+        appliesTo: "sysarch:Actor"
+        shape: "stick-figure"
+        width: 24
+        height: 48
+        labelPosition: "outside"
+        labelExpression: "{name}"
+    edgeStyles:
+      - id: "association"
+        domainClass: "sysarch:UseCase"
+        sourceEnd: "self"
+        targetEnd: "actors"
+        routing: "straight"
+        arrow: "none"
+        lineStyle: "solid"
+        color: "#1A2B4A"
+        labelExpression: ""
+    tools:
+      - id: "createUseCase"
+        label: "新建用例"
+        action: "create-child"
+        targetClass: "sysarch:UseCase"
+      - id: "createActor"
+        label: "新建参与者"
+        action: "create-child"
+        targetClass: "sysarch:Actor"
+      - id: "associate"
+        label: "关联参与者"
+        action: "create-edge"
+        targetClass: "sysarch:UseCase"
+        validateOnDrop: true

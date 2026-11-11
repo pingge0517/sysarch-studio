@@ -91,10 +91,10 @@ class VsmCompilerTest {
     void repositoryViewsCompileToProvidersAndRegistry() throws IOException {
         Result result = this.compile(this.output("out"));
         assertEquals(VsmCompiler.OK, result.exitCode(), result.err());
-        assertEquals(List.of("AllocationMatrixTableDescriptionProvider.java", "BddDiagramDescriptionProvider.java", "IbdDiagramDescriptionProvider.java",
+        assertEquals(List.of("ActivityDiagramDescriptionProvider.java", "AllocationMatrixTableDescriptionProvider.java", "BddDiagramDescriptionProvider.java", "IbdDiagramDescriptionProvider.java",
                 "LaArchitectureDiagramDescriptionProvider.java",
                 "PaArchitectureDiagramDescriptionProvider.java", "ParametricDiagramDescriptionProvider.java", "RequirementTraceTableDescriptionProvider.java",
-                "SaFunctionChainDiagramDescriptionProvider.java", "StateMachineDiagramDescriptionProvider.java",
+                "SaFunctionChainDiagramDescriptionProvider.java", "StateMachineDiagramDescriptionProvider.java", "UseCaseDiagramDescriptionProvider.java",
                 "ViewpointRegistry.java"),
                 fileNames(this.output("out")));
         String bdd = Files.readString(this.output("out").resolve("BddDiagramDescriptionProvider.java"));
@@ -300,16 +300,37 @@ class VsmCompilerTest {
         assertTrue(generated.contains(".withDefault(\"isInitial\", \"true\")"));
     }
 
+    /**
+     * P3 T6: the three behaviour views share one template; a parameter alone on its line is a YAML block indented like the
+     * placeholder (more styles, more tools), and an empty one removes the line (use cases and actors have no containment).
+     */
+    @Test
+    void theBehaviourViewsShareOneTemplate() throws IOException {
+        Result result = this.compile(this.output("out"));
+        assertEquals(VsmCompiler.OK, result.exitCode(), result.err());
+        String activity = Files.readString(this.output("out").resolve("ActivityDiagramDescriptionProvider.java"));
+        assertTrue(activity.contains(".shape(Shape.DIAMOND)") && activity.contains(".when(\"kind == 'DECIDE'\")"), activity);
+        assertTrue(activity.contains(".lineStyle(LineStyle.DASHED)") && activity.contains(".when(\"isObjectFlow\")"));
+        assertTrue(activity.contains(".withDefault(\"kind\", \"DECIDE\")"));
+        String useCase = Files.readString(this.output("out").resolve("UseCaseDiagramDescriptionProvider.java"));
+        assertTrue(useCase.contains(".shape(Shape.ELLIPSE)") && useCase.contains(".shape(Shape.STICK_FIGURE)") && useCase.contains(".arrow(Arrow.NONE)"));
+        assertTrue(useCase.contains("Tool.createChild(\"createActor\", \"新建参与者\", \"sysarch::Actor\", null)"), "a root: no containment line");
+        assertTrue(useCase.contains("Tool.createEdge(\"associate\", \"关联参与者\", \"sysarch::UseCase\", true))"));
+        for (String view : List.of("state-machine", "activity", "use-case")) {
+            assertTrue(Files.readString(this.workspace.resolve("views/_templates/" + view + ".params.yaml")).contains("template: \"behavior.vsm.tpl.yaml\""));
+        }
+    }
+
     @Test
     void aWhenMayOnlyNameAttributesOfItsClass() throws IOException {
         this.edit(STATE_MACHINE, "        when: \"isInitial\"", "        when: \"layer == 'SYSTEM' and source\"");
-        this.assertFails(STATE_MACHINE + ":23 invalid when \"layer == 'SYSTEM' and source\": 'source' is not allowed: it is not an attribute of the element");
+        this.assertFails(STATE_MACHINE + ":30 invalid when \"layer == 'SYSTEM' and source\": 'source' is not allowed: it is not an attribute of the element");
     }
 
     @Test
     void aWhenFlagMustBeBoolean() throws IOException {
         this.edit(STATE_MACHINE, "        when: \"isInitial\"", "        when: \"doBehavior\"");
-        this.assertFails(STATE_MACHINE + ":23 'doBehavior' is not boolean");
+        this.assertFails(STATE_MACHINE + ":30 'doBehavior' is not boolean");
     }
 
     @Test

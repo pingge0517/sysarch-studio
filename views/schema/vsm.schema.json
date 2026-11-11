@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.com/sysarch/vsm/1.0/vsm.schema.json",
   "title": "VSM DSL 1.0",
-  "description": "Declarative view definitions (spec §4.2). The field set is closed: it is exactly what P0 §4.2-§4.4, P1 §3.2-§3.5 and P3 (nodeStylesExtra, when, circle shapes, create-edge containmentFeature) use. New fields need review (spec §10.1).",
+  "description": "Declarative view definitions (spec §4.2). The field set is closed: it is exactly what P0 §4.2-§4.4, P1 §3.2-§3.5 and P3 (nodeStylesExtra, when, circle/ellipse/diamond/stick-figure shapes, arrow none, create-edge containmentFeature) use. New fields need review (spec §10.1).",
   "type": "object",
   "additionalProperties": false,
   "required": ["vsm", "viewpoint", "representations"],
@@ -164,7 +164,7 @@
       "properties": {
         "id": { "$ref": "#/$defs/id" },
         "appliesTo": { "$ref": "#/$defs/classRef" },
-        "shape": { "enum": ["rectangle", "rounded-rectangle", "square", "filled-circle", "double-circle"] },
+        "shape": { "enum": ["rectangle", "rounded-rectangle", "square", "filled-circle", "double-circle", "ellipse", "diamond", "stick-figure"] },
         "color": { "$ref": "#/$defs/color" },
         "borderColor": { "$ref": "#/$defs/color" },
         "borderWidth": { "$ref": "#/$defs/positiveInt" },
@@ -205,7 +205,7 @@
         "sourceEnd": { "type": "string", "pattern": "^(self|[a-z][A-Za-z0-9_]*)$" },
         "targetEnd": { "type": "string", "pattern": "^(self|[a-z][A-Za-z0-9_]*)$" },
         "routing": { "enum": ["straight", "manhattan", "spline"] },
-        "arrow": { "enum": ["hollow-triangle", "filled-diamond", "open"] },
+        "arrow": { "enum": ["hollow-triangle", "filled-diamond", "open", "none"] },
         "lineStyle": { "enum": ["solid", "dashed"] },
         "color": { "$ref": "#/$defs/color" },
         "when": { "description": "P3 T5: filter expression over the attributes of domainClass; picks among alternative styles (same type and ends)", "type": "string", "minLength": 1 }

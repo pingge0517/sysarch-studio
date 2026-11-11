@@ -1,0 +1,74 @@
+vsm: "1.0"
+viewpoint:
+  id: "sysarch.core"
+  label: "系统架构建模"
+  metamodelUri: "http://example.com/sysarch/1.0"
+  priority: 10
+
+representations:
+  - id: "activity"
+    label: "活动图（Activity）"
+    kind: "diagram"
+    domainClass: "sysarch:Activity"
+    synchronization: "auto"
+    refresh:
+      mode: "incremental"
+      budgetMs: 2000
+    autoExpand:
+      - feature: "actions"
+        maxDepth: 1
+    nodeStyles:
+      - id: "action"
+        appliesTo: "sysarch:Action"
+        shape: "rectangle"
+        color: "#FFFFFF"
+        borderColor: "#1A2B4A"
+        labelExpression: "{name}"
+        subLabelExpression: "{expression}"
+      - id: "decision"
+        appliesTo: "sysarch:Action"
+        when: "kind == 'DECIDE'"
+        shape: "diamond"
+        width: 32
+        height: 32
+        labelPosition: "outside"
+        labelExpression: "{name}"
+    edgeStyles:
+      - id: "controlFlow"
+        domainClass: "sysarch:ActivityFlow"
+        sourceEnd: "source"
+        targetEnd: "target"
+        routing: "straight"
+        arrow: "open"
+        lineStyle: "solid"
+        color: "#1A2B4A"
+        labelExpression: ""
+      - id: "objectFlow"
+        domainClass: "sysarch:ActivityFlow"
+        sourceEnd: "source"
+        targetEnd: "target"
+        routing: "straight"
+        arrow: "open"
+        lineStyle: "dashed"
+        color: "#1A2B4A"
+        labelExpression: ""
+        when: "isObjectFlow"
+    tools:
+      - id: "createAction"
+        label: "新建动作"
+        action: "create-child"
+        targetClass: "sysarch:Action"
+        containmentFeature: "actions"
+      - id: "createDecision"
+        label: "新建判定"
+        action: "create-child"
+        targetClass: "sysarch:Action"
+        containmentFeature: "actions"
+        defaults:
+          kind: "DECIDE"
+      - id: "connect"
+        label: "新建流"
+        action: "create-edge"
+        targetClass: "sysarch:ActivityFlow"
+        containmentFeature: "flows"
+        validateOnDrop: true

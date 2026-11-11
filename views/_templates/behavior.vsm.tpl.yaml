@@ -18,63 +18,35 @@ representations:
       - feature: "${nodesFeature}"
         maxDepth: 1
     nodeStyles:
-      - id: "${startStyle}"
-        appliesTo: "sysarch:${nodeClass}"
-        when: "${startFlag}"
-        shape: "${startShape}"
-        width: 20
-        height: 20
-        color: "${lineColor}"
-        labelPosition: "outside"
-        labelExpression: ""
-      - id: "${endStyle}"
-        appliesTo: "sysarch:${nodeClass}"
-        when: "${endFlag}"
-        shape: "${endShape}"
-        width: 24
-        height: 24
-        labelPosition: "outside"
-        labelExpression: ""
       - id: "${nodeStyle}"
         appliesTo: "sysarch:${nodeClass}"
         shape: "${nodeShape}"
-        color: "${nodeColor}"
-        borderColor: "${lineColor}"
+        color: "#FFFFFF"
+        borderColor: "#1A2B4A"
         labelExpression: "{name}"
         subLabelExpression: "${nodeDetail}"
+      ${moreNodeStyles}
     edgeStyles:
       - id: "${edgeStyle}"
         domainClass: "sysarch:${edgeClass}"
-        sourceEnd: "source"
-        targetEnd: "target"
+        sourceEnd: "${edgeSource}"
+        targetEnd: "${edgeTarget}"
         routing: "straight"
-        arrow: "open"
+        arrow: "${edgeArrow}"
         lineStyle: "solid"
-        color: "${lineColor}"
+        color: "#1A2B4A"
         labelExpression: "${edgeLabel}"
+      ${moreEdgeStyles}
     tools:
       - id: "${createNodeTool}"
         label: "${createNodeLabel}"
         action: "create-child"
         targetClass: "sysarch:${nodeClass}"
-        containmentFeature: "${nodesFeature}"
-      - id: "${createStartTool}"
-        label: "${createStartLabel}"
-        action: "create-child"
-        targetClass: "sysarch:${nodeClass}"
-        containmentFeature: "${nodesFeature}"
-        defaults:
-          ${startFlag}: true
-      - id: "${createEndTool}"
-        label: "${createEndLabel}"
-        action: "create-child"
-        targetClass: "sysarch:${nodeClass}"
-        containmentFeature: "${nodesFeature}"
-        defaults:
-          ${endFlag}: true
+        ${nodeContainment}
+      ${moreTools}
       - id: "${connectTool}"
         label: "${connectLabel}"
         action: "create-edge"
         targetClass: "sysarch:${edgeClass}"
-        containmentFeature: "${edgesFeature}"
+        ${edgeContainment}
         validateOnDrop: true

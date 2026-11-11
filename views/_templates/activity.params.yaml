@@ -1,0 +1,53 @@
+# Parameters of views/activity.vsm.yaml (spec P3 §4.1 / T6): actions are rectangles, a DECIDE action is a diamond, an
+# object flow is dashed and a control flow solid (told apart by shape and line, not by colour).
+template: "behavior.vsm.tpl.yaml"
+output: "activity.vsm.yaml"
+params:
+  id: "activity"
+  label: "活动图（Activity）"
+  rootClass: "Activity"
+  nodesFeature: "actions"
+  nodeStyle: "action"
+  nodeClass: "Action"
+  nodeShape: "rectangle"
+  nodeDetail: "{expression}"
+  moreNodeStyles: |
+    - id: "decision"
+      appliesTo: "sysarch:Action"
+      when: "kind == 'DECIDE'"
+      shape: "diamond"
+      width: 32
+      height: 32
+      labelPosition: "outside"
+      labelExpression: "{name}"
+  edgeStyle: "controlFlow"
+  edgeClass: "ActivityFlow"
+  edgeSource: "source"
+  edgeTarget: "target"
+  edgeArrow: "open"
+  edgeLabel: ""
+  moreEdgeStyles: |
+    - id: "objectFlow"
+      domainClass: "sysarch:ActivityFlow"
+      sourceEnd: "source"
+      targetEnd: "target"
+      routing: "straight"
+      arrow: "open"
+      lineStyle: "dashed"
+      color: "#1A2B4A"
+      labelExpression: ""
+      when: "isObjectFlow"
+  createNodeTool: "createAction"
+  createNodeLabel: "新建动作"
+  nodeContainment: 'containmentFeature: "actions"'
+  moreTools: |
+    - id: "createDecision"
+      label: "新建判定"
+      action: "create-child"
+      targetClass: "sysarch:Action"
+      containmentFeature: "actions"
+      defaults:
+        kind: "DECIDE"
+  connectTool: "connect"
+  connectLabel: "新建流"
+  edgeContainment: 'containmentFeature: "flows"'

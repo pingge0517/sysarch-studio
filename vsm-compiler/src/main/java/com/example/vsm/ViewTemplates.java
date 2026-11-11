@@ -128,12 +128,34 @@ final class ViewTemplates {
         return expansions;
     }
 
-    /** {@code ${name}} replaced line by line, so an error names the template line. Null if anything was wrong. */
+    /** P3 T6: a placeholder that is the whole line (after its indentation). */
+    private static final Pattern WHOLE_LINE = Pattern.compile("([ ]*)\\$\\{([a-z][A-Za-z0-9]*)}[ ]*");
+
+    /**
+     * {@code ${name}} replaced line by line, so an error names the template line. Null if anything was wrong.
+     *
+     * <p>P3 T6: a placeholder alone on its line takes a block: every line of the value gets the placeholder's indentation
+     * (a YAML fragment such as more node styles, written in the parameter file as a {@code |} block), and an empty value
+     * removes the line. Still plain substitution: the template decides where, the parameter only what.
+     */
     private static String substitute(String templateFile, String template, Map<String, String> params, List<Diagnostic> diagnostics) {
         StringBuilder out = new StringBuilder();
         boolean ok = true;
         String[] lines = template.split("\n", -1);
         for (int i = 0; i < lines.length; i++) {
+            Matcher whole = WHOLE_LINE.matcher(lines[i]);
+            if (whole.matches() && params.containsKey(whole.group(2))) {
+                String value = params.get(whole.group(2)).stripTrailing();
+                if (!value.isEmpty()) {
+                    String indent = whole.group(1);
+                    out.append(java.util.Arrays.stream(value.split("\n", -1)).map(l -> l.isBlank() ? "" : indent + l)
+                            .collect(java.util.stream.Collectors.joining("\n")));
+                    if (i < lines.length - 1) {
+                        out.append('\n');
+                    }
+                }
+                continue;
+            }
             Matcher matcher = PLACEHOLDER.matcher(lines[i]);
             StringBuilder line = new StringBuilder();
             while (matcher.find()) {

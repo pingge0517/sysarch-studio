@@ -26,6 +26,7 @@ public class ViewpointRegistry {
 
     public static final List<Viewpoint> VIEWPOINTS = List.of(
         new Viewpoint("sysarch.core", "系统架构建模", "http://example.com/sysarch/1.0", 10, List.of(
+            new Representation("activity", "活动图（Activity）", RepresentationKind.DIAGRAM),
             new Representation("allocation-matrix", "分配矩阵（系统→逻辑→物理）", RepresentationKind.TABLE),
             new Representation("la-architecture", "逻辑架构（LA）", RepresentationKind.DIAGRAM),
             new Representation("pa-architecture", "物理架构（PA）", RepresentationKind.DIAGRAM),
@@ -34,7 +35,8 @@ public class ViewpointRegistry {
             new Representation("sa-function-chain", "系统功能链（SA）", RepresentationKind.DIAGRAM),
             new Representation("state-machine", "状态机图（State Machine）", RepresentationKind.DIAGRAM),
             new Representation("bdd", "块定义图（BDD）", RepresentationKind.DIAGRAM),
-            new Representation("ibd", "内部块图（IBD）", RepresentationKind.DIAGRAM)
+            new Representation("ibd", "内部块图（IBD）", RepresentationKind.DIAGRAM),
+            new Representation("use-case", "用例图（Use Case）", RepresentationKind.DIAGRAM)
         ))
     );
 
@@ -42,8 +44,9 @@ public class ViewpointRegistry {
 
     private final Map<String, ITableDescriptionProvider> tableProviders;
 
-    public ViewpointRegistry(LaArchitectureDiagramDescriptionProvider laArchitectureProvider, PaArchitectureDiagramDescriptionProvider paArchitectureProvider, ParametricDiagramDescriptionProvider parametricProvider, SaFunctionChainDiagramDescriptionProvider saFunctionChainProvider, StateMachineDiagramDescriptionProvider stateMachineProvider, BddDiagramDescriptionProvider bddProvider, IbdDiagramDescriptionProvider ibdProvider, AllocationMatrixTableDescriptionProvider allocationMatrixTableProvider, RequirementTraceTableDescriptionProvider requirementTraceTableProvider) {
+    public ViewpointRegistry(ActivityDiagramDescriptionProvider activityProvider, LaArchitectureDiagramDescriptionProvider laArchitectureProvider, PaArchitectureDiagramDescriptionProvider paArchitectureProvider, ParametricDiagramDescriptionProvider parametricProvider, SaFunctionChainDiagramDescriptionProvider saFunctionChainProvider, StateMachineDiagramDescriptionProvider stateMachineProvider, BddDiagramDescriptionProvider bddProvider, IbdDiagramDescriptionProvider ibdProvider, UseCaseDiagramDescriptionProvider useCaseProvider, AllocationMatrixTableDescriptionProvider allocationMatrixTableProvider, RequirementTraceTableDescriptionProvider requirementTraceTableProvider) {
         Map<String, IDiagramDescriptionProvider> byId = new LinkedHashMap<>();
+        byId.put("activity", activityProvider);
         byId.put("la-architecture", laArchitectureProvider);
         byId.put("pa-architecture", paArchitectureProvider);
         byId.put("parametric", parametricProvider);
@@ -51,6 +54,7 @@ public class ViewpointRegistry {
         byId.put("state-machine", stateMachineProvider);
         byId.put("bdd", bddProvider);
         byId.put("ibd", ibdProvider);
+        byId.put("use-case", useCaseProvider);
         this.providers = Collections.unmodifiableMap(byId);
         Map<String, ITableDescriptionProvider> tablesById = new LinkedHashMap<>();
         tablesById.put("allocation-matrix", allocationMatrixTableProvider);

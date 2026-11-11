@@ -251,6 +251,9 @@ final class ToolFactory {
                         errors.stream().map(error -> new Message(error.message(), MessageLevel.ERROR)).toList());
             }
         }
+        if (EdgeStyle.SELF.equals(style.sourceEnd())) {
+            return link(from.get(), to.get(), style.targetEnd());
+        }
         EObject connection = EcoreUtil.create(connectionType);
         connection.eSet(connectionType.getEStructuralFeature(style.sourceEnd()), from.get());
         connection.eSet(connectionType.getEStructuralFeature(style.targetEnd()), to.get());
@@ -270,6 +273,27 @@ final class ToolFactory {
         }
         // Connections have no container in the metamodel: they live at the top of the document of the ports.
         from.get().eResource().getContents().add(connection);
+        return SiriusDiagramDescriptionFactory.semanticChange();
+    }
+
+    /**
+     * P3 T6: an edge of a {@code self -> feature} style is that reference of its source (a use case's actors): connecting
+     * adds the target to it, nothing is created. Already linked: nothing changes.
+     */
+    @SuppressWarnings("unchecked")
+    private static IStatus link(EObject source, EObject target, String featureName) {
+        if (!(source.eClass().getEStructuralFeature(featureName) instanceof EReference reference) || reference.isContainment()
+                || !reference.getEReferenceType().isInstance(target)) {
+            return new Failure("无法把 " + name(target) + " 关联到 " + name(source));
+        }
+        if (reference.isMany()) {
+            List<EObject> values = (List<EObject>) source.eGet(reference);
+            if (!values.contains(target)) {
+                values.add(target);
+            }
+        } else {
+            source.eSet(reference, target);
+        }
         return SiriusDiagramDescriptionFactory.semanticChange();
     }
 
@@ -311,6 +335,9 @@ final class ToolFactory {
     }
 
     private static EClass endType(EClass edgeType, String end) {
+        if (EdgeStyle.SELF.equals(end)) {
+            return edgeType; // P3 T6: the edge is a reference of its source element (use case -> actors)
+        }
         return edgeType.getEStructuralFeature(end) instanceof EReference reference ? reference.getEReferenceType() : null;
     }
 

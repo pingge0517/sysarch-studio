@@ -1,34 +1,60 @@
 # Parameters of views/state-machine.vsm.yaml (spec P3 §4.1 / T5): initial pseudo-state a filled circle, final state a
 # ring around a disc, states rounded, transitions labelled trigger[guard]/effect with empty segments left out.
-# The behaviour template is shared with the activity and use-case views (P3 T6).
+# The behaviour template is shared with the activity and use-case views (P3 T6); the more* parameters are YAML blocks.
 template: "behavior.vsm.tpl.yaml"
 output: "state-machine.vsm.yaml"
 params:
   id: "state-machine"
   label: "状态机图（State Machine）"
   rootClass: "StateMachine"
-  nodeClass: "State"
   nodesFeature: "states"
-  edgeClass: "Transition"
-  edgesFeature: "transitions"
-  startStyle: "initial"
-  startFlag: "isInitial"
-  startShape: "filled-circle"
-  endStyle: "final"
-  endFlag: "isFinal"
-  endShape: "double-circle"
   nodeStyle: "state"
+  nodeClass: "State"
   nodeShape: "rounded-rectangle"
-  nodeColor: "#FFFFFF"
   nodeDetail: 'entry/{entryBehavior}\ndo/{doBehavior}\nexit/{exitBehavior}'
-  lineColor: "#1A2B4A"
+  moreNodeStyles: |
+    - id: "initial"
+      appliesTo: "sysarch:State"
+      when: "isInitial"
+      shape: "filled-circle"
+      width: 20
+      height: 20
+      color: "#1A2B4A"
+      labelPosition: "outside"
+      labelExpression: ""
+    - id: "final"
+      appliesTo: "sysarch:State"
+      when: "isFinal"
+      shape: "double-circle"
+      width: 24
+      height: 24
+      labelPosition: "outside"
+      labelExpression: ""
   edgeStyle: "transition"
+  edgeClass: "Transition"
+  edgeSource: "source"
+  edgeTarget: "target"
+  edgeArrow: "open"
   edgeLabel: "{trigger}[{guard}]/{effect}"
+  moreEdgeStyles: ""
   createNodeTool: "createState"
   createNodeLabel: "新建状态"
-  createStartTool: "createInitial"
-  createStartLabel: "新建初始状态"
-  createEndTool: "createFinal"
-  createEndLabel: "新建终止状态"
+  nodeContainment: 'containmentFeature: "states"'
+  moreTools: |
+    - id: "createInitial"
+      label: "新建初始状态"
+      action: "create-child"
+      targetClass: "sysarch:State"
+      containmentFeature: "states"
+      defaults:
+        isInitial: true
+    - id: "createFinal"
+      label: "新建终止状态"
+      action: "create-child"
+      targetClass: "sysarch:State"
+      containmentFeature: "states"
+      defaults:
+        isFinal: true
   connectTool: "connect"
   connectLabel: "新建迁移"
+  edgeContainment: 'containmentFeature: "transitions"'

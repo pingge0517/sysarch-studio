@@ -1,0 +1,40 @@
+# Parameters of views/use-case.vsm.yaml (spec P3 §4.1 / T6): use cases are ellipses, actors stick figures, an
+# association is a solid line without arrow: the use case's actors reference (connecting links, deleting unlinks).
+# Use cases and actors are document roots, so the create tools have no containment feature.
+template: "behavior.vsm.tpl.yaml"
+output: "use-case.vsm.yaml"
+params:
+  id: "use-case"
+  label: "用例图（Use Case）"
+  rootClass: "UseCase"
+  nodesFeature: "actors"
+  nodeStyle: "useCase"
+  nodeClass: "UseCase"
+  nodeShape: "ellipse"
+  nodeDetail: ""
+  moreNodeStyles: |
+    - id: "actor"
+      appliesTo: "sysarch:Actor"
+      shape: "stick-figure"
+      width: 24
+      height: 48
+      labelPosition: "outside"
+      labelExpression: "{name}"
+  edgeStyle: "association"
+  edgeClass: "UseCase"
+  edgeSource: "self"
+  edgeTarget: "actors"
+  edgeArrow: "none"
+  edgeLabel: ""
+  moreEdgeStyles: ""
+  createNodeTool: "createUseCase"
+  createNodeLabel: "新建用例"
+  nodeContainment: ""
+  moreTools: |
+    - id: "createActor"
+      label: "新建参与者"
+      action: "create-child"
+      targetClass: "sysarch:Actor"
+  connectTool: "associate"
+  connectLabel: "关联参与者"
+  edgeContainment: ""
