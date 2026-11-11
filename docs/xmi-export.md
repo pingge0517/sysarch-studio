@@ -86,3 +86,21 @@ curl -X POST http://<host>/api/v1/export/xmi \
 - **UML 校验**：UML2 的校验器没有发现任何问题。唯一的报告是 SysML 配置文件引用无法解析，这是预期的：UML2 本身不带 SysML 配置文件，Cameo 和 Papyrus 会把这个标准 URI 解析到各自内置的 SysML 1.6。
 
 **一项需要在 Cameo 中留意的差异**：本工具按 SysML 1.6 的要求，写的是 UML 2.5.1 命名空间 `http://www.omg.org/spec/UML/20161101`。UML2 5.5 只认识到 UML 2.5（`…/20131001`），所以检查时只把这一个命名空间改成了 2.5。我们用到的类和属性在两个版本中完全相同。这个选项现在已经提供（第 1 节的 `umlVersion: "2.5"`）：用它导出的文件，UML2 不经任何改写即可直接读入（2026-11-11 已实测）。如果 Cameo 不接受 2.5.1，请改用它。
+
+### 代替验证：Papyrus（SysML 1.6，2026-11-11）
+
+工具：Eclipse Papyrus for SysML 1.6 独立版（2.2.0_c，2023-01；Windows zip 410,561,399 字节，与服务器大小一致，解压校验无错误），放在 `C:\PapyrusCheck`，不在项目内。本机工具只能操作浏览器，不能操作桌面程序，所以没有在 Papyrus 界面里点选。改用 Papyrus 自带的 jar（它的 UML2 5.5 和 SysML 1.6 模型包，也就是编辑器底层用的代码）无界面加载演示文件，结果如下：
+
+| 文件 | Papyrus 看到的内容 |
+|---|---|
+| 默认（UML 2.5.1 命名空间） | 模型**不被识别为 UML**：Papyrus 的 UML2 只认识到 UML 2.5 |
+| `umlVersion: "2.5"` | 模型完整读入为 UML：类、部件、端口、连接器、关系都在。但 **19 个 SysML 构造型应用不被识别** |
+
+**原因**：Papyrus 6.x 的 SysML 1.6 使用自己的命名空间（`http://www.eclipse.org/papyrus/sysml/1.6/SysML/Blocks`、`…/Requirements` 等，按包拆分），而本工具和 OMG 标准 XMI 写的是统一的 `http://www.omg.org/spec/SysML/20181001/SysML`。在 Papyrus 中打开时，内容会显示为普通 UML（类、端口、连接器），没有 «Block»、«Requirement» 等构造型。
+
+**结论**：
+- **Papyrus 部分通过**：结构可以读入（需用 `umlVersion: "2.5"`），SysML 构造型需要 Papyrus 专用命名空间才能识别。
+- **Cameo 仍待验证**：Cameo 读写的是 OMG 标准命名空间，所以本工具当前的写法正是为 Cameo 准备的。
+- 如需在 Papyrus 中直接看到构造型，可以增加一个"Papyrus 风格"导出选项（按 Papyrus 的分包命名空间写构造型）。目前没有做。
+
+如果要在 Papyrus 界面里亲自看：运行 `C:\PapyrusCheck\app\papyrusSysML16\papyrusSysML.exe`，把 `C:\PapyrusCheck\files\domain-controller-uml25.xmi` 拖进一个工程，右键用 UML 模型编辑器打开。
