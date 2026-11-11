@@ -163,6 +163,13 @@ public final class SiriusDiagramDescriptionFactory {
                 .build();
     }
 
+    /** P3 (spec §9): "（分区 2/5：第 201–400 个…）" after the frame's name when a large diagram shows one partition. */
+    private String partitionNote(DiagramDescription source, VariableManager vm) {
+        ProjectionCache.Projection projection = this.projection(source, vm);
+        var partition = projection == null ? null : projection.snapshot().partition();
+        return partition == null ? "" : "（" + partition.describe() + "；用\"上一分区/下一分区\"切换）";
+    }
+
     // ---- Nodes ----
 
     private NodeDescription nodeDescription(DiagramDescription source, String id, NodeStyle style, SynchronizationPolicy policy,
@@ -211,7 +218,7 @@ public final class SiriusDiagramDescriptionFactory {
                 .targetObjectLabelProvider(vm -> self(vm).map(SiriusDiagramDescriptionFactory::name).orElse(""))
                 .semanticElementsProvider(vm -> diagramRoot(vm).map(List::of).orElse(List.of()))
                 .styleProvider(vm -> rectangle(DEFAULT_COLOR, DEFAULT_BORDER_COLOR, 2, 0))
-                .insideLabelDescription(insideLabel(id + "/label", vm -> self(vm).map(SiriusDiagramDescriptionFactory::name).orElse(""),
+                .insideLabelDescription(insideLabel(id + "/label", vm -> self(vm).map(SiriusDiagramDescriptionFactory::name).orElse("") + this.partitionNote(source, vm),
                         labelStyle(true, false), true))
                 .childNodeDescriptions(children)
                 .borderNodeDescriptions(borders)

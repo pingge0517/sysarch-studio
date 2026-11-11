@@ -96,6 +96,17 @@ final class ToolFactory {
                     .handler(vm -> this.toggleFilter(vm, filter.id()))
                     .build());
         }
+        if (source.partitionSize() != null) { // P3 (spec §9): large diagrams are shown one partition at a time
+            for (int delta : new int[] { -1, 1 }) {
+                tools.add(SingleClickOnDiagramElementTool.newSingleClickOnDiagramElementTool(diagramId + "/tool/partition/" + (delta < 0 ? "previous" : "next"))
+                        .label(delta < 0 ? "上一分区" : "下一分区")
+                        .iconURL(List.of())
+                        .targetDescriptions(List.of())
+                        .appliesToDiagramRoot(true)
+                        .handler(vm -> this.movePartition(vm, source, delta))
+                        .build());
+            }
+        }
         return Palette.newPalette(diagramId + "/palette").tools(tools).toolSections(List.of()).build();
     }
 
@@ -294,6 +305,21 @@ final class ToolFactory {
         } else {
             source.eSet(reference, target);
         }
+        return SiriusDiagramDescriptionFactory.semanticChange();
+    }
+
+    /** P3: previous / next partition of a large diagram; view state only, the model is not touched. */
+    private IStatus movePartition(VariableManager vm, DiagramDescription source, int delta) {
+        String diagramId = SiriusDiagramDescriptionFactory.diagramId(vm);
+        java.util.Optional<EObject> root = SiriusDiagramDescriptionFactory.diagramRoot(vm);
+        if (diagramId == null || root.isEmpty()) {
+            return new Failure("未找到当前图");
+        }
+        var partition = com.example.sysarch.view.projection.DiagramProjector.project(source, root.get(), this.filters.active(diagramId)).partition();
+        if (partition == null) {
+            return new Failure("此图元素不多，没有分区");
+        }
+        this.filters.movePartition(diagramId, delta, partition.count());
         return SiriusDiagramDescriptionFactory.semanticChange();
     }
 

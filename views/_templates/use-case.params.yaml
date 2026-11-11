@@ -6,6 +6,7 @@ output: "use-case.vsm.yaml"
 params:
   id: "use-case"
   label: "用例图（Use Case）"
+  partitionSize: "200"
   rootClass: "UseCase"
   nodesFeature: "actors"
   nodeStyle: "useCase"

@@ -12,6 +12,8 @@ import java.util.Objects;
  * Sirius Web, so a Sirius upgrade touches the adapter only and never the generated code.
  *
  * @param domainType root element type, as {@code nsPrefix::EClass} (e.g. {@code sysarch::PartDefinition})
+ * @param partitionSize P3 (spec §9 "状态机节点上限 200，超出启用分区视图"): null, or the most top-level nodes drawn at once; a
+ *        larger diagram is shown one partition at a time
  */
 public record DiagramDescription(
         String id,
@@ -23,7 +25,8 @@ public record DiagramDescription(
         List<Filter> filters,
         List<NodeStyle> nodes,
         List<EdgeStyle> edges,
-        List<Tool> tools) {
+        List<Tool> tools,
+        Integer partitionSize) {
 
     public DiagramDescription {
         Objects.requireNonNull(id);
@@ -43,6 +46,7 @@ public record DiagramDescription(
     /** Fluent builder used by generated providers. */
     public static final class Builder {
         private final String id;
+        private Integer partitionSize;
         private String label;
         private String domainType;
         private SynchronizationKind synchronizationKind;
@@ -97,6 +101,11 @@ public record DiagramDescription(
             return this;
         }
 
+        public Builder partitionSize(int partitionSize) {
+            this.partitionSize = partitionSize;
+            return this;
+        }
+
         public Builder addTool(Tool tool) {
             this.tools.add(tool);
             return this;
@@ -104,7 +113,7 @@ public record DiagramDescription(
 
         public DiagramDescription build() {
             return new DiagramDescription(this.id, this.label, this.domainType, this.synchronizationKind, this.refreshPolicy,
-                    this.autoExpands, this.filters, this.nodes, this.edges, this.tools);
+                    this.autoExpands, this.filters, this.nodes, this.edges, this.tools, this.partitionSize);
         }
     }
 }

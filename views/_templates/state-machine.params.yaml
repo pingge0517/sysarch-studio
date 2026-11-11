@@ -6,6 +6,7 @@ output: "state-machine.vsm.yaml"
 params:
   id: "state-machine"
   label: "状态机图（State Machine）"
+  partitionSize: "200"
   rootClass: "StateMachine"
   nodesFeature: "states"
   nodeStyle: "state"

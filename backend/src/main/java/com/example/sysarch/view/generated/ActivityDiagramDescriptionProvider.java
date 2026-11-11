@@ -16,6 +16,7 @@ public class ActivityDiagramDescriptionProvider implements IDiagramDescriptionPr
             .domainType("sysarch::Activity")
             .synchronizationKind(SynchronizationKind.AUTO)
             .refreshPolicy(RefreshPolicy.incremental(2000))
+            .partitionSize(200)
             .autoExpand("actions", 1)
             .addNode(NodeStyle.builder("action")
                 .appliesTo("sysarch::Action")

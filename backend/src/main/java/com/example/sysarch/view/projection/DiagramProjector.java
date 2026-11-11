@@ -68,6 +68,12 @@ public final class DiagramProjector {
     /** P3 T3: the reserved affiliationFeature "the element that contains it" (vsm-compiler accepts it). */
     public static final String EOBJECT_CONTAINER = "eContainer";
 
+    /**
+     * P3 (spec §9): the partition to show, passed with the active filter ids as {@code "§partition=N"} (0-based), so the
+     * projection cache keys on it like on filters. Not a filter id.
+     */
+    public static final String PARTITION_TOKEN = "§partition=";
+
     static final String ABSTRACT_FEATURE = "isAbstract";
 
     static final String TYPE_FEATURE = "typedBy";
@@ -147,6 +153,15 @@ public final class DiagramProjector {
         /** Which element an edge id was first given to (P3 T5: a second element between the same ends gets its own edge). */
         private final Map<String, EObject> edgeOwners = new HashMap<>();
 
+        private int partitionIndex;
+
+        /** Elements whose node is left out because they belong to another partition (P3). */
+        private final Set<EObject> otherPartitions = new HashSet<>();
+
+        private DiagramSnapshot.Partition partition;
+
+        private int hiddenEdges;
+
         Projection(DiagramDescription description, EObject root, Set<String> activeFilterIds) {
             this.description = description;
             this.root = root;
@@ -165,6 +180,10 @@ public final class DiagramProjector {
                 }
             }
             for (String id : activeFilterIds) {
+                if (id.startsWith(PARTITION_TOKEN)) {
+                    this.partitionIndex = Integer.parseInt(id.substring(PARTITION_TOKEN.length()));
+                    continue;
+                }
                 if (!known.contains(id)) {
                     throw new IllegalArgumentException("unknown filter '" + id + "' for diagram " + description.id());
                 }
@@ -177,11 +196,79 @@ public final class DiagramProjector {
             for (EObject element : this.scope) {
                 this.projectNode(element, plain, false);
             }
+            this.partition();
             for (EObject element : this.scope) {
                 this.projectNode(element, border, true);
             }
             this.elementsById.put(elementId(this.root), this.root);
-            return new DiagramSnapshot(this.description.id(), elementId(this.root), this.orderedNodes, this.edges());
+            List<DiagramSnapshot.Edge> edges = this.edges();
+            if (this.partition != null) {
+                this.partition = new DiagramSnapshot.Partition(this.partition.index(), this.partition.count(), this.partition.first(), this.partition.last(),
+                        this.partition.total(), this.hiddenEdges);
+            }
+            return new DiagramSnapshot(this.description.id(), elementId(this.root), this.orderedNodes, edges, this.partition);
+        }
+
+        /**
+         * P3 (spec §9 "状态机节点上限 200，超出启用分区视图"): with more top-level nodes than {@code partitionSize}, the nodes are
+         * put in breadth-first order along the view's edges (starting from the first node in document order, then the
+         * next one not yet reached), so neighbours stay together, cut into partitions of {@code partitionSize}, and only
+         * the chosen partition is kept. Border nodes and edges of the others then drop out by themselves.
+         */
+        private void partition() {
+            Integer size = this.description.partitionSize();
+            List<DiagramSnapshot.Node> top = this.orderedNodes.stream().filter(n -> n.parentId() == null).toList();
+            if (size == null || top.size() <= size) {
+                return;
+            }
+            Map<String, Set<String>> neighbours = new HashMap<>();
+            for (EdgeStyle style : this.description.edges()) {
+                EClass type = this.eClass(style.domainType());
+                for (EObject element : this.scope) {
+                    if (type.isInstance(element)) {
+                        for (EObject s : ends(element, style.sourceEnd())) {
+                            for (EObject t : ends(element, style.targetEnd())) {
+                                neighbours.computeIfAbsent(elementId(s), k -> new java.util.LinkedHashSet<>()).add(elementId(t));
+                                neighbours.computeIfAbsent(elementId(t), k -> new java.util.LinkedHashSet<>()).add(elementId(s));
+                            }
+                        }
+                    }
+                }
+            }
+            Set<String> topIds = new java.util.LinkedHashSet<>();
+            top.forEach(n -> topIds.add(n.id()));
+            List<String> order = new ArrayList<>();
+            Set<String> seen = new HashSet<>();
+            for (String start : topIds) {
+                if (!seen.add(start)) {
+                    continue;
+                }
+                java.util.ArrayDeque<String> queue = new java.util.ArrayDeque<>(List.of(start));
+                while (!queue.isEmpty()) {
+                    String id = queue.poll();
+                    order.add(id);
+                    for (String next : neighbours.getOrDefault(id, Set.of())) {
+                        if (topIds.contains(next) && seen.add(next)) {
+                            queue.add(next);
+                        }
+                    }
+                }
+            }
+            int count = (order.size() + size - 1) / size;
+            int index = Math.max(0, Math.min(this.partitionIndex, count - 1));
+            Set<String> keep = new HashSet<>(order.subList(index * size, Math.min(order.size(), (index + 1) * size)));
+            Set<String> removed = new HashSet<>();
+            for (DiagramSnapshot.Node node : List.copyOf(this.orderedNodes)) {
+                if ((node.parentId() == null && !keep.contains(node.id())) || removed.contains(node.parentId())) {
+                    removed.add(node.id());
+                    this.orderedNodes.remove(node);
+                    EObject element = this.elementsById.remove(node.elementId());
+                    this.nodes.remove(element);
+                    this.nodeIds.remove(node.id());
+                    this.otherPartitions.add(element);
+                }
+            }
+            this.partition = new DiagramSnapshot.Partition(index, count, index * size + 1, Math.min(order.size(), (index + 1) * size), order.size(), 0);
         }
 
         private void projectNode(EObject element, List<NodeStyle> styles, boolean borderPass) {
@@ -287,6 +374,9 @@ public final class DiagramProjector {
                 targetNode = this.containerNode(target);
             }
             if (sourceNode == null || targetNode == null) {
+                if ((sourceNode != null || targetNode != null) && (this.otherPartitions.contains(source) || this.otherPartitions.contains(target))) {
+                    this.hiddenEdges++; // P3: crosses into another partition
+                }
                 return Optional.empty();
             }
             String id = idPrefix + ":" + elementId(source) + "->" + elementId(target);

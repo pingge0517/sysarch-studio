@@ -22,6 +22,9 @@ public class ${d.className()} implements IDiagramDescriptionProvider {
 <#if d.refreshBudgetMs()??>
             .refreshPolicy(RefreshPolicy.incremental(${d.refreshBudgetMs()}))
 </#if>
+<#if d.partitionSize()??>
+            .partitionSize(${d.partitionSize()})
+</#if>
 <#list d.autoExpands() as a>
             .autoExpand(${q(a.feature())}, ${a.maxDepth()})
 </#list>

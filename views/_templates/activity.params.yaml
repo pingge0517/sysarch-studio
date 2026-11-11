@@ -5,6 +5,7 @@ output: "activity.vsm.yaml"
 params:
   id: "activity"
   label: "活动图（Activity）"
+  partitionSize: "200"
   rootClass: "Activity"
   nodesFeature: "actions"
   nodeStyle: "action"

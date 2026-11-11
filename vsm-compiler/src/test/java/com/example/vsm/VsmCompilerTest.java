@@ -312,6 +312,7 @@ class VsmCompilerTest {
         assertTrue(activity.contains(".shape(Shape.DIAMOND)") && activity.contains(".when(\"kind == 'DECIDE'\")"), activity);
         assertTrue(activity.contains(".lineStyle(LineStyle.DASHED)") && activity.contains(".when(\"isObjectFlow\")"));
         assertTrue(activity.contains(".withDefault(\"kind\", \"DECIDE\")"));
+        assertTrue(activity.contains(".partitionSize(200)"), "spec §9: at most 200 nodes at once");
         String useCase = Files.readString(this.output("out").resolve("UseCaseDiagramDescriptionProvider.java"));
         assertTrue(useCase.contains(".shape(Shape.ELLIPSE)") && useCase.contains(".shape(Shape.STICK_FIGURE)") && useCase.contains(".arrow(Arrow.NONE)"));
         assertTrue(useCase.contains("Tool.createChild(\"createActor\", \"新建参与者\", \"sysarch::Actor\", null)"), "a root: no containment line");
@@ -324,19 +325,19 @@ class VsmCompilerTest {
     @Test
     void aWhenMayOnlyNameAttributesOfItsClass() throws IOException {
         this.edit(STATE_MACHINE, "        when: \"isInitial\"", "        when: \"layer == 'SYSTEM' and source\"");
-        this.assertFails(STATE_MACHINE + ":30 invalid when \"layer == 'SYSTEM' and source\": 'source' is not allowed: it is not an attribute of the element");
+        this.assertFails(STATE_MACHINE + ":31 invalid when \"layer == 'SYSTEM' and source\": 'source' is not allowed: it is not an attribute of the element");
     }
 
     @Test
     void aWhenFlagMustBeBoolean() throws IOException {
         this.edit(STATE_MACHINE, "        when: \"isInitial\"", "        when: \"doBehavior\"");
-        this.assertFails(STATE_MACHINE + ":30 'doBehavior' is not boolean");
+        this.assertFails(STATE_MACHINE + ":31 'doBehavior' is not boolean");
     }
 
     @Test
     void anEdgeContainmentMustHoldTheEdge() throws IOException {
         this.edit(STATE_MACHINE, "        containmentFeature: \"transitions\"", "        containmentFeature: \"states\"");
-        this.assertFails(STATE_MACHINE + ":78 sysarch:Transition cannot be stored in sysarch:StateMachine.states");
+        this.assertFails(STATE_MACHINE + ":79 sysarch:Transition cannot be stored in sysarch:StateMachine.states");
     }
 
     // =========================================================== P1 T3: layer views, filters, defaults, templates

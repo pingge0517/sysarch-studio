@@ -18,8 +18,25 @@ public class DiagramFilterState {
 
     private final Map<String, Set<String>> activeByDiagram = new ConcurrentHashMap<>();
 
+    /** P3 (spec §9): the partition shown per diagram (0 = the first; only views with partitionSize use it). */
+    private final Map<String, Integer> partitionByDiagram = new ConcurrentHashMap<>();
+
+    /** The switched-on filters, plus the partition token when a partition other than the first is shown (the cache keys on both). */
     public Set<String> active(String diagramId) {
-        return diagramId == null ? Set.of() : Set.copyOf(this.activeByDiagram.getOrDefault(diagramId, Set.of()));
+        if (diagramId == null) {
+            return Set.of();
+        }
+        Set<String> active = new HashSet<>(this.activeByDiagram.getOrDefault(diagramId, Set.of()));
+        int partition = this.partitionByDiagram.getOrDefault(diagramId, 0);
+        if (partition > 0) {
+            active.add(com.example.sysarch.view.projection.DiagramProjector.PARTITION_TOKEN + partition);
+        }
+        return Set.copyOf(active);
+    }
+
+    /** Moves to the previous (-1) or next (+1) partition, within 0..count-1; returns the new index. */
+    public int movePartition(String diagramId, int delta, int count) {
+        return this.partitionByDiagram.merge(diagramId, Math.max(0, Math.min(count - 1, delta)), (old, d) -> Math.max(0, Math.min(count - 1, old + delta)));
     }
 
     /** Switches a filter on if it was off and off if it was on; returns the new state. */
