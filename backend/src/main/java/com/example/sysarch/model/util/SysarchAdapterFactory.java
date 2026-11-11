@@ -156,6 +156,18 @@ public class SysarchAdapterFactory extends AdapterFactoryImpl {
 				return createActorAdapter();
 			}
 			@Override
+			public Adapter caseInteraction(Interaction object) {
+				return createInteractionAdapter();
+			}
+			@Override
+			public Adapter caseLifeline(Lifeline object) {
+				return createLifelineAdapter();
+			}
+			@Override
+			public Adapter caseMessage(Message object) {
+				return createMessageAdapter();
+			}
+			@Override
 			public Adapter defaultCase(EObject object) {
 				return createEObjectAdapter();
 			}
@@ -480,6 +492,48 @@ public class SysarchAdapterFactory extends AdapterFactoryImpl {
 	 * @generated
 	 */
 	public Adapter createActorAdapter() {
+		return null;
+	}
+
+	/**
+	 * Creates a new adapter for an object of class '{@link com.example.sysarch.model.Interaction <em>Interaction</em>}'.
+	 * <!-- begin-user-doc -->
+	 * This default implementation returns null so that we can easily ignore cases;
+	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
+	 * <!-- end-user-doc -->
+	 * @return the new adapter.
+	 * @see com.example.sysarch.model.Interaction
+	 * @generated
+	 */
+	public Adapter createInteractionAdapter() {
+		return null;
+	}
+
+	/**
+	 * Creates a new adapter for an object of class '{@link com.example.sysarch.model.Lifeline <em>Lifeline</em>}'.
+	 * <!-- begin-user-doc -->
+	 * This default implementation returns null so that we can easily ignore cases;
+	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
+	 * <!-- end-user-doc -->
+	 * @return the new adapter.
+	 * @see com.example.sysarch.model.Lifeline
+	 * @generated
+	 */
+	public Adapter createLifelineAdapter() {
+		return null;
+	}
+
+	/**
+	 * Creates a new adapter for an object of class '{@link com.example.sysarch.model.Message <em>Message</em>}'.
+	 * <!-- begin-user-doc -->
+	 * This default implementation returns null so that we can easily ignore cases;
+	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
+	 * <!-- end-user-doc -->
+	 * @return the new adapter.
+	 * @see com.example.sysarch.model.Message
+	 * @generated
+	 */
+	public Adapter createMessageAdapter() {
 		return null;
 	}
 

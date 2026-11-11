@@ -16,6 +16,7 @@ import { BranchesPage } from './branch/BranchesPage';
 import { effectiveProject, trunks } from './branch/workspaces';
 import { ReportsPage } from './report/ReportsPage';
 import { ImportPage } from './sysmlimport/ImportPage';
+import { SequencePage } from './sequence/SequencePage';
 
 // TODO: mount the Sirius Web frontend components and register the BDD/IBD views. Until then the diagrams are
 // edited in Sirius Web's own UI (backend :8080); this shell hosts the P1 matrix pages.
@@ -48,7 +49,7 @@ export function App() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
   const [table, setTable] = useState(param('table') || 'allocation-matrix');
-  const [view, setView] = useState(['baselines', 'locks', 'branches', 'reports', 'import', 'comments', 'admin'].includes(param('view')) ? param('view') : 'matrix');
+  const [view, setView] = useState(['baselines', 'locks', 'branches', 'reports', 'sequence', 'import', 'comments', 'admin'].includes(param('view')) ? param('view') : 'matrix');
   const [me, setMe] = useState<Me | null>(null);
   const [grant, setGrant] = useState<AccessGrant | null>(null);
   const user = me?.user ?? '';
@@ -216,6 +217,7 @@ export function App() {
             <option value="locks">编辑锁</option>
             <option value="branches">分支</option>
             <option value="reports">报告</option>
+            <option value="sequence">时序图（只读）</option>
             <option value="import">导入（SysML v2 / XMI）</option>
             <option value="comments">评论</option>
             <option value="admin">角色与审计</option>
@@ -274,6 +276,7 @@ export function App() {
         {project && view === 'baselines' && <BaselinePage project={workspace} />}
         {project && view === 'locks' && <LocksPage project={workspace} user={user} />}
         {project && view === 'reports' && <ReportsPage project={workspace} />}
+        {project && view === 'sequence' && <SequencePage project={workspace} />}
         {project && view === 'comments' && <CommentsPage project={workspace} grant={grant} />}
         {view === 'admin' && <AdminPage project={project ? workspace : ''} />}
         {project && view === 'branches' && <BranchesPage trunk={project} current={branch ? branchId : ''} onSwitch={(id) => void switchTo(id)} />}

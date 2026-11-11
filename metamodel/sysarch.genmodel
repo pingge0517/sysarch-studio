@@ -38,6 +38,11 @@
       <genEnumLiterals ecoreEnumLiteral="sysarch.ecore#//ActionKind/ASSIGN"/>
       <genEnumLiterals ecoreEnumLiteral="sysarch.ecore#//ActionKind/DECIDE"/>
     </genEnums>
+    <genEnums typeSafeEnumCompatible="false" ecoreEnum="sysarch.ecore#//MessageKind">
+      <genEnumLiterals ecoreEnumLiteral="sysarch.ecore#//MessageKind/SYNC"/>
+      <genEnumLiterals ecoreEnumLiteral="sysarch.ecore#//MessageKind/ASYNC"/>
+      <genEnumLiterals ecoreEnumLiteral="sysarch.ecore#//MessageKind/REPLY"/>
+    </genEnums>
     <genClasses image="false" ecoreClass="sysarch.ecore#//ArchElement">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//ArchElement/id"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//ArchElement/name"/>
@@ -161,5 +166,17 @@
       <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sysarch.ecore#//UseCase/subject"/>
     </genClasses>
     <genClasses ecoreClass="sysarch.ecore#//Actor"/>
+    <genClasses ecoreClass="sysarch.ecore#//Interaction">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference sysarch.ecore#//Interaction/lifelines"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference sysarch.ecore#//Interaction/messages"/>
+    </genClasses>
+    <genClasses ecoreClass="sysarch.ecore#//Lifeline">
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sysarch.ecore#//Lifeline/represents"/>
+    </genClasses>
+    <genClasses ecoreClass="sysarch.ecore#//Message">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute sysarch.ecore#//Message/kind"/>
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sysarch.ecore#//Message/sender"/>
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference sysarch.ecore#//Message/receiver"/>
+    </genClasses>
   </genPackages>
 </genmodel:GenModel>

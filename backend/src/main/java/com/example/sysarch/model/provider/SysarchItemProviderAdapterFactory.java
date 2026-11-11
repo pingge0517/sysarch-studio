@@ -555,6 +555,75 @@ public class SysarchItemProviderAdapterFactory extends SysarchAdapterFactory imp
 	}
 
 	/**
+	 * This keeps track of the one adapter used for all {@link com.example.sysarch.model.Interaction} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected InteractionItemProvider interactionItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link com.example.sysarch.model.Interaction}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createInteractionAdapter() {
+		if (interactionItemProvider == null) {
+			interactionItemProvider = new InteractionItemProvider(this);
+		}
+
+		return interactionItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link com.example.sysarch.model.Lifeline} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected LifelineItemProvider lifelineItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link com.example.sysarch.model.Lifeline}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createLifelineAdapter() {
+		if (lifelineItemProvider == null) {
+			lifelineItemProvider = new LifelineItemProvider(this);
+		}
+
+		return lifelineItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link com.example.sysarch.model.Message} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected MessageItemProvider messageItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link com.example.sysarch.model.Message}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createMessageAdapter() {
+		if (messageItemProvider == null) {
+			messageItemProvider = new MessageItemProvider(this);
+		}
+
+		return messageItemProvider;
+	}
+
+	/**
 	 * This returns the root adapter factory that contains this factory.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -680,6 +749,9 @@ public class SysarchItemProviderAdapterFactory extends SysarchAdapterFactory imp
 		if (activityFlowItemProvider != null) activityFlowItemProvider.dispose();
 		if (useCaseItemProvider != null) useCaseItemProvider.dispose();
 		if (actorItemProvider != null) actorItemProvider.dispose();
+		if (interactionItemProvider != null) interactionItemProvider.dispose();
+		if (lifelineItemProvider != null) lifelineItemProvider.dispose();
+		if (messageItemProvider != null) messageItemProvider.dispose();
 	}
 
 }

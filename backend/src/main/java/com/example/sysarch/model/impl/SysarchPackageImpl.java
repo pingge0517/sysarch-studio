@@ -15,9 +15,13 @@ import com.example.sysarch.model.ConnectionKind;
 import com.example.sysarch.model.ConstraintBlock;
 import com.example.sysarch.model.ConstraintExpr;
 import com.example.sysarch.model.DiagramLayout;
+import com.example.sysarch.model.Interaction;
 import com.example.sysarch.model.InterfaceDef;
 import com.example.sysarch.model.ItemFlow;
 import com.example.sysarch.model.Layer;
+import com.example.sysarch.model.Lifeline;
+import com.example.sysarch.model.Message;
+import com.example.sysarch.model.MessageKind;
 import com.example.sysarch.model.Parameter;
 import com.example.sysarch.model.Part;
 import com.example.sysarch.model.PartDefinition;
@@ -207,6 +211,27 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	private EClass interactionEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass lifelineEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass messageEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	private EEnum layerEEnum = null;
 
 	/**
@@ -236,6 +261,13 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 	 * @generated
 	 */
 	private EEnum actionKindEEnum = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EEnum messageKindEEnum = null;
 
 	/**
 	 * Creates an instance of the model <b>Package</b>, registered with
@@ -1303,6 +1335,96 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 	 * @generated
 	 */
 	@Override
+	public EClass getInteraction() {
+		return interactionEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getInteraction_Lifelines() {
+		return (EReference)interactionEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getInteraction_Messages() {
+		return (EReference)interactionEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getLifeline() {
+		return lifelineEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getLifeline_Represents() {
+		return (EReference)lifelineEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getMessage() {
+		return messageEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getMessage_Kind() {
+		return (EAttribute)messageEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getMessage_Sender() {
+		return (EReference)messageEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getMessage_Receiver() {
+		return (EReference)messageEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EEnum getLayer() {
 		return layerEEnum;
 	}
@@ -1345,6 +1467,16 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 	@Override
 	public EEnum getActionKind() {
 		return actionKindEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getMessageKind() {
+		return messageKindEEnum;
 	}
 
 	/**
@@ -1498,12 +1630,25 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 
 		actorEClass = createEClass(ACTOR);
 
+		interactionEClass = createEClass(INTERACTION);
+		createEReference(interactionEClass, INTERACTION__LIFELINES);
+		createEReference(interactionEClass, INTERACTION__MESSAGES);
+
+		lifelineEClass = createEClass(LIFELINE);
+		createEReference(lifelineEClass, LIFELINE__REPRESENTS);
+
+		messageEClass = createEClass(MESSAGE);
+		createEAttribute(messageEClass, MESSAGE__KIND);
+		createEReference(messageEClass, MESSAGE__SENDER);
+		createEReference(messageEClass, MESSAGE__RECEIVER);
+
 		// Create enums
 		layerEEnum = createEEnum(LAYER);
 		portDirectionEEnum = createEEnum(PORT_DIRECTION);
 		connectionKindEEnum = createEEnum(CONNECTION_KIND);
 		verifyMethodEEnum = createEEnum(VERIFY_METHOD);
 		actionKindEEnum = createEEnum(ACTION_KIND);
+		messageKindEEnum = createEEnum(MESSAGE_KIND);
 	}
 
 	/**
@@ -1554,6 +1699,9 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 		activityFlowEClass.getESuperTypes().add(this.getArchElement());
 		useCaseEClass.getESuperTypes().add(this.getArchElement());
 		actorEClass.getESuperTypes().add(this.getArchElement());
+		interactionEClass.getESuperTypes().add(this.getArchElement());
+		lifelineEClass.getESuperTypes().add(this.getArchElement());
+		messageEClass.getESuperTypes().add(this.getArchElement());
 
 		// Initialize classes, features, and operations; add parameters
 		initEClass(archElementEClass, ArchElement.class, "ArchElement", IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
@@ -1680,6 +1828,18 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 
 		initEClass(actorEClass, Actor.class, "Actor", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 
+		initEClass(interactionEClass, Interaction.class, "Interaction", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEReference(getInteraction_Lifelines(), this.getLifeline(), null, "lifelines", null, 0, -1, Interaction.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getInteraction_Messages(), this.getMessage(), null, "messages", null, 0, -1, Interaction.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(lifelineEClass, Lifeline.class, "Lifeline", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEReference(getLifeline_Represents(), this.getArchElement(), null, "represents", null, 0, 1, Lifeline.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(messageEClass, Message.class, "Message", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getMessage_Kind(), this.getMessageKind(), "kind", "SYNC", 0, 1, Message.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getMessage_Sender(), this.getLifeline(), null, "sender", null, 1, 1, Message.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getMessage_Receiver(), this.getLifeline(), null, "receiver", null, 1, 1, Message.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
 		// Initialize enums and add enum literals
 		initEEnum(layerEEnum, Layer.class, "Layer");
 		addEEnumLiteral(layerEEnum, Layer.OPERATIONAL);
@@ -1708,6 +1868,11 @@ public class SysarchPackageImpl extends EPackageImpl implements SysarchPackage {
 		addEEnumLiteral(actionKindEEnum, ActionKind.CALL);
 		addEEnumLiteral(actionKindEEnum, ActionKind.ASSIGN);
 		addEEnumLiteral(actionKindEEnum, ActionKind.DECIDE);
+
+		initEEnum(messageKindEEnum, MessageKind.class, "MessageKind");
+		addEEnumLiteral(messageKindEEnum, MessageKind.SYNC);
+		addEEnumLiteral(messageKindEEnum, MessageKind.ASYNC);
+		addEEnumLiteral(messageKindEEnum, MessageKind.REPLY);
 
 		// Create resource
 		createResource(eNS_URI);

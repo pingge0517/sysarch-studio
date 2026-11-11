@@ -239,4 +239,27 @@
 
   <eClassifiers xsi:type="ecore:EClass" name="Actor" eSuperTypes="#//ArchElement"/>
 
+  <!-- v1.4 (after P3, probe A's fallback "时序图降级为只读导出 PNG", spec §6.1): an interaction to draw as a read-only
+       sequence picture. A document root like UseCase; messages in time order; a lifeline may name what it stands for. -->
+  <eClassifiers xsi:type="ecore:EEnum" name="MessageKind">
+    <eLiterals name="SYNC" value="0" literal="SYNC"/>
+    <eLiterals name="ASYNC" value="1" literal="ASYNC"/>
+    <eLiterals name="REPLY" value="2" literal="REPLY"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="Interaction" eSuperTypes="#//ArchElement">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="lifelines" upperBound="-1" eType="#//Lifeline" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="messages" upperBound="-1" eType="#//Message" containment="true"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="Lifeline" eSuperTypes="#//ArchElement">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="represents" eType="#//ArchElement"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="Message" eSuperTypes="#//ArchElement">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="kind" eType="#//MessageKind" defaultValueLiteral="SYNC"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="sender" lowerBound="1" eType="#//Lifeline"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="receiver" lowerBound="1" eType="#//Lifeline"/>
+  </eClassifiers>
+
 </ecore:EPackage>

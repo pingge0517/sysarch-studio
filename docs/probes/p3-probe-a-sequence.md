@@ -32,7 +32,7 @@
 
 ## 降级方案
 
-时序图只读、导出 PNG。可选的做法：按交互数据生成 PlantUML 或 Mermaid 文本，再渲染成图片。这样不进 Sirius 画布，也不影响其他视图。具体做不做，在 P4 规划时决定。
+时序图只读、导出 PNG。**已实现（2026-11-11）**：元模型 v1.4 新增 Interaction、Lifeline、Message；后端用纯 Java 画成 SVG 或 PNG（不依赖外部渲染器）；网页"时序图（只读）"负责查看和下载。详见 `../param-behavior.md` 第 5 节。
 
 ## 截图
 

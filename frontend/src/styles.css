@@ -533,3 +533,4 @@ body,
   white-space: pre-wrap;
   max-width: 40rem;
 }
+.sequence-picture { display: block; max-width: 100%; margin-top: 12px; border: 1px solid #d0d7e2; background: #fff; }

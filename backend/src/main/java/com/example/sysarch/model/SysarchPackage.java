@@ -2640,6 +2640,333 @@ public interface SysarchPackage extends EPackage {
 	int ACTOR_OPERATION_COUNT = ARCH_ELEMENT_OPERATION_COUNT + 0;
 
 	/**
+	 * The meta object id for the '{@link com.example.sysarch.model.impl.InteractionImpl <em>Interaction</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see com.example.sysarch.model.impl.InteractionImpl
+	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getInteraction()
+	 * @generated
+	 */
+	int INTERACTION = 22;
+
+	/**
+	 * The feature id for the '<em><b>Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INTERACTION__ID = ARCH_ELEMENT__ID;
+
+	/**
+	 * The feature id for the '<em><b>Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INTERACTION__NAME = ARCH_ELEMENT__NAME;
+
+	/**
+	 * The feature id for the '<em><b>Description</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INTERACTION__DESCRIPTION = ARCH_ELEMENT__DESCRIPTION;
+
+	/**
+	 * The feature id for the '<em><b>Layer</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INTERACTION__LAYER = ARCH_ELEMENT__LAYER;
+
+	/**
+	 * The feature id for the '<em><b>Stereotypes</b></em>' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INTERACTION__STEREOTYPES = ARCH_ELEMENT__STEREOTYPES;
+
+	/**
+	 * The feature id for the '<em><b>Work Item Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INTERACTION__WORK_ITEM_ID = ARCH_ELEMENT__WORK_ITEM_ID;
+
+	/**
+	 * The feature id for the '<em><b>Rev</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INTERACTION__REV = ARCH_ELEMENT__REV;
+
+	/**
+	 * The feature id for the '<em><b>Lifelines</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INTERACTION__LIFELINES = ARCH_ELEMENT_FEATURE_COUNT + 0;
+
+	/**
+	 * The feature id for the '<em><b>Messages</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INTERACTION__MESSAGES = ARCH_ELEMENT_FEATURE_COUNT + 1;
+
+	/**
+	 * The number of structural features of the '<em>Interaction</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INTERACTION_FEATURE_COUNT = ARCH_ELEMENT_FEATURE_COUNT + 2;
+
+	/**
+	 * The number of operations of the '<em>Interaction</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INTERACTION_OPERATION_COUNT = ARCH_ELEMENT_OPERATION_COUNT + 0;
+
+	/**
+	 * The meta object id for the '{@link com.example.sysarch.model.impl.LifelineImpl <em>Lifeline</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see com.example.sysarch.model.impl.LifelineImpl
+	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getLifeline()
+	 * @generated
+	 */
+	int LIFELINE = 23;
+
+	/**
+	 * The feature id for the '<em><b>Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int LIFELINE__ID = ARCH_ELEMENT__ID;
+
+	/**
+	 * The feature id for the '<em><b>Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int LIFELINE__NAME = ARCH_ELEMENT__NAME;
+
+	/**
+	 * The feature id for the '<em><b>Description</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int LIFELINE__DESCRIPTION = ARCH_ELEMENT__DESCRIPTION;
+
+	/**
+	 * The feature id for the '<em><b>Layer</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int LIFELINE__LAYER = ARCH_ELEMENT__LAYER;
+
+	/**
+	 * The feature id for the '<em><b>Stereotypes</b></em>' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int LIFELINE__STEREOTYPES = ARCH_ELEMENT__STEREOTYPES;
+
+	/**
+	 * The feature id for the '<em><b>Work Item Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int LIFELINE__WORK_ITEM_ID = ARCH_ELEMENT__WORK_ITEM_ID;
+
+	/**
+	 * The feature id for the '<em><b>Rev</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int LIFELINE__REV = ARCH_ELEMENT__REV;
+
+	/**
+	 * The feature id for the '<em><b>Represents</b></em>' reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int LIFELINE__REPRESENTS = ARCH_ELEMENT_FEATURE_COUNT + 0;
+
+	/**
+	 * The number of structural features of the '<em>Lifeline</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int LIFELINE_FEATURE_COUNT = ARCH_ELEMENT_FEATURE_COUNT + 1;
+
+	/**
+	 * The number of operations of the '<em>Lifeline</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int LIFELINE_OPERATION_COUNT = ARCH_ELEMENT_OPERATION_COUNT + 0;
+
+	/**
+	 * The meta object id for the '{@link com.example.sysarch.model.impl.MessageImpl <em>Message</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see com.example.sysarch.model.impl.MessageImpl
+	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getMessage()
+	 * @generated
+	 */
+	int MESSAGE = 24;
+
+	/**
+	 * The feature id for the '<em><b>Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int MESSAGE__ID = ARCH_ELEMENT__ID;
+
+	/**
+	 * The feature id for the '<em><b>Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int MESSAGE__NAME = ARCH_ELEMENT__NAME;
+
+	/**
+	 * The feature id for the '<em><b>Description</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int MESSAGE__DESCRIPTION = ARCH_ELEMENT__DESCRIPTION;
+
+	/**
+	 * The feature id for the '<em><b>Layer</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int MESSAGE__LAYER = ARCH_ELEMENT__LAYER;
+
+	/**
+	 * The feature id for the '<em><b>Stereotypes</b></em>' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int MESSAGE__STEREOTYPES = ARCH_ELEMENT__STEREOTYPES;
+
+	/**
+	 * The feature id for the '<em><b>Work Item Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int MESSAGE__WORK_ITEM_ID = ARCH_ELEMENT__WORK_ITEM_ID;
+
+	/**
+	 * The feature id for the '<em><b>Rev</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int MESSAGE__REV = ARCH_ELEMENT__REV;
+
+	/**
+	 * The feature id for the '<em><b>Kind</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int MESSAGE__KIND = ARCH_ELEMENT_FEATURE_COUNT + 0;
+
+	/**
+	 * The feature id for the '<em><b>Sender</b></em>' reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int MESSAGE__SENDER = ARCH_ELEMENT_FEATURE_COUNT + 1;
+
+	/**
+	 * The feature id for the '<em><b>Receiver</b></em>' reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int MESSAGE__RECEIVER = ARCH_ELEMENT_FEATURE_COUNT + 2;
+
+	/**
+	 * The number of structural features of the '<em>Message</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int MESSAGE_FEATURE_COUNT = ARCH_ELEMENT_FEATURE_COUNT + 3;
+
+	/**
+	 * The number of operations of the '<em>Message</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int MESSAGE_OPERATION_COUNT = ARCH_ELEMENT_OPERATION_COUNT + 0;
+
+	/**
 	 * The meta object id for the '{@link com.example.sysarch.model.Layer <em>Layer</em>}' enum.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -2647,7 +2974,7 @@ public interface SysarchPackage extends EPackage {
 	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getLayer()
 	 * @generated
 	 */
-	int LAYER = 22;
+	int LAYER = 25;
 
 	/**
 	 * The meta object id for the '{@link com.example.sysarch.model.PortDirection <em>Port Direction</em>}' enum.
@@ -2657,7 +2984,7 @@ public interface SysarchPackage extends EPackage {
 	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getPortDirection()
 	 * @generated
 	 */
-	int PORT_DIRECTION = 23;
+	int PORT_DIRECTION = 26;
 
 	/**
 	 * The meta object id for the '{@link com.example.sysarch.model.ConnectionKind <em>Connection Kind</em>}' enum.
@@ -2667,7 +2994,7 @@ public interface SysarchPackage extends EPackage {
 	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getConnectionKind()
 	 * @generated
 	 */
-	int CONNECTION_KIND = 24;
+	int CONNECTION_KIND = 27;
 
 	/**
 	 * The meta object id for the '{@link com.example.sysarch.model.VerifyMethod <em>Verify Method</em>}' enum.
@@ -2677,7 +3004,7 @@ public interface SysarchPackage extends EPackage {
 	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getVerifyMethod()
 	 * @generated
 	 */
-	int VERIFY_METHOD = 25;
+	int VERIFY_METHOD = 28;
 
 	/**
 	 * The meta object id for the '{@link com.example.sysarch.model.ActionKind <em>Action Kind</em>}' enum.
@@ -2687,7 +3014,17 @@ public interface SysarchPackage extends EPackage {
 	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getActionKind()
 	 * @generated
 	 */
-	int ACTION_KIND = 26;
+	int ACTION_KIND = 29;
+
+	/**
+	 * The meta object id for the '{@link com.example.sysarch.model.MessageKind <em>Message Kind</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see com.example.sysarch.model.MessageKind
+	 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getMessageKind()
+	 * @generated
+	 */
+	int MESSAGE_KIND = 30;
 
 
 	/**
@@ -3768,6 +4105,102 @@ public interface SysarchPackage extends EPackage {
 	EClass getActor();
 
 	/**
+	 * Returns the meta object for class '{@link com.example.sysarch.model.Interaction <em>Interaction</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Interaction</em>'.
+	 * @see com.example.sysarch.model.Interaction
+	 * @generated
+	 */
+	EClass getInteraction();
+
+	/**
+	 * Returns the meta object for the containment reference list '{@link com.example.sysarch.model.Interaction#getLifelines <em>Lifelines</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference list '<em>Lifelines</em>'.
+	 * @see com.example.sysarch.model.Interaction#getLifelines()
+	 * @see #getInteraction()
+	 * @generated
+	 */
+	EReference getInteraction_Lifelines();
+
+	/**
+	 * Returns the meta object for the containment reference list '{@link com.example.sysarch.model.Interaction#getMessages <em>Messages</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference list '<em>Messages</em>'.
+	 * @see com.example.sysarch.model.Interaction#getMessages()
+	 * @see #getInteraction()
+	 * @generated
+	 */
+	EReference getInteraction_Messages();
+
+	/**
+	 * Returns the meta object for class '{@link com.example.sysarch.model.Lifeline <em>Lifeline</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Lifeline</em>'.
+	 * @see com.example.sysarch.model.Lifeline
+	 * @generated
+	 */
+	EClass getLifeline();
+
+	/**
+	 * Returns the meta object for the reference '{@link com.example.sysarch.model.Lifeline#getRepresents <em>Represents</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the reference '<em>Represents</em>'.
+	 * @see com.example.sysarch.model.Lifeline#getRepresents()
+	 * @see #getLifeline()
+	 * @generated
+	 */
+	EReference getLifeline_Represents();
+
+	/**
+	 * Returns the meta object for class '{@link com.example.sysarch.model.Message <em>Message</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Message</em>'.
+	 * @see com.example.sysarch.model.Message
+	 * @generated
+	 */
+	EClass getMessage();
+
+	/**
+	 * Returns the meta object for the attribute '{@link com.example.sysarch.model.Message#getKind <em>Kind</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Kind</em>'.
+	 * @see com.example.sysarch.model.Message#getKind()
+	 * @see #getMessage()
+	 * @generated
+	 */
+	EAttribute getMessage_Kind();
+
+	/**
+	 * Returns the meta object for the reference '{@link com.example.sysarch.model.Message#getSender <em>Sender</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the reference '<em>Sender</em>'.
+	 * @see com.example.sysarch.model.Message#getSender()
+	 * @see #getMessage()
+	 * @generated
+	 */
+	EReference getMessage_Sender();
+
+	/**
+	 * Returns the meta object for the reference '{@link com.example.sysarch.model.Message#getReceiver <em>Receiver</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the reference '<em>Receiver</em>'.
+	 * @see com.example.sysarch.model.Message#getReceiver()
+	 * @see #getMessage()
+	 * @generated
+	 */
+	EReference getMessage_Receiver();
+
+	/**
 	 * Returns the meta object for enum '{@link com.example.sysarch.model.Layer <em>Layer</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -3816,6 +4249,16 @@ public interface SysarchPackage extends EPackage {
 	 * @generated
 	 */
 	EEnum getActionKind();
+
+	/**
+	 * Returns the meta object for enum '{@link com.example.sysarch.model.MessageKind <em>Message Kind</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for enum '<em>Message Kind</em>'.
+	 * @see com.example.sysarch.model.MessageKind
+	 * @generated
+	 */
+	EEnum getMessageKind();
 
 	/**
 	 * Returns the factory that creates the instances of the model.
@@ -4685,6 +5128,84 @@ public interface SysarchPackage extends EPackage {
 		EClass ACTOR = eINSTANCE.getActor();
 
 		/**
+		 * The meta object literal for the '{@link com.example.sysarch.model.impl.InteractionImpl <em>Interaction</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see com.example.sysarch.model.impl.InteractionImpl
+		 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getInteraction()
+		 * @generated
+		 */
+		EClass INTERACTION = eINSTANCE.getInteraction();
+
+		/**
+		 * The meta object literal for the '<em><b>Lifelines</b></em>' containment reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference INTERACTION__LIFELINES = eINSTANCE.getInteraction_Lifelines();
+
+		/**
+		 * The meta object literal for the '<em><b>Messages</b></em>' containment reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference INTERACTION__MESSAGES = eINSTANCE.getInteraction_Messages();
+
+		/**
+		 * The meta object literal for the '{@link com.example.sysarch.model.impl.LifelineImpl <em>Lifeline</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see com.example.sysarch.model.impl.LifelineImpl
+		 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getLifeline()
+		 * @generated
+		 */
+		EClass LIFELINE = eINSTANCE.getLifeline();
+
+		/**
+		 * The meta object literal for the '<em><b>Represents</b></em>' reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference LIFELINE__REPRESENTS = eINSTANCE.getLifeline_Represents();
+
+		/**
+		 * The meta object literal for the '{@link com.example.sysarch.model.impl.MessageImpl <em>Message</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see com.example.sysarch.model.impl.MessageImpl
+		 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getMessage()
+		 * @generated
+		 */
+		EClass MESSAGE = eINSTANCE.getMessage();
+
+		/**
+		 * The meta object literal for the '<em><b>Kind</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute MESSAGE__KIND = eINSTANCE.getMessage_Kind();
+
+		/**
+		 * The meta object literal for the '<em><b>Sender</b></em>' reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference MESSAGE__SENDER = eINSTANCE.getMessage_Sender();
+
+		/**
+		 * The meta object literal for the '<em><b>Receiver</b></em>' reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference MESSAGE__RECEIVER = eINSTANCE.getMessage_Receiver();
+
+		/**
 		 * The meta object literal for the '{@link com.example.sysarch.model.Layer <em>Layer</em>}' enum.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -4733,6 +5254,16 @@ public interface SysarchPackage extends EPackage {
 		 * @generated
 		 */
 		EEnum ACTION_KIND = eINSTANCE.getActionKind();
+
+		/**
+		 * The meta object literal for the '{@link com.example.sysarch.model.MessageKind <em>Message Kind</em>}' enum.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see com.example.sysarch.model.MessageKind
+		 * @see com.example.sysarch.model.impl.SysarchPackageImpl#getMessageKind()
+		 * @generated
+		 */
+		EEnum MESSAGE_KIND = eINSTANCE.getMessageKind();
 
 	}
 

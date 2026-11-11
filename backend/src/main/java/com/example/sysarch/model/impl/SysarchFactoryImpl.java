@@ -78,6 +78,9 @@ public class SysarchFactoryImpl extends EFactoryImpl implements SysarchFactory {
 			case SysarchPackage.ACTIVITY_FLOW: return createActivityFlow();
 			case SysarchPackage.USE_CASE: return createUseCase();
 			case SysarchPackage.ACTOR: return createActor();
+			case SysarchPackage.INTERACTION: return createInteraction();
+			case SysarchPackage.LIFELINE: return createLifeline();
+			case SysarchPackage.MESSAGE: return createMessage();
 			default:
 				throw new IllegalArgumentException("The class '" + eClass.getName() + "' is not a valid classifier");
 		}
@@ -101,6 +104,8 @@ public class SysarchFactoryImpl extends EFactoryImpl implements SysarchFactory {
 				return createVerifyMethodFromString(eDataType, initialValue);
 			case SysarchPackage.ACTION_KIND:
 				return createActionKindFromString(eDataType, initialValue);
+			case SysarchPackage.MESSAGE_KIND:
+				return createMessageKindFromString(eDataType, initialValue);
 			default:
 				throw new IllegalArgumentException("The datatype '" + eDataType.getName() + "' is not a valid classifier");
 		}
@@ -124,6 +129,8 @@ public class SysarchFactoryImpl extends EFactoryImpl implements SysarchFactory {
 				return convertVerifyMethodToString(eDataType, instanceValue);
 			case SysarchPackage.ACTION_KIND:
 				return convertActionKindToString(eDataType, instanceValue);
+			case SysarchPackage.MESSAGE_KIND:
+				return convertMessageKindToString(eDataType, instanceValue);
 			default:
 				throw new IllegalArgumentException("The datatype '" + eDataType.getName() + "' is not a valid classifier");
 		}
@@ -365,6 +372,39 @@ public class SysarchFactoryImpl extends EFactoryImpl implements SysarchFactory {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	@Override
+	public Interaction createInteraction() {
+		InteractionImpl interaction = new InteractionImpl();
+		return interaction;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Lifeline createLifeline() {
+		LifelineImpl lifeline = new LifelineImpl();
+		return lifeline;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Message createMessage() {
+		MessageImpl message = new MessageImpl();
+		return message;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	public Layer createLayerFromString(EDataType eDataType, String initialValue) {
 		Layer result = Layer.get(initialValue);
 		if (result == null) throw new IllegalArgumentException("The value '" + initialValue + "' is not a valid enumerator of '" + eDataType.getName() + "'");
@@ -457,6 +497,26 @@ public class SysarchFactoryImpl extends EFactoryImpl implements SysarchFactory {
 	 * @generated
 	 */
 	public String convertActionKindToString(EDataType eDataType, Object instanceValue) {
+		return instanceValue == null ? null : instanceValue.toString();
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public MessageKind createMessageKindFromString(EDataType eDataType, String initialValue) {
+		MessageKind result = MessageKind.get(initialValue);
+		if (result == null) throw new IllegalArgumentException("The value '" + initialValue + "' is not a valid enumerator of '" + eDataType.getName() + "'");
+		return result;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public String convertMessageKindToString(EDataType eDataType, Object instanceValue) {
 		return instanceValue == null ? null : instanceValue.toString();
 	}
 

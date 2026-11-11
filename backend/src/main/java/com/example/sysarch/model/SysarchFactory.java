@@ -211,6 +211,33 @@ public interface SysarchFactory extends EFactory {
 	Actor createActor();
 
 	/**
+	 * Returns a new object of class '<em>Interaction</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Interaction</em>'.
+	 * @generated
+	 */
+	Interaction createInteraction();
+
+	/**
+	 * Returns a new object of class '<em>Lifeline</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Lifeline</em>'.
+	 * @generated
+	 */
+	Lifeline createLifeline();
+
+	/**
+	 * Returns a new object of class '<em>Message</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Message</em>'.
+	 * @generated
+	 */
+	Message createMessage();
+
+	/**
 	 * Returns the package supported by this factory.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
