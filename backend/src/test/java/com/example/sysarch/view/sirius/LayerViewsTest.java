@@ -137,12 +137,28 @@ class LayerViewsTest {
         assertNotNull(type, "a layer view also creates the part's type, so the Part is not left untyped");
         assertEquals(Layer.LOGICAL, type.getLayer());
         assertEquals(part.getName(), type.getName());
+        assertEquals("逻辑组件 1", part.getName(), "named after the tool (P1 trial T9-03), not part1");
         assertSame(this.model, type.eResource());
 
         assertEquals(Set.of("控制器", part.getName()), Set.copyOf(labels(this.render(this.la, this.controller))));
         assertEquals(List.of("ECU"), labels(this.render(this.pa, this.ecu)), "not visible in PA");
         assertEquals(List.of("整车功能"), labels(this.render(this.sa, this.system)));
         assertEquals(List.of(), VALIDATOR.validateAll(List.of(part, type)), "neither is marked red");
+    }
+
+    /** P1 trial T9-03: numbered among the elements of that class and layer, a used name skipped. */
+    @Test
+    void newElementsAreNumberedPerLayerAndNamesStayUnique() {
+        this.click(this.la, "/tool/createFunction", this.controller);
+        this.click(this.sa, "/tool/createFunction", this.system);
+        this.controller.getOwnedParts().get(0).getTypedBy().setName("逻辑组件 2"); // a block someone renamed
+
+        this.click(this.la, "/tool/createFunction", this.controller);
+
+        Part second = this.controller.getOwnedParts().get(1);
+        assertEquals("逻辑组件 3", second.getName(), "2 is the second logical part's number, but a block is already called that");
+        assertEquals("逻辑组件 3", second.getTypedBy().getName());
+        assertTrue(this.system.getOwnedParts().get(0).getName().endsWith(" 1"), "the SA part counts in its own layer");
     }
 
     @Test

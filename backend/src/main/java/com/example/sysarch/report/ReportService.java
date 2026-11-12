@@ -219,20 +219,32 @@ public class ReportService {
                 .param("at", OffsetDateTime.now(this.clock)).update();
     }
 
+    /** Every report job of a project goes with its files (the Sirius project was deleted); returns how many jobs. */
+    public int dropProject(String projectId) {
+        List<String> ids = this.jdbc.sql("SELECT id FROM report_job WHERE project_id = :p").param("p", projectId).query(String.class).list();
+        ids.forEach(this::deleteFiles);
+        this.jdbc.sql("DELETE FROM report_job WHERE project_id = :p").param("p", projectId).update();
+        return ids.size();
+    }
+
+    private void deleteFiles(String id) {
+        Path dir = this.directory.resolve(id);
+        if (Files.isDirectory(dir)) {
+            try (Stream<Path> files = Files.walk(dir)) {
+                files.sorted(Comparator.reverseOrder()).forEach(p -> p.toFile().delete());
+            } catch (IOException e) {
+                this.logger.warn("Cannot delete report files {}: {}", dir, e.getMessage());
+            }
+        }
+    }
+
     /** Files older than 90 days go (§7.3); their jobs become EXPIRED. */
     public int expire() {
         OffsetDateTime limit = OffsetDateTime.now(this.clock).minus(RETENTION);
         List<String> old = this.jdbc.sql("SELECT id FROM report_job WHERE created_at < :limit AND status <> 'EXPIRED'").param("limit", limit).query(String.class)
                 .list();
         for (String id : old) {
-            Path dir = this.directory.resolve(id);
-            if (Files.isDirectory(dir)) {
-                try (Stream<Path> files = Files.walk(dir)) {
-                    files.sorted(Comparator.reverseOrder()).forEach(p -> p.toFile().delete());
-                } catch (IOException e) {
-                    this.logger.warn("Cannot delete report files {}: {}", dir, e.getMessage());
-                }
-            }
+            this.deleteFiles(id);
             this.jdbc.sql("UPDATE report_job SET status = 'EXPIRED' WHERE id = :id").param("id", id).update();
         }
         return old.size();

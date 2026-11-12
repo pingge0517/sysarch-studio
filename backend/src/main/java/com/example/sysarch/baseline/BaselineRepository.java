@@ -75,6 +75,12 @@ public class BaselineRepository {
     }
 
     /** Deletes a baseline; its elements go with it (ON DELETE CASCADE, and explicitly for databases without it). */
+    /** Every baseline of a project goes with its elements (the Sirius project was deleted; its branches are gone first). */
+    public int dropProject(String projectId) {
+        this.jdbc.sql("DELETE FROM baseline_element WHERE baseline_id IN (SELECT id FROM baseline WHERE project_id = :p)").param("p", projectId).update();
+        return this.jdbc.sql("DELETE FROM baseline WHERE project_id = :p").param("p", projectId).update();
+    }
+
     public void delete(String baselineId) {
         this.jdbc.sql("DELETE FROM baseline_element WHERE baseline_id = :b").param("b", baselineId).update();
         this.jdbc.sql("DELETE FROM baseline WHERE id = :b").param("b", baselineId).update();

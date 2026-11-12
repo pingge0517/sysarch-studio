@@ -75,6 +75,17 @@ public class SyncStore {
         return true;
     }
 
+    /** One Work Item of the unbound pool. */
+    public record PooledWorkItem(String workItemId, String workItemType, String title, OffsetDateTime discoveredAt) {
+    }
+
+    /** The unbound pool of a Polarion project, oldest first. */
+    public java.util.List<PooledWorkItem> unboundPool(String projectId) {
+        return this.jdbc.sql("SELECT work_item_id, work_item_type, title, discovered_at FROM polarion_unbound_pool WHERE project_id = :project "
+                + "ORDER BY discovered_at, work_item_id").param("project", projectId)
+                .query((rs, row) -> new PooledWorkItem(rs.getString(1), rs.getString(2), rs.getString(3), rs.getObject(4, OffsetDateTime.class))).list();
+    }
+
     /** Claiming a pooled Work Item (binding it) removes it from the pool. */
     public void removeFromUnboundPool(String projectId, String workItemId) {
         this.jdbc.sql("DELETE FROM polarion_unbound_pool WHERE project_id = :project AND work_item_id = :id")

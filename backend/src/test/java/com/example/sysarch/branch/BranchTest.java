@@ -291,6 +291,75 @@ class BranchTest {
         assertEquals(1, this.jdbc.sql("SELECT COUNT(*) FROM audit_log WHERE action = 'BRANCH_ABANDON'").query(Integer.class).single());
     }
 
+    // =========================================================== deleting a Sirius project (T9-02, P2 T3 known gap)
+
+    private com.example.sysarch.project.ProjectCleanup cleanup() {
+        com.example.sysarch.report.ReportService reports = mock(com.example.sysarch.report.ReportService.class);
+        when(reports.dropProject(anyString())).thenReturn(0);
+        return new com.example.sysarch.project.ProjectCleanup(this.jdbc, this.branches, this.baselines, this.locks, this.sessions, reports,
+                new AuditLog(this.jdbc), new com.example.sysarch.identity.Editors());
+    }
+
+    private int count(String sql) {
+        return this.jdbc.sql(sql).query(Integer.class).single();
+    }
+
+    @Test
+    void deletingTheTrunkRemovesItsBranchesBaselinesLocksSessionsAndComments() {
+        BranchService.BranchView branch = this.branches.create(TRUNK, "方案A", this.baseline(), "alice");
+        this.edit(() -> this.block("PD-002").setName("v2"));
+        this.baseline();
+        this.locks.acquire(TRUNK, List.of("PD-001"), "bob", 90);
+        this.sessions.touch(TRUNK, "bob", null);
+        this.jdbc.sql("INSERT INTO element_comment (id, project_id, element_id, author, body) VALUES ('c1', :p, 'PD-001', 'rita', '看一下')").param("p", TRUNK)
+                .update();
+        this.baselines.insert(new StoredBaseline("other", "trunk-2", "别的项目", null, 1, 0, "alice", OffsetDateTime.now(ZoneOffset.UTC)), List.of());
+
+        com.example.sysarch.project.ProjectCleanup.Removed removed = this.cleanup().cleanUp(TRUNK, "admin");
+
+        assertEquals(1, removed.branches());
+        assertEquals(2, removed.baselines());
+        assertEquals(1, removed.locks());
+        assertEquals(1, removed.sessions());
+        assertEquals(1, removed.comments());
+        verify(this.projects).deleteProject(any(DeleteProjectInput.class)); // the open branch's workspace project
+        assertEquals(0, this.count("SELECT COUNT(*) FROM branch"));
+        assertEquals(0, this.count("SELECT COUNT(*) FROM changeset"));
+        assertEquals(0, this.count("SELECT COUNT(*) FROM baseline_element WHERE baseline_id <> 'other'"));
+        assertEquals(1, this.count("SELECT COUNT(*) FROM baseline"), "another project's baseline stays");
+        assertEquals(30, this.sessions.limit(WORKSPACE), "no longer a workspace");
+        assertEquals(1, this.count("SELECT COUNT(*) FROM audit_log WHERE action = 'PROJECT_DELETE' AND project_id = '" + TRUNK + "'"));
+        assertEquals("branches 1, baselines 2, locks 1, sessions 1, reports 0, comments 1",
+                this.jdbc.sql("SELECT detail FROM audit_log WHERE action = 'PROJECT_DELETE'").query(String.class).single());
+        assertNotNull(branch);
+    }
+
+    @Test
+    void deletingAWorkspaceInSiriusAbandonsItsBranchAndKeepsTheChangeset() {
+        BranchService.BranchView branch = this.branches.create(TRUNK, "方案A", this.baseline(), "alice");
+        this.edit(() -> this.block("PD-002").setName("v2"));
+
+        com.example.sysarch.project.ProjectCleanup.Removed removed = this.cleanup().cleanUp(WORKSPACE, "admin");
+
+        assertTrue(removed.workspaceOfOpenBranch());
+        assertEquals(BranchService.ABANDONED, this.branches.get(branch.id()).status());
+        assertEquals(1, this.branches.get(branch.id()).changes(), "the changeset stays with its trunk");
+        assertEquals(1, this.count("SELECT COUNT(*) FROM baseline"), "the trunk's baseline stays");
+        assertEquals(30, this.sessions.limit(WORKSPACE));
+        verify(this.projects, never()).deleteProject(any(DeleteProjectInput.class)); // already deleted
+    }
+
+    @Test
+    void deletingAnUnrelatedProjectRemovesNothingElse() {
+        this.branches.create(TRUNK, "方案A", this.baseline(), "alice");
+
+        com.example.sysarch.project.ProjectCleanup.Removed removed = this.cleanup().cleanUp("elsewhere", "admin");
+
+        assertEquals(0, removed.branches() + removed.baselines() + removed.locks() + removed.sessions() + removed.comments());
+        assertEquals(1, this.count("SELECT COUNT(*) FROM branch WHERE status = 'OPEN'"));
+        assertEquals(1, this.count("SELECT COUNT(*) FROM baseline"));
+    }
+
     // =========================================================== helpers
 
     private JdbcDataSource lastDataSource;

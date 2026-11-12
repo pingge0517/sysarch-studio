@@ -30,8 +30,49 @@ public class LinksController implements LinksApi {
 
     private final LinkRepository links;
 
+    private final com.example.sysarch.sync.SyncStore store;
+
+    private final jakarta.servlet.http.HttpServletRequest request;
+
+    private final com.example.sysarch.access.Access access;
+
+    /** Tests: no permission checks, no pool, no audit. */
     public LinksController(LinkRepository links) {
+        this(links, null, null, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public LinksController(LinkRepository links, com.example.sysarch.sync.SyncStore store, jakarta.servlet.http.HttpServletRequest request,
+            com.example.sysarch.access.Access access) {
         this.links = Objects.requireNonNull(links);
+        this.store = store;
+        this.request = request;
+        this.access = access;
+    }
+
+    /**
+     * Binding and unbinding change what sync writes to Polarion: the SYNC permission in the Polarion project, as push and
+     * pull (P2 T8; these two endpoints had been left without a check).
+     */
+    private void require(String polarionProject) {
+        if (this.access != null) {
+            this.access.requirePolarion(this.request, polarionProject, com.example.sysarch.access.Permission.SYNC);
+        }
+    }
+
+    private String actor() {
+        return this.request == null ? "anonymous" : com.example.sysarch.identity.CurrentUser.of(this.request).orElse("anonymous");
+    }
+
+    /**
+     * {@code GET /api/v1/sync/unbound?projectId=}: the Work Items created in Polarion that no element is bound to yet
+     * (spec §6.2 "未绑定池"), oldest first. Claiming one = {@code POST /links} with its id, which takes it out of the
+     * pool; the next push writes the element's model-owned fields to it.
+     */
+    @org.springframework.web.bind.annotation.GetMapping("/sync/unbound")
+    public List<com.example.sysarch.sync.SyncStore.PooledWorkItem> unbound(@org.springframework.web.bind.annotation.RequestParam String projectId) {
+        this.require(projectId);
+        return this.store == null ? List.of() : this.store.unboundPool(projectId);
     }
 
     @Override
@@ -46,6 +87,7 @@ public class LinksController implements LinksApi {
     public ResponseEntity<Void> linksPost(LinkRequest request) {
         parse(Link.ElementTypeEnum::fromValue, request.getElementType(), "elementType");
         parse(Link.WorkItemTypeEnum::fromValue, request.getWorkItemType(), "workItemType");
+        this.require(request.getProjectId());
         Optional<StoredLink> existing = this.links.find(request.getElementId());
         if (existing.isPresent()) {
             if (!sameBinding(existing.get(), request)) {
@@ -62,12 +104,24 @@ public class LinksController implements LinksApi {
                     .map(l -> ResponseEntity.status(HttpStatus.CREATED).<Void>build())
                     .orElseThrow(() -> conflict(this.links.find(request.getElementId()).orElseThrow()));
         }
+        if (this.store != null) {
+            this.store.removeFromUnboundPool(request.getProjectId(), request.getWorkItemId());
+            this.store.audit(request.getProjectId(), request.getElementId(), request.getWorkItemId(), "BIND", "link", null, request.getWorkItemId(), this.actor());
+        }
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @Override
     public ResponseEntity<Void> linksElementIdDelete(String elementId) {
+        Optional<StoredLink> existing = this.links.find(elementId);
+        if (existing.isEmpty()) {
+            return ResponseEntity.noContent().build(); // nothing bound: nothing to check or do
+        }
+        this.require(existing.get().projectId());
         this.links.delete(elementId);
+        if (this.store != null) {
+            this.store.audit(existing.get().projectId(), elementId, existing.get().workItemId(), "UNBIND", "link", existing.get().workItemId(), null, this.actor());
+        }
         return ResponseEntity.noContent().build();
     }
 

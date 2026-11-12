@@ -246,6 +246,36 @@ public class BranchService {
         return this.view(this.find(branchId));
     }
 
+    /** What {@link #projectDeleted} removed. */
+    public record Removed(int branches, boolean workspaceOfOpenBranch) {
+    }
+
+    /**
+     * A Sirius project was deleted. If it was the workspace of an open branch (deleted in Sirius rather than through
+     * abandon), that branch is ABANDONED (audited; its changeset stays until its trunk goes). If it was a trunk, its open
+     * branches are closed as by abandon (their workspace projects deleted), then every branch row of it goes with its
+     * changeset and merge runs: nothing can be merged into a project that no longer exists.
+     */
+    public Removed projectDeleted(String projectId, String actor) {
+        Optional<Branch> workspaceOf = this.jdbc.sql("SELECT * FROM branch WHERE workspace_project_id = :p AND status = 'OPEN'").param("p", projectId)
+                .query(BranchWorkspaces::branch).optional();
+        workspaceOf.ifPresent(branch -> {
+            this.jdbc.sql("UPDATE branch SET status = :s WHERE id = :id").param("s", ABANDONED).param("id", branch.id()).update();
+            this.audit.append(branch.projectId(), actor, com.example.sysarch.audit.AuditLog.BRANCH_ABANDON, null,
+                    "branch " + branch.name() + " (" + branch.id() + "): workspace project deleted");
+        });
+        this.workspaces.forget(projectId);
+        List<Branch> branches = this.jdbc.sql("SELECT * FROM branch WHERE project_id = :p").param("p", projectId).query(BranchWorkspaces::branch).list();
+        for (Branch branch : branches) {
+            if (branch.open()) {
+                this.close(branch, ABANDONED);
+            }
+            this.bases.remove(branch.id());
+        }
+        this.jdbc.sql("DELETE FROM branch WHERE project_id = :p").param("p", projectId).update(); // changesets, merge runs: on delete cascade
+        return new Removed(branches.size(), workspaceOf.isPresent());
+    }
+
     /** After its merge into the trunk (T4, user's decision): MERGED, workspace deleted, changeset kept. */
     public void markMerged(String branchId) {
         this.close(this.find(branchId), MERGED);

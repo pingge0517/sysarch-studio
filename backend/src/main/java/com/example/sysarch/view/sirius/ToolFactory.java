@@ -166,6 +166,7 @@ final class ToolFactory {
             container.get().eSet(feature, child);
         }
         if (layerView) {
+            setName(child, layerViewName(container.get(), child, tool)); // P1 trial T9-03: "逻辑组件 4", not "part4"
             createType(container.get(), child, tool.defaults());
         }
         return SiriusDiagramDescriptionFactory.semanticChange();
@@ -369,6 +370,40 @@ final class ToolFactory {
 
     private static EClass typeOfRoot(DiagramDescription source, List<NodeDescription> nodes, Function<NodeDescription, EClass> typeOf) {
         return eClassOf(nodes, typeOf, source.domainType());
+    }
+
+    /**
+     * The name of an element created in a layer view (P1 trial issue T9-03): the tool's label without its leading
+     * "新建" and a number, e.g. "逻辑组件 4" for the fourth element of that class and layer in the document; a number
+     * already used by an element of that class is skipped. Its type block (see {@link #createType}) gets the same name.
+     */
+    static String layerViewName(EObject container, EObject child, Tool tool) {
+        String base = tool.label().startsWith("新建") && tool.label().length() > 2 ? tool.label().substring(2) : tool.label();
+        EStructuralFeature layer = child.eClass().getEStructuralFeature("layer");
+        java.util.Set<String> used = new java.util.HashSet<>();
+        EClass typeClass = child.eClass().getEStructuralFeature(TYPE_FEATURE) instanceof EReference typedBy ? typedBy.getEReferenceType() : null;
+        int same = 0;
+        java.util.Iterator<EObject> all = container.eResource() == null ? EcoreUtil.getAllContents(java.util.List.of(container))
+                : container.eResource().getAllContents();
+        while (all.hasNext()) {
+            EObject e = all.next();
+            if (e == child) {
+                continue;
+            }
+            if (e.eClass() == child.eClass()) {
+                if (layer == null || java.util.Objects.equals(e.eGet(layer), child.eGet(layer))) {
+                    same++;
+                }
+                used.add(name(e));
+            } else if (typeClass != null && typeClass.isInstance(e)) {
+                used.add(name(e)); // the type block gets the same name
+            }
+        }
+        int number = same + 1;
+        while (used.contains(base + " " + number)) {
+            number++;
+        }
+        return base + " " + number;
     }
 
     /** e.g. {@code part3}: the class name in lower camel case and a running number. */

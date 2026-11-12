@@ -143,6 +143,13 @@ public class SessionService {
         this.recent.remove(projectId + '\n' + user);
     }
 
+    /** Every session of a project goes (the Sirius project was deleted); returns how many rows. */
+    public int dropProject(String projectId) {
+        this.recent.keySet().removeIf(key -> key.startsWith(projectId + '\n'));
+        this.projectLocks.remove(projectId);
+        return this.jdbc.sql("DELETE FROM edit_session WHERE project_id = :p").param("p", projectId).update();
+    }
+
     private FullException full(String projectId, int open, int limit) {
         if (limit == 1) {
             String holders = this.jdbc.sql("SELECT user_id FROM edit_session WHERE project_id = :p AND closed_at IS NULL").param("p", projectId)

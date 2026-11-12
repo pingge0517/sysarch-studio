@@ -36,6 +36,9 @@ public class AuditLog {
 
     public static final String ROLE_MAPPING_CHANGE = "ROLE_MAPPING_CHANGE";
 
+    /** A Sirius project was deleted and its SysArch data with it (detail: what was removed). */
+    public static final String PROJECT_DELETE = "PROJECT_DELETE";
+
     public record Entry(long id, String projectId, String actor, String action, String elementId, String detail, OffsetDateTime createdAt) {
     }
 

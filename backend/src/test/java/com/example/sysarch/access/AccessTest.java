@@ -228,6 +228,45 @@ class AccessTest {
         assertEquals(rev, identities.resolve(browser).orElseThrow(), "the session cookie");
     }
 
+    private static MockHttpServletRequest as(Principal principal) {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        if (principal != null) {
+            request.setAttribute(Principal.class.getName(), (java.util.function.Supplier<java.util.Optional<Principal>>) () -> java.util.Optional.of(principal));
+        }
+        return request;
+    }
+
+    /** Binding and unbinding need SYNC in the Polarion project; claiming a pooled Work Item takes it out of the pool. */
+    @Test
+    void bindingNeedsTheSyncPermissionAndClaimingEmptiesThePool() {
+        com.example.sysarch.sync.SyncStore store = new com.example.sysarch.sync.SyncStore(this.jdbc);
+        com.example.sysarch.link.LinkRepository links = new com.example.sysarch.link.LinkRepository(this.jdbc);
+        store.addToUnboundPool("sysarch", "SYS-42", "requirement", "新需求");
+        com.example.sysarch.sync.api.model.LinkRequest claim = new com.example.sysarch.sync.api.model.LinkRequest("RQ-009", "Requirement", "SYS-42", "requirement", "sysarch");
+
+        for (MockHttpServletRequest refused : List.of(as(null), as(user("rev", List.of("sysarch/project_reviewer"))))) {
+            com.example.sysarch.link.LinksController controller = new com.example.sysarch.link.LinksController(links, store, refused, this.access);
+            assertThrows(ForbiddenException.class, () -> controller.linksPost(claim));
+            assertThrows(ForbiddenException.class, () -> controller.unbound("sysarch"));
+        }
+        assertTrue(links.find("RQ-009").isEmpty(), "nothing bound");
+
+        com.example.sysarch.link.LinksController architect = new com.example.sysarch.link.LinksController(links, store,
+                as(user("arch", List.of("sysarch/project_user"))), this.access);
+        assertEquals(List.of("SYS-42"), architect.unbound("sysarch").stream().map(com.example.sysarch.sync.SyncStore.PooledWorkItem::workItemId).toList());
+        assertEquals(201, architect.linksPost(claim).getStatusCode().value());
+        assertEquals("SYS-42", links.find("RQ-009").orElseThrow().workItemId());
+        assertEquals(List.of(), architect.unbound("sysarch"), "claimed: out of the pool");
+
+        com.example.sysarch.link.LinksController reviewer = new com.example.sysarch.link.LinksController(links, store,
+                as(user("rev", List.of("sysarch/project_reviewer"))), this.access);
+        assertThrows(ForbiddenException.class, () -> reviewer.linksElementIdDelete("RQ-009"));
+        assertEquals(204, architect.linksElementIdDelete("RQ-009").getStatusCode().value());
+        assertTrue(links.find("RQ-009").isEmpty());
+        assertEquals(List.of("BIND", "UNBIND"), this.jdbc.sql("SELECT direction FROM sync_audit WHERE element_id = 'RQ-009' ORDER BY id").query(String.class).list());
+        assertTrue(this.jdbc.sql("SELECT COUNT(*) FROM audit_log WHERE action = 'ACCESS_DENIED'").query(Integer.class).single() >= 5, "refusals audited");
+    }
+
     @Test
     void anUnrecordedSiriusInputIsAnonymousNotSystem() {
         String renamed = "{\"query\":\"mutation($i:EditLabelInput!){editLabel(input:$i){__typename}}\","
