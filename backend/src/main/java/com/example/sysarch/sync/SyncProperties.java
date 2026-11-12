@@ -73,6 +73,20 @@ public class SyncProperties {
     /** The scheduled incremental pull (P1 T6 step 2). */
     public static class Schedule {
 
+        /**
+         * false = no scheduled pull even with a service token (the token may be there only for Polarion single sign-on,
+         * which reads users' roles with it). Env SYSARCH_SCHEDULED_PULL.
+         */
+        private boolean enabled = true;
+
+        public boolean isEnabled() {
+            return this.enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
         private java.time.Duration interval = java.time.Duration.ofMinutes(15);
 
         /** After a failure, one retry after this delay. */

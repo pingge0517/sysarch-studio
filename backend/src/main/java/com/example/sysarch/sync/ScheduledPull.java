@@ -61,7 +61,7 @@ public class ScheduledPull {
     }
 
     public boolean enabled() {
-        return this.properties.getSyncToken() != null && !this.properties.getSyncToken().isBlank();
+        return this.properties.getSchedule().isEnabled() && this.properties.getSyncToken() != null && !this.properties.getSyncToken().isBlank();
     }
 
     @Scheduled(fixedDelayString = "${sysarch.polarion.schedule.tick:PT30S}", initialDelayString = "${sysarch.polarion.schedule.tick:PT30S}")

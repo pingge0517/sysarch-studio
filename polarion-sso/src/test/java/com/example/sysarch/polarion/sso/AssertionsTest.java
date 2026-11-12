@@ -40,6 +40,23 @@ class AssertionsTest {
         assertEquals(null, StartServlet.readKey(key.toString()), "an empty file is no key");
     }
 
+    /** The Work Item panel frames the start page, which lands on the embed page of that Work Item. */
+    @Test
+    void theWorkItemPanelFramesTheEmbedPageOfItsWorkItem() {
+        String url = WorkItemPanel.startUrl("sysarch", "SYS-12");
+        assertEquals("/polarion/sysarch-sso/start?return=%2F%3Fembed%3D1%26polarionProject%3Dsysarch%26workItem%3DSYS-12", url);
+        assertEquals("/?embed=1&polarionProject=sysarch&workItem=SYS-12",
+                java.net.URLDecoder.decode(url.substring(url.indexOf("return=") + 7), StandardCharsets.UTF_8));
+        assertEquals("/", StartServlet.localPath("https://evil.example"), "the start page still accepts local paths only");
+
+        String html = WorkItemPanel.html("sysarch", "SYS-12", true);
+        assertTrue(html.contains("<iframe src=\"" + url + "\""), html);
+        assertTrue(html.contains("target=\"_blank\""));
+        String odd = WorkItemPanel.html("p\"><script>", "x", true);
+        assertTrue(!odd.contains("<script>") && odd.contains("polarionProject%3Dp%2522%253E%253Cscript%253E"), "ids are encoded: " + odd);
+        assertTrue(WorkItemPanel.html("sysarch", "SYS-12", false).contains("保存工作项后"), "not saved yet: no frame");
+    }
+
     @Test
     void userIdsAreEscaped() {
         assertEquals("a\\\"b\\\\c\\u000a", Assertions.escape("a\"b\\c\n"));

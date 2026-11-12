@@ -364,6 +364,17 @@ class TraceAndScheduleIT {
         this.polarion.verify(0, com.github.tomakehurst.wiremock.client.WireMock.anyRequestedFor(anyUrl()));
     }
 
+    /** SYSARCH_SCHEDULED_PULL=false: the service token may serve Polarion single sign-on only. */
+    @Test
+    void theScheduleCanBeSwitchedOffWithAServiceAccount() {
+        this.properties.getSchedule().setEnabled(false);
+
+        assertFalse(this.scheduler.enabled());
+        this.scheduler.tick();
+
+        this.polarion.verify(0, com.github.tomakehurst.wiremock.client.WireMock.anyRequestedFor(anyUrl()));
+    }
+
     @Test
     void pushAndPullTimesAreRecordedForThePanel() {
         this.bindBlock();

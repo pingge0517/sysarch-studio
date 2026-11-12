@@ -113,6 +113,8 @@ sysarch:
       verified-by: verifies
     # Incremental pull: every interval; after a failure one retry after retry-delay; max-failures in a row pause it.
     schedule:
+      # false: no scheduled pull although POLARION_SYNC_TOKEN is set (e.g. the token only serves Polarion single sign-on)
+      enabled: ${SYSARCH_SCHEDULED_PULL:true}
       interval: PT15M
       retry-delay: PT2M
       max-failures: 3

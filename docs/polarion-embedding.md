@@ -66,6 +66,7 @@ Polarion 页面 ── iframe ──▶ /polarion/sysarch-sso/start?return=/?emb
 |---|---|
 | `SYSARCH_POLARION_SSO_SECRET` | 与 Polarion 的 `sysarch.sso.secret` 相同；不设则单点登录关闭（503），令牌登录照常可用 |
 | `POLARION_SYNC_TOKEN` | 服务账号令牌，用来读取登录用户的角色（也用于定时拉取） |
+| `SYSARCH_SCHEDULED_PULL` | `false` 时不做定时拉取，即使设置了服务账号令牌（令牌只用于单点登录时） |
 | `SYSARCH_SSO_ORIGINS` | 允许提交登录表单的 Polarion 源，例如 `https://polarion.example.com`（默认 `http://localhost`） |
 | `SYSARCH_FRAME_ANCESTORS` | 允许嵌入 SysArch 的源；默认取 `POLARION_BASE_URL` 的源 |
 | `SYSARCH_COOKIE_SAMESITE` | `Lax`（默认，Polarion 与 SysArch 同站，例如同一公司域名下的两个主机）；不同站时设 `None`，并同时设 `SYSARCH_SECURE_COOKIE=true` |
@@ -86,6 +87,18 @@ Polarion 页面 ── iframe ──▶ /polarion/sysarch-sso/start?return=/?emb
 
 指向某个 Work Item 时在 `return` 中加 `workItem`：`return=/?embed=1&polarionProject=sysarch&workItem=SYS-12`（URL 编码后放进 `return`）。嵌入页会打开与该 Work Item 绑定的模型元素；没有绑定时只打开模型。
 
+### Work Item 表单上的“SysArch 架构”面板
+
+扩展里还带一个 Work Item 表单扩展 `sysarchArchitecture`：在 Work Item 表单上显示该 Work Item 的嵌入页（框架高 260 px，下方有“在新标签页中打开 SysArch”）。未保存的 Work Item 只显示一行提示。
+
+启用方法：Polarion 管理 → 工作项 → 表单配置 → 表单布局，为需要的类型（例如“架构元素”）新建或编辑布局，在自定义字段面板之后加一行：
+
+```xml
+<extension id="sysarchArchitecture" label="SysArch 架构" />
+```
+
+这个表单扩展实现的是 Polarion 自己的接口，只能用 Polarion 的 jar 编译：构建时找到 Polarion（`POLARION_HOME`、`-Ppolarion.home`，或本机的 `C:/Polarion/polarion`）才会把它编进扩展，并在清单里加上 `Guice-Modules`；找不到时（例如 CI）构建的扩展不带面板，其余功能不变。构建日志会写明 `with` 或 `without the Work Item form panel`。
+
 ## 6. 嵌入页
 
 `/?embed=1&polarionProject=<Polarion 项目>[&workItem=<ID>]`：
@@ -100,4 +113,5 @@ Polarion 页面 ── iframe ──▶ /polarion/sysarch-sso/start?return=/?emb
 
 - 已验证（2026-11-12）：单元测试（`PolarionSsoTest`、`AssertionsTest`、前端 `embed/api.test.ts`）；本机实际运行的后端，用扩展自己的签名代码生成凭证，Polarion 接口用本地桩代替：登录 303 并带上 Cookie 和角色、重放 401、其他源 403、Polarion 源调用其他接口 403、嵌入目标接口未登录 401、`frame-ancestors` 响应头。
 - 已验证（2026-11-12，本机 Polarion 2512，按第 3 节安装）：已登录 Polarion 的浏览器打开 `/polarion/sysarch-sso/start` 后直接进入 SysArch 嵌入页，显示 System Administrator，没有输入任何令牌；在 Polarion 页面（`http://localhost`）中用 iframe 打开同一地址：Polarion 起始页 → 表单提交到 SysArch（`/api/v1/auth/polarion-sso`）→ 嵌入页加载并读取用户和目标（均 200），用户确认框架内显示嵌入页，点“打开模型（Sirius Web）”后 Sirius Web 也在框架内打开。测试时 SysArch 的服务账号令牌临时用了个人令牌，并映射到一个不存在的 Polarion 项目，避免定时拉取碰到已有的绑定；测试项目和记录事后已删除。
+- 已验证（2026-11-12）Work Item 面板：在 sysarch 项目“架构元素”类型的表单布局中加入面板，新建一个测试工作项，并在 SysArch 中把它临时绑定到一个元素：打开该工作项，表单上出现“SysArch 架构”面板（865×262 的框架），框架内依次完成登录、加载嵌入页、读取用户和目标（均 200），目标为绑定的元素且已在模型中定位；用户确认面板显示正常。测试工作项、临时绑定和临时项目事后已删除，表单布局保留。
 - 未验证：Polarion 与 SysArch 不同站（需要 `SameSite=None` 和 HTTPS）时的第三方 Cookie 行为；在 Polarion 页面里保存的正式 Wiki 页面（测试只在浏览器里临时插入了 iframe，没有改动 Polarion 的内容）。
