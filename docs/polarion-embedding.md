@@ -31,6 +31,18 @@ Polarion 页面 ── iframe ──▶ /polarion/sysarch-sso/start?return=/?emb
 
 ## 3. 安装到 Polarion（由 Polarion 管理员操作）
 
+**推荐用安装脚本**（P4 T2）：在构建好扩展后，以管理员身份在 PowerShell 中运行
+
+```powershell
+./polarion-sso/install.ps1 -SysArchUrl https://sysarch.example.com [-PolarionHome C:Polarion] [-Restart]
+./polarion-sso/install.ps1 -Uninstall [-PolarionHome C:Polarion] [-Restart]   # 卸载
+```
+
+脚本先检查参数，再备份 `polarion.properties`（`.bak-sysarch-<时间>`），然后完成下面第 1、2、3、5 步：复制扩展（替换旧版本）、缺少时生成密钥文件、在一对标记注释之间写入两个属性（重复运行只会替换这一段，原有的 `sysarch.sso.*` 行会被清掉，文件的编码和换行符保持不变）、删除 `.config`。它**不会修改 Apache 配置**，只检查 `frame-src` 是否已允许 SysArch，没有时打印需要加的内容（第 4 步由管理员手工完成）。它也不会显示密钥，只提示密钥文件的位置。Polarion 运行时 `.config` 里的文件被占用，所以：Polarion 服务正在运行时，不加 `-Restart` 脚本会在改动任何文件之前拒绝；加 `-Restart` 时先停服务，改完再启动。只认程序路径在 `-PolarionHome` 下的那个 Polarion 服务。2026-11-12 在本机 Polarion 2512 上实测：首次运行时脚本还没有先停服务，删除 `.config` 失败（文件被占用），已按上述方式修正；修正后的一次运行完成全部步骤，Polarion 重启后扩展正常加载，整页 `/polarion/sysarch-sso/page?project=sysarch` 单点登录成功，非法项目 ID 返回 400。
+
+手工安装的步骤如下：
+
+
 1. 把 `com.example.sysarch.sso` 文件夹复制到 `<Polarion 安装目录>/polarion/extensions/`。
 2. 把密钥（与 SysArch 的 `SYSARCH_POLARION_SSO_SECRET` 相同，至少 32 个随机字符，例如 `openssl rand -hex 32`）写进一个文件，例如 `<Polarion 安装目录>/polarion/configuration/sysarch-sso.key`，只让 Polarion 服务账号可读。
 3. 在 `<Polarion 安装目录>/polarion/configuration/polarion.properties` 中加入：
@@ -91,7 +103,9 @@ Polarion 页面 ── iframe ──▶ /polarion/sysarch-sso/start?return=/?emb
 
 ## 5. 在 Polarion 中加入页面
 
-在项目里新建一个 LiveReport 页面（文档与页面 → 新建 → LiveReport Page），从部件目录加一个“Script - Block”部件，内容如下（把 `sysarch` 换成 Polarion 项目 ID），应用后保存：
+**最简单的做法**（P4 T2）：扩展自带一个整页，地址是 `/polarion/sysarch-sso/page?project=<Polarion 项目 ID>`。页面顶部有一行“SysArch 架构 · 项目 · 在新标签页中打开”，下面是整页的 SysArch。把这个地址加到 Polarion 的项目快捷方式或导航里即可，不需要建页面。项目 ID 只能包含字母、数字和 `_ - .`，其他内容会被拒绝（400）。
+
+也可以在项目里新建一个 LiveReport 页面（文档与页面 → 新建 → LiveReport Page），从部件目录加一个“Script - Block”部件，内容如下（把 `sysarch` 换成 Polarion 项目 ID），应用后保存：
 
 ```html
 <iframe src="/polarion/sysarch-sso/start?return=%2F%3Fembed%3D1%26polarionProject%3Dsysarch"

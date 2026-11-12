@@ -18,6 +18,14 @@
     <servlet-name>start</servlet-name>
     <url-pattern>/start</url-pattern>
   </servlet-mapping>
+  <servlet>
+    <servlet-name>page</servlet-name>
+    <servlet-class>com.example.sysarch.polarion.sso.PageServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>page</servlet-name>
+    <url-pattern>/page</url-pattern>
+  </servlet-mapping>
   <security-constraint>
     <web-resource-collection>
       <web-resource-name>SysArch single sign-on</web-resource-name>

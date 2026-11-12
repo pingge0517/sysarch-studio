@@ -57,6 +57,21 @@ class AssertionsTest {
         assertTrue(WorkItemPanel.html("sysarch", "SYS-12", false).contains("保存工作项后"), "not saved yet: no frame");
     }
 
+    /** P4 T2: the whole page of a project frames the embed page through single sign-on; odd project ids are refused. */
+    @Test
+    void theProjectPageFramesTheProjectsEmbedPage() {
+        String html = ProjectPage.html("sysarch");
+        assertTrue(html.startsWith("<!DOCTYPE html>"));
+        assertTrue(html.contains("<iframe src=\"" + WorkItemPanel.startUrl("sysarch", null) + "\""), html);
+        assertTrue(html.contains("<title>SysArch 架构 – sysarch</title>"));
+        assertEquals("/polarion/sysarch-sso/start?return=%2F%3Fembed%3D1%26polarionProject%3Dsysarch", WorkItemPanel.startUrl("sysarch", null));
+        for (String bad : new String[] { null, "", "a b", "x\"><script>", "../etc", "p/q" }) {
+            assertTrue(!ProjectPage.validProject(bad), String.valueOf(bad));
+            assertTrue(!ProjectPage.html(bad).contains("<iframe"), "no frame for " + bad);
+        }
+        assertTrue(ProjectPage.validProject("PR001.v2_x-1"));
+    }
+
     @Test
     void userIdsAreEscaped() {
         assertEquals("a\\\"b\\\\c\\u000a", Assertions.escape("a\"b\\c\n"));
