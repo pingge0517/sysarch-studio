@@ -36,6 +36,7 @@ curl -X POST http://<host>/api/v1/export/xmi \
 | 需求（Requirement） | `uml:Class` + `sysml:Requirement`（`id` = 需求编号，`text` = 需求文本） | Requirement |
 | 满足、验证、分配 | `uml:Abstraction` + `sysml:Satisfy` / `sysml:Verify` / `sysml:Allocate` | Satisfy / Verify / Allocate |
 | 描述 | 元素自带的 `uml:Comment` | Comment |
+| 交互（v1.4） | `uml:Interaction`：生命线 `uml:Lifeline`；每条消息一对按时间顺序排列的 `uml:MessageOccurrenceSpecification`（发送、接收），以及 `uml:Message`（messageSort 为 synchCall、asynchCall 或 reply）。生命线代表块时，`represents` 指向交互中以该块为类型的属性 | Interaction / Sequence Diagram |
 
 文件开头有一段 XML 注释和一个 `xmi:Documentation`，注明"分层信息为扩展注释，标准工具不可见"，并列出各类元素各导出了多少个、哪些没有导出。
 
@@ -49,13 +50,14 @@ curl -X POST http://<host>/api/v1/export/xmi \
 | 需求 | `verifyMethod`、`priority` |
 | 连接 | `kind`、`interfaceType`、`itemFlow`（id、名称、条目名、条目类型、分层）；两端不在同一个块中时记 `crossBlock` |
 | 分配 | `rationale` |
+| 生命线 | `represents`：代表的元素不是块时（例如部件），记录它的 id |
 | 部件 | 写不成上下限的多重性，原样记在 `multiplicity` |
 
 ## 4. 已知限制
 
 - **部件上的端口**：UML 的端口只能属于类型，不能属于某个部件。所以部件上的端口会写到部件的类型块上（部件没有类型时，写到部件所在的块），扩展里记下它原本属于哪个部件。同一个块类型的多个部件，在 Cameo 里会共享这些端口。
 - **跨块连接**：两端不在同一个块中的连接，放在源端所在的块下，扩展里标记 `crossBlock`。
-- **不导出**：参数图元素（约束块、参数、绑定）和行为元素（状态机、活动、用例、参与者），文件头会列出数量。需要时请用 SysML v2 文本导出，或在原工具里查看。
+- **不导出**：参数图元素（约束块、参数、绑定），以及状态机、活动、用例、参与者，文件头会列出数量。交互（v1.4）会导出。需要时请用 SysML v2 文本导出，或在原工具里查看。
 - **导入**：见第 5 节。
 
 ## 5. 导入（P3 T8）

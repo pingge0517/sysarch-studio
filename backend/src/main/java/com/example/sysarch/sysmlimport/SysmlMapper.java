@@ -108,6 +108,7 @@ public final class SysmlMapper {
             switch (decl.kind) {
                 case "part def", "port def" -> { }
                 case "requirement" -> this.requirement(decl);
+                case "occurrence def" -> this.interaction(decl); // v1.4
                 case "part", "port", "connection" -> this.unmapped.add(decl + "：顶层的" + decl.kind + "没有所属的块，未导入");
                 default -> this.unmapped.add(decl + "：未导入");
             }
@@ -344,8 +345,97 @@ public final class SysmlMapper {
             case InterfaceDef def -> decl.superTypes.forEach(name -> add(def.getSuperTypes(), this.unique(this.interfacesByName, name, decl, "父接口")));
             case Part part -> part.setTypedBy(decl.type == null ? null : this.unique(this.blocksByName, decl.type, decl, "类型"));
             case Port port -> port.setInterfaceType(decl.type == null ? null : this.unique(this.interfacesByName, decl.type, decl, "接口"));
+            case com.example.sysarch.model.Lifeline lifeline -> lifeline.setRepresents(decl.type != null ? this.unique(this.blocksByName, decl.type, decl, "代表的块")
+                    : this.represented(decl));
             default -> { }
         }
+    }
+
+    private static final Pattern REPRESENTS = Pattern.compile("^represents: .*<([^<>]+)>$");
+
+    /** A lifeline's "represents: name <id>" doc line (what it stands for when that is not a block). */
+    private ArchElement represented(Decl decl) {
+        for (String line : lines(decl.docs)) {
+            var m = REPRESENTS.matcher(line.strip());
+            if (m.matches()) {
+                ArchElement found = this.byId.get(m.group(1));
+                if (found == null) {
+                    this.unmapped.add(decl + "：代表的元素 <" + m.group(1) + "> 在文本里没有，未设置");
+                }
+                return found;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * v1.4: an {@code occurrence def} as SysArch exports an interaction: {@code part}s are lifelines (typed = the block
+     * represented, resolved later), {@code message}s keep their order, ends by short name, else name, among this
+     * occurrence's parts; "kind: X" sets the message kind; successions only restate the order and are not needed.
+     */
+    private void interaction(Decl decl) {
+        com.example.sysarch.model.Interaction interaction = FACTORY.createInteraction();
+        this.init(interaction, decl, "occurrence def", null);
+        interaction.setDescription(text(decl.docs));
+        this.roots.add(interaction);
+        Map<String, com.example.sysarch.model.Lifeline> byShortName = new HashMap<>();
+        Map<String, List<com.example.sysarch.model.Lifeline>> byName = new HashMap<>();
+        for (Decl child : decl.children) {
+            if (child.kind.equals("part")) {
+                com.example.sysarch.model.Lifeline lifeline = FACTORY.createLifeline();
+                this.init(lifeline, child, "lifeline", interaction.getLayer());
+                lifeline.setDescription(text(child.docs.stream().filter(d -> !d.strip().startsWith("represents:")).toList()));
+                interaction.getLifelines().add(lifeline);
+                if (child.shortName != null) {
+                    byShortName.put(child.shortName, lifeline);
+                }
+                byName.computeIfAbsent(lifeline.getName(), k -> new ArrayList<>()).add(lifeline);
+            }
+        }
+        for (Decl child : decl.children) {
+            switch (child.kind) {
+                case "part", "succession" -> { }
+                case "message" -> {
+                    com.example.sysarch.model.Message message = FACTORY.createMessage();
+                    this.init(message, child, "message", interaction.getLayer());
+                    List<String> description = new ArrayList<>();
+                    for (String doc : child.docs) {
+                        if (doc.strip().startsWith("kind: ")) {
+                            com.example.sysarch.model.MessageKind kind = com.example.sysarch.model.MessageKind.getByName(doc.strip().substring(6).strip());
+                            if (kind == null) {
+                                this.unmapped.add(child + "：消息类型「" + doc.strip().substring(6) + "」不存在");
+                            } else {
+                                message.setKind(kind);
+                            }
+                        } else {
+                            description.add(doc);
+                        }
+                    }
+                    message.setDescription(text(description));
+                    message.setSender(this.lifeline(child, child.sourceEnd, byShortName, byName, "发送方"));
+                    message.setReceiver(this.lifeline(child, child.targetEnd, byShortName, byName, "接收方"));
+                    interaction.getMessages().add(message);
+                }
+                default -> this.unmapped.add(child + "：交互里的" + child.kind + "未导入");
+            }
+        }
+    }
+
+    private com.example.sysarch.model.Lifeline lifeline(Decl message, List<String> end, Map<String, com.example.sysarch.model.Lifeline> byShortName,
+            Map<String, List<com.example.sysarch.model.Lifeline>> byName, String what) {
+        if (end == null) {
+            return null;
+        }
+        String ref = end.get(end.size() - 1);
+        if (byShortName.containsKey(ref)) {
+            return byShortName.get(ref);
+        }
+        List<com.example.sysarch.model.Lifeline> named = byName.getOrDefault(ref, List.of());
+        if (named.size() == 1) {
+            return named.get(0);
+        }
+        this.unmapped.add(message + "：" + what + "「" + ref + "」" + (named.isEmpty() ? "不是本交互的生命线" : "有 " + named.size() + " 条同名生命线，无法确定") + "，未设置");
+        return null;
     }
 
     private static <T> void add(List<T> list, T value) {

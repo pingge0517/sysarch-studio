@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmlns:xmi="http://www.omg.org/spec/XMI/20131001" xmlns:sysml="http://www.omg.org/spec/SysML/20181001/SysML" xmlns:uml="http://www.omg.org/spec/UML/20161101">
+  <!-- 分层信息为扩展注释，标准工具不可见：layer、stereotypes 及 UML 没有对应项的字段写在各元素的 xmi:Extension（extender = SysArch Studio）中，标准工具（Cameo、Papyrus）会忽略它们；元素与关系用标准 UML 2.5.1 / SysML 1.6 表达。XMI 往返不保证分层无损，需要无损时请用 SysML v2 文本导出。 -->
+  <xmi:Documentation exporter="SysArch Studio" exporterVersion="P3">
+    <xmi:longDescription>分层信息为扩展注释，标准工具不可见：layer、stereotypes 及 UML 没有对应项的字段写在各元素的 xmi:Extension（extender = SysArch Studio）中，标准工具（Cameo、Papyrus）会忽略它们；元素与关系用标准 UML 2.5.1 / SysML 1.6 表达。XMI 往返不保证分层无损，需要无损时请用 SysML v2 文本导出。
+导出：Interaction 1；Lifeline 3；Message 5；Part 1；PartDefinition 2；</xmi:longDescription>
+  </xmi:Documentation>
+  <uml:Model name="case-04-interaction" xmi:id="model">
+    <profileApplication xmi:id="model_profileApplication" xmi:type="uml:ProfileApplication">
+      <appliedProfile href="http://www.omg.org/spec/SysML/20181001/SysML.xmi#SysML" xmi:type="uml:Profile"/>
+    </profileApplication>
+    <packagedElement name="整车控制" xmi:id="PD-1" xmi:type="uml:Class">
+      <xmi:Extension extender="SysArch Studio">
+        <layer value="LOGICAL"/>
+      </xmi:Extension>
+      <ownedAttribute aggregation="composite" name="前门" type="PD-2" xmi:id="PT-1" xmi:type="uml:Property">
+        <xmi:Extension extender="SysArch Studio">
+          <layer value="LOGICAL"/>
+        </xmi:Extension>
+        <lowerValue value="1" xmi:id="PT-1_lower" xmi:type="uml:LiteralInteger"/>
+        <upperValue value="1" xmi:id="PT-1_upper" xmi:type="uml:LiteralUnlimitedNatural"/>
+      </ownedAttribute>
+    </packagedElement>
+    <packagedElement name="门控" xmi:id="PD-2" xmi:type="uml:Class">
+      <xmi:Extension extender="SysArch Studio">
+        <layer value="LOGICAL"/>
+      </xmi:Extension>
+    </packagedElement>
+    <packagedElement name="开门" xmi:id="SQ-1" xmi:type="uml:Interaction">
+      <xmi:Extension extender="SysArch Studio">
+        <layer value="LOGICAL"/>
+      </xmi:Extension>
+      <ownedComment annotatedElement="SQ-1" body="驾驶员开门的交互" xmi:id="SQ-1_comment" xmi:type="uml:Comment"/>
+      <ownedAttribute name="门控单元" type="PD-2" xmi:id="LL-1_represents" xmi:type="uml:Property"/>
+      <lifeline name="门控单元" represents="LL-1_represents" xmi:id="LL-1" xmi:type="uml:Lifeline">
+        <xmi:Extension extender="SysArch Studio">
+          <layer value="LOGICAL"/>
+        </xmi:Extension>
+      </lifeline>
+      <lifeline name="前门实例" xmi:id="LL-2" xmi:type="uml:Lifeline">
+        <xmi:Extension extender="SysArch Studio">
+          <represents value="PT-1"/>
+          <layer value="LOGICAL"/>
+        </xmi:Extension>
+      </lifeline>
+      <lifeline name="记录器" xmi:id="LL-3" xmi:type="uml:Lifeline">
+        <xmi:Extension extender="SysArch Studio">
+          <layer value="PHYSICAL"/>
+          <stereotype value="monitor"/>
+        </xmi:Extension>
+        <ownedComment annotatedElement="LL-3" body="只记录" xmi:id="LL-3_comment" xmi:type="uml:Comment"/>
+      </lifeline>
+      <fragment covered="LL-1" message="MS-1" xmi:id="MS-1_send" xmi:type="uml:MessageOccurrenceSpecification"/>
+      <fragment covered="LL-2" message="MS-1" xmi:id="MS-1_receive" xmi:type="uml:MessageOccurrenceSpecification"/>
+      <fragment covered="LL-2" message="MS-2" xmi:id="MS-2_send" xmi:type="uml:MessageOccurrenceSpecification"/>
+      <fragment covered="LL-1" message="MS-2" xmi:id="MS-2_receive" xmi:type="uml:MessageOccurrenceSpecification"/>
+      <fragment covered="LL-1" message="MS-3" xmi:id="MS-3_send" xmi:type="uml:MessageOccurrenceSpecification"/>
+      <fragment covered="LL-2" message="MS-3" xmi:id="MS-3_receive" xmi:type="uml:MessageOccurrenceSpecification"/>
+      <fragment covered="LL-2" message="MS-4" xmi:id="MS-4_send" xmi:type="uml:MessageOccurrenceSpecification"/>
+      <fragment covered="LL-2" message="MS-4" xmi:id="MS-4_receive" xmi:type="uml:MessageOccurrenceSpecification"/>
+      <fragment covered="LL-2" message="MS-5" xmi:id="MS-5_send" xmi:type="uml:MessageOccurrenceSpecification"/>
+      <fragment covered="LL-3" message="MS-5" xmi:id="MS-5_receive" xmi:type="uml:MessageOccurrenceSpecification"/>
+      <message messageSort="asynchCall" name="开门请求" receiveEvent="MS-1_receive" sendEvent="MS-1_send" xmi:id="MS-1" xmi:type="uml:Message">
+        <xmi:Extension extender="SysArch Studio">
+          <layer value="LOGICAL"/>
+        </xmi:Extension>
+      </message>
+      <message messageSort="synchCall" name="解锁()" receiveEvent="MS-2_receive" sendEvent="MS-2_send" xmi:id="MS-2" xmi:type="uml:Message">
+        <xmi:Extension extender="SysArch Studio">
+          <layer value="LOGICAL"/>
+        </xmi:Extension>
+      </message>
+      <message messageSort="reply" name="已解锁" receiveEvent="MS-3_receive" sendEvent="MS-3_send" xmi:id="MS-3" xmi:type="uml:Message">
+        <xmi:Extension extender="SysArch Studio">
+          <layer value="LOGICAL"/>
+        </xmi:Extension>
+      </message>
+      <message messageSort="synchCall" name="自检" receiveEvent="MS-4_receive" sendEvent="MS-4_send" xmi:id="MS-4" xmi:type="uml:Message">
+        <xmi:Extension extender="SysArch Studio">
+          <layer value="LOGICAL"/>
+        </xmi:Extension>
+        <ownedComment annotatedElement="MS-4" body="每次开门前" xmi:id="MS-4_comment" xmi:type="uml:Comment"/>
+      </message>
+      <message messageSort="asynchCall" name="记一笔" receiveEvent="MS-5_receive" sendEvent="MS-5_send" xmi:id="MS-5" xmi:type="uml:Message">
+        <xmi:Extension extender="SysArch Studio">
+          <layer value="LOGICAL"/>
+        </xmi:Extension>
+      </message>
+    </packagedElement>
+  </uml:Model>
+  <sysml:Block base_Class="PD-1" xmi:id="PD-1_Block"/>
+  <sysml:Block base_Class="PD-2" xmi:id="PD-2_Block"/>
+</xmi:XMI>

@@ -82,6 +82,9 @@ const KINDS: Record<string, string> = {
   requirement: '需求',
   allocation: '分配',
   'item flow': '项流',
+  'occurrence def': '交互',
+  lifeline: '生命线',
+  message: '消息',
 };
 
 /** "块 6、部件 3、…" in a stable order. */

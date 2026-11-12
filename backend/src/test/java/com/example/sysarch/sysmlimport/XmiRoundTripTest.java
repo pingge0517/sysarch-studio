@@ -113,6 +113,61 @@ class XmiRoundTripTest {
         return List.of(b1, b2, b3, r1, r2, r3, r4, r5);
     }
 
+    /**
+     * case-04 (v1.4): an interaction: lifelines representing a block (a typed property of the interaction) and a part (the
+     * extension), a third with its own layer, stereotype and description; every message kind, a self-message, time order.
+     */
+    static List<EObject> interaction() {
+        PartDefinition system = block("PD-1", "整车控制", Layer.LOGICAL);
+        PartDefinition ecu = block("PD-2", "门控", Layer.LOGICAL);
+        Part door = part("PT-1", "前门", ecu, "1");
+        system.getOwnedParts().add(door);
+        com.example.sysarch.model.Interaction sq = F.createInteraction();
+        named(sq, "SQ-1", "开门", Layer.LOGICAL);
+        sq.setDescription("驾驶员开门的交互");
+        com.example.sysarch.model.Lifeline driver = lifeline("LL-1", "门控单元", ecu);
+        com.example.sysarch.model.Lifeline front = lifeline("LL-2", "前门实例", door);
+        com.example.sysarch.model.Lifeline log = lifeline("LL-3", "记录器", null);
+        log.setLayer(Layer.PHYSICAL);
+        log.getStereotypes().add("monitor");
+        log.setDescription("只记录");
+        sq.getLifelines().addAll(List.of(driver, front, log));
+        sq.getMessages().add(message("MS-1", "开门请求", com.example.sysarch.model.MessageKind.ASYNC, driver, front));
+        sq.getMessages().add(message("MS-2", "解锁()", com.example.sysarch.model.MessageKind.SYNC, front, driver));
+        sq.getMessages().add(message("MS-3", "已解锁", com.example.sysarch.model.MessageKind.REPLY, driver, front));
+        com.example.sysarch.model.Message self = message("MS-4", "自检", com.example.sysarch.model.MessageKind.SYNC, front, front);
+        self.setDescription("每次开门前");
+        sq.getMessages().add(self);
+        sq.getMessages().add(message("MS-5", "记一笔", com.example.sysarch.model.MessageKind.ASYNC, front, log));
+        return List.of(system, ecu, sq);
+    }
+
+    private static com.example.sysarch.model.Lifeline lifeline(String id, String name, ArchElement represents) {
+        com.example.sysarch.model.Lifeline l = F.createLifeline();
+        named(l, id, name, Layer.LOGICAL);
+        l.setRepresents(represents);
+        return l;
+    }
+
+    private static com.example.sysarch.model.Message message(String id, String name, com.example.sysarch.model.MessageKind kind,
+            com.example.sysarch.model.Lifeline from, com.example.sysarch.model.Lifeline to) {
+        com.example.sysarch.model.Message m = F.createMessage();
+        named(m, id, name, Layer.LOGICAL);
+        m.setKind(kind);
+        m.setSender(from);
+        m.setReceiver(to);
+        return m;
+    }
+
+    @Test
+    void case04Interaction() throws IOException {
+        this.roundTrip("case-04-interaction", XmiRoundTripTest::interaction);
+        // for tools/uml2-check: the same model in the Papyrus flavour
+        Files.createDirectories(Path.of("build/xmi-export"));
+        Files.writeString(Path.of("build/xmi-export/case-04-interaction.uml"),
+                XmiExporter.export("case-04-interaction", List.of(resource(interaction())), null, XmiExporter.Flavour.PAPYRUS), StandardCharsets.UTF_8);
+    }
+
     @Test
     void case01Basic() throws IOException {
         this.roundTrip("case-01-basic", XmiRoundTripTest::basic);

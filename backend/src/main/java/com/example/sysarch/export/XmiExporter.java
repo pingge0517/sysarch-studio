@@ -126,6 +126,15 @@ public final class XmiExporter {
 
     private static final EClass ABSTRACTION = eClass(UML, "Abstraction", false);
 
+    // v1.4: interactions (UML's Interaction with lifelines, message occurrence fragments and messages)
+    private static final EClass INTERACTION = eClass(UML, "Interaction", false);
+
+    private static final EClass LIFELINE = eClass(UML, "Lifeline", false);
+
+    private static final EClass OCCURRENCE = eClass(UML, "MessageOccurrenceSpecification", false);
+
+    private static final EClass MESSAGE = eClass(UML, "Message", false);
+
     static {
         UML.setName("uml");
         UML.setNsPrefix("uml");
@@ -134,7 +143,7 @@ public final class XmiExporter {
         SYSML.setNsPrefix("sysml");
         SYSML.setNsURI(SYSML_NS);
         for (EClass c : List.of(COMMENT, MODEL, PROFILE_APPLICATION, PROFILE, CLASS, GENERALIZATION, PROPERTY, LITERAL_INTEGER, LITERAL_UNLIMITED,
-                CONNECTOR, CONNECTOR_END, ABSTRACTION)) {
+                CONNECTOR, CONNECTOR_END, ABSTRACTION, INTERACTION, LIFELINE, OCCURRENCE, MESSAGE)) {
             c.getESuperTypes().add(ELEMENT);
         }
         PORT.getESuperTypes().add(PROPERTY);
@@ -142,7 +151,7 @@ public final class XmiExporter {
         containment(ELEMENT, "ownedComment");
         attribute(COMMENT, "body");
         reference(COMMENT, "annotatedElement", true);
-        for (EClass named : List.of(MODEL, CLASS, PROPERTY, CONNECTOR, ABSTRACTION)) {
+        for (EClass named : List.of(MODEL, CLASS, PROPERTY, CONNECTOR, ABSTRACTION, INTERACTION, LIFELINE, MESSAGE)) {
             if (named.getEStructuralFeature("name") == null) {
                 attribute(named, "name");
             }
@@ -167,6 +176,16 @@ public final class XmiExporter {
         reference(CONNECTOR_END, "partWithPort", false);
         reference(ABSTRACTION, "client", true);
         reference(ABSTRACTION, "supplier", true);
+        containment(INTERACTION, "ownedAttribute");
+        containment(INTERACTION, "lifeline");
+        containment(INTERACTION, "fragment");
+        containment(INTERACTION, "message");
+        reference(LIFELINE, "represents", false);
+        reference(OCCURRENCE, "covered", true);
+        reference(OCCURRENCE, "message", false);
+        attribute(MESSAGE, "messageSort");
+        reference(MESSAGE, "sendEvent", false);
+        reference(MESSAGE, "receiveEvent", false);
         for (String name : List.of("Block", "InterfaceBlock", "Requirement")) {
             reference(eClass(SYSML, name, false), "base_Class", false);
         }
@@ -438,6 +457,12 @@ public final class XmiExporter {
                 case Connection connection -> this.connector(connection);
                 case Requirement r -> {
                 }
+                case com.example.sysarch.model.Interaction i -> {
+                }
+                case com.example.sysarch.model.Lifeline l -> {
+                }
+                case com.example.sysarch.model.Message m -> {
+                }
                 case Allocate a -> {
                 }
                 case ItemFlow flow -> {
@@ -466,6 +491,7 @@ public final class XmiExporter {
         // satisfy/verify in requirement order, then the allocations in document order
         all.stream().filter(Requirement.class::isInstance).map(Requirement.class::cast).forEach(this::requirementRelations);
         all.stream().filter(Allocate.class::isInstance).map(Allocate.class::cast).forEach(this::allocate);
+        all.stream().filter(com.example.sysarch.model.Interaction.class::isInstance).map(com.example.sysarch.model.Interaction.class::cast).forEach(this::interaction);
         this.resource.getContents().add(this.model);
         this.resource.getContents().addAll(this.applications);
         this.ids.forEach(this.resource::setID);
@@ -640,6 +666,62 @@ public final class XmiExporter {
         this.apply(stereotype, "base_Abstraction", abstraction);
         this.exported.merge(stereotype, 1, Integer::sum);
         return abstraction;
+    }
+
+    /**
+     * v1.4: an interaction as UML's: lifelines; per message a send and a receive MessageOccurrenceSpecification covering
+     * the sender's and the receiver's lifeline, in time order, and the Message with its messageSort (synchCall,
+     * asynchCall, reply). A lifeline that represents a block represents a property of the interaction typed by it (UML:
+     * a lifeline represents a connectable element of its interaction); anything else it represents is named in the extension.
+     */
+    private void interaction(com.example.sysarch.model.Interaction interaction) {
+        EObject uml = this.create(INTERACTION, this.xmiId(interaction));
+        this.named(uml, interaction);
+        this.list(this.model, "packagedElement").add(uml);
+        for (com.example.sysarch.model.Lifeline lifeline : interaction.getLifelines()) {
+            EObject line = this.create(LIFELINE, this.xmiId(lifeline));
+            this.umlOf.put(lifeline, line);
+            this.named(line, lifeline);
+            ArchElement represents = lifeline.getRepresents();
+            EObject type = represents == null ? null : this.umlOf.get(represents);
+            if (type != null && type.eClass() == CLASS) {
+                EObject property = this.create(PROPERTY, this.xmiId(lifeline) + "_represents");
+                property.eSet(PROPERTY.getEStructuralFeature("name"), lifeline.getName());
+                property.eSet(PROPERTY.getEStructuralFeature("type"), type);
+                this.list(uml, "ownedAttribute").add(property);
+                line.eSet(LIFELINE.getEStructuralFeature("represents"), property);
+            } else if (represents != null) {
+                this.extra(lifeline, "represents", this.xmiId(represents));
+            }
+            this.list(uml, "lifeline").add(line);
+            this.common(lifeline, line);
+            this.exported.merge("Lifeline", 1, Integer::sum);
+        }
+        for (com.example.sysarch.model.Message message : interaction.getMessages()) {
+            EObject umlMessage = this.create(MESSAGE, this.xmiId(message));
+            this.named(umlMessage, message);
+            umlMessage.eSet(MESSAGE.getEStructuralFeature("messageSort"), switch (message.getKind()) {
+                case ASYNC -> "asynchCall";
+                case REPLY -> "reply";
+                default -> "synchCall";
+            });
+            EObject sender = message.getSender() == null ? null : this.umlOf.get(message.getSender());
+            EObject receiver = message.getReceiver() == null ? null : this.umlOf.get(message.getReceiver());
+            if (sender != null && receiver != null) {
+                for (boolean send : new boolean[] { true, false }) {
+                    EObject occurrence = this.create(OCCURRENCE, this.xmiId(message) + (send ? "_send" : "_receive"));
+                    this.list(occurrence, "covered").add(send ? sender : receiver);
+                    occurrence.eSet(OCCURRENCE.getEStructuralFeature("message"), umlMessage);
+                    this.list(uml, "fragment").add(occurrence);
+                    umlMessage.eSet(MESSAGE.getEStructuralFeature(send ? "sendEvent" : "receiveEvent"), occurrence);
+                }
+            }
+            this.list(uml, "message").add(umlMessage);
+            this.common(message, umlMessage);
+            this.exported.merge("Message", 1, Integer::sum);
+        }
+        this.common(interaction, uml);
+        this.exported.merge("Interaction", 1, Integer::sum);
     }
 
     // ---- shared

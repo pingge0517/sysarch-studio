@@ -7,5 +7,6 @@ describe('import report (P2 T6)', () => {
       '块 6、部件 3、接口定义 1、端口 6、连接 4、需求 5、分配 3',
     );
     expect(countsText({})).toBe('');
+    expect(countsText({ message: 5, 'occurrence def': 1, lifeline: 3 })).toBe('交互 1、生命线 3、消息 5');
   });
 });

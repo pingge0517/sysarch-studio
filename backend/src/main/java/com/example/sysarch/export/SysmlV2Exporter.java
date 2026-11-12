@@ -152,7 +152,7 @@ public final class SysmlV2Exporter {
     /** The elements that are exported as top-level declarations. */
     private java.util.stream.Stream<ArchElement> topLevel() {
         return this.all.stream().map(e -> (ArchElement) e)
-                .filter(e -> e instanceof PartDefinition || e instanceof InterfaceDef || e instanceof Requirement);
+                .filter(e -> e instanceof PartDefinition || e instanceof InterfaceDef || e instanceof Requirement || e instanceof com.example.sysarch.model.Interaction);
     }
 
     /** A part, port or connection is exported with the block that holds it. */
@@ -161,6 +161,9 @@ public final class SysmlV2Exporter {
             case PartDefinition block -> block;
             case InterfaceDef interfaceDef -> interfaceDef;
             case Requirement requirement -> requirement;
+            case com.example.sysarch.model.Interaction interaction -> interaction;
+            case com.example.sysarch.model.Lifeline lifeline -> (ArchElement) lifeline.eContainer();
+            case com.example.sysarch.model.Message message -> (ArchElement) message.eContainer();
             case Part part -> part.getOwner();
             case Port port -> blockOf(port);
             case Connection connection -> commonBlock(connection);
@@ -240,6 +243,12 @@ public final class SysmlV2Exporter {
             if (element instanceof Requirement requirement) {
                 this.line(0, "");
                 this.requirement(requirement);
+            }
+        }
+        for (ArchElement element : this.selected) {
+            if (element instanceof com.example.sysarch.model.Interaction interaction) {
+                this.line(0, "");
+                this.interaction(interaction);
             }
         }
         if (!this.stubs.isEmpty()) {
@@ -373,6 +382,59 @@ public final class SysmlV2Exporter {
             doc.add("description: " + requirement.getDescription()); // P2 T6: told apart from the text on import
         }
         this.doc(2, doc);
+        this.line(1, "}");
+    }
+
+    /**
+     * v1.4: an interaction as SysML v2's form of one: an {@code occurrence def} whose {@code part}s are the lifelines (typed
+     * by the block a lifeline represents) and whose {@code message}s run {@code from} sender {@code to} receiver, in time
+     * order, which {@code first … then …} successions state. Ends and successions use the short names (ids are unique,
+     * names need not be). What SysML v2 has no place for is a doc line, as elsewhere: a lifeline that represents
+     * something other than a block ({@code represents: name <id>}), a message kind other than SYNC ({@code kind: REPLY}).
+     */
+    private void interaction(com.example.sysarch.model.Interaction interaction) {
+        this.count("occurrence def");
+        this.line(1, "occurrence def " + shortAndName(interaction) + " {");
+        this.metadata(2, interaction);
+        this.doc(2, interaction.getDescription() == null ? List.of() : List.of(interaction.getDescription()));
+        Layer layer = interaction.getLayer();
+        for (com.example.sysarch.model.Lifeline lifeline : interaction.getLifelines()) {
+            this.count("lifeline");
+            ArchElement represents = lifeline.getRepresents();
+            String head = "part " + shortAndName(lifeline) + (represents instanceof PartDefinition block ? " : " + quote(name(block)) : "");
+            boolean representsOther = represents != null && !(represents instanceof PartDefinition);
+            if (this.hasExtras(lifeline, layer) || representsOther) {
+                this.line(2, head + " {");
+                this.extras(3, lifeline, layer);
+                if (representsOther) {
+                    this.doc(3, List.of("represents: " + reference(represents)));
+                }
+                this.line(2, "}");
+            } else {
+                this.line(2, head + ";");
+            }
+        }
+        List<com.example.sysarch.model.Message> messages = interaction.getMessages();
+        for (com.example.sysarch.model.Message message : messages) {
+            this.count("message");
+            String ends = message.getSender() == null || message.getReceiver() == null ? ""
+                    : " from " + quote(id(message.getSender())) + " to " + quote(id(message.getReceiver()));
+            String head = "message " + shortAndName(message) + ends;
+            boolean kind = message.getKind() != com.example.sysarch.model.MessageKind.SYNC;
+            if (this.hasExtras(message, layer) || kind) {
+                this.line(2, head + " {");
+                this.extras(3, message, layer);
+                if (kind) {
+                    this.doc(3, List.of("kind: " + message.getKind().getName()));
+                }
+                this.line(2, "}");
+            } else {
+                this.line(2, head + ";");
+            }
+        }
+        for (int i = 1; i < messages.size(); i++) {
+            this.line(2, "first " + quote(id(messages.get(i - 1))) + " then " + quote(id(messages.get(i))) + ";");
+        }
         this.line(1, "}");
     }
 

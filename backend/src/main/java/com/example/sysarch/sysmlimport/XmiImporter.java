@@ -86,6 +86,10 @@ public final class XmiImporter {
 
     private final List<Runnable> afterwards = new ArrayList<>();
 
+    private final List<Element> interactions = new ArrayList<>();
+
+    private final List<EObject> interactionRoots = new ArrayList<>();
+
     private String modelName;
 
     private XmiImporter(Document document, Layer defaultLayer) {
@@ -159,12 +163,16 @@ public final class XmiImporter {
         for (Element abstraction : abstractions) {
             this.relation(abstraction);
         }
+        for (Element interaction : this.interactions) {
+            this.interaction(interaction);
+        }
         if (!this.problems.isEmpty()) {
             return new Result(List.copyOf(this.problems), null, List.copyOf(this.ignored));
         }
         List<EObject> all = new ArrayList<>(this.roots);
         all.addAll(this.connectionRoots);
         all.addAll(this.relationRoots);
+        all.addAll(this.interactionRoots);
         return new Result(List.of(), new SysmlMapper.Mapped(all, this.counts, this.defaulted, this.ignored, List.of(), this.modelName), List.copyOf(this.ignored));
     }
 
@@ -210,6 +218,7 @@ public final class XmiImporter {
                 case "Package" -> this.packaged(child, classes, abstractions);
                 case "Class" -> classes.add(child);
                 case "Abstraction" -> abstractions.add(child);
+                case "Interaction" -> this.interactions.add(child); // v1.4
                 default -> this.refuse(child);
             }
         }
@@ -447,6 +456,83 @@ public final class XmiImporter {
         }
     }
 
+    /**
+     * v1.4: a {@code uml:Interaction}: lifelines (represents = the type of the interaction's property they represent, or the
+     * element the SysArch extension names), messages in the order of their send occurrences (UML's time order; ours
+     * writes them in order anyway), sender / receiver = the lifelines the send / receive occurrence covers, messageSort →
+     * kind (synchCall SYNC, asynchCall / asynchSignal ASYNC, reply REPLY, others SYNC).
+     */
+    private void interaction(Element element) {
+        com.example.sysarch.model.Interaction interaction = F.createInteraction();
+        this.common(element, interaction);
+        Map<String, String> propertyType = new HashMap<>();
+        Map<String, String> covered = new HashMap<>();
+        List<String> fragmentOrder = new ArrayList<>();
+        List<Element> lifelines = new ArrayList<>();
+        List<Element> messages = new ArrayList<>();
+        List<Runnable> later = new ArrayList<>();
+        for (Element child : children(element)) {
+            String local = child.getLocalName();
+            if (this.isExtension(child) || local.equals("ownedComment")) {
+                continue;
+            }
+            switch (local) {
+                case "ownedAttribute" -> propertyType.put(this.xmiAttr(child, "id"), this.reference(child, "type"));
+                case "lifeline" -> lifelines.add(child);
+                case "fragment" -> {
+                    String id = this.xmiAttr(child, "id");
+                    fragmentOrder.add(id);
+                    covered.put(id, this.reference(child, "covered"));
+                }
+                case "message" -> messages.add(child);
+                default -> this.refuse(child);
+            }
+        }
+        for (Element child : lifelines) {
+            com.example.sysarch.model.Lifeline lifeline = F.createLifeline();
+            this.common(child, lifeline);
+            interaction.getLifelines().add(lifeline);
+            String property = this.reference(child, "represents");
+            String target = property != null ? propertyType.get(property) : this.extension(child, "represents");
+            if (target != null) {
+                later.add(() -> {
+                    if (this.imported.get(target) instanceof com.example.sysarch.model.ArchElement represented) {
+                        lifeline.setRepresents(represented);
+                    } else {
+                        this.ignored.add("生命线「" + lifeline.getName() + "」代表的元素 " + target + " 不在文件中，未设置");
+                    }
+                });
+            }
+            this.count(lifeline);
+        }
+        messages.sort(java.util.Comparator.comparingInt(m -> {
+            int at = fragmentOrder.indexOf(this.reference(m, "sendEvent"));
+            return at < 0 ? Integer.MAX_VALUE : at;
+        }));
+        for (Element child : messages) {
+            com.example.sysarch.model.Message message = F.createMessage();
+            this.common(child, message);
+            message.setKind(switch (child.getAttribute("messageSort")) {
+                case "asynchCall", "asynchSignal" -> com.example.sysarch.model.MessageKind.ASYNC;
+                case "reply" -> com.example.sysarch.model.MessageKind.REPLY;
+                default -> com.example.sysarch.model.MessageKind.SYNC;
+            });
+            String sender = covered.get(this.reference(child, "sendEvent"));
+            String receiver = covered.get(this.reference(child, "receiveEvent"));
+            if (sender != null && this.imported.get(sender) instanceof com.example.sysarch.model.Lifeline s) {
+                message.setSender(s);
+            }
+            if (receiver != null && this.imported.get(receiver) instanceof com.example.sysarch.model.Lifeline r) {
+                message.setReceiver(r);
+            }
+            interaction.getMessages().add(message);
+            this.count(message);
+        }
+        later.forEach(Runnable::run); // its own list: the importer's afterwards have already run
+        this.interactionRoots.add(interaction);
+        this.count(interaction);
+    }
+
     /** Id, name, description and the SysArch extension's layer and stereotypes. */
     private void common(Element source, ArchElement element) {
         String xmiId = this.xmiAttr(source, "id");
@@ -479,7 +565,7 @@ public final class XmiImporter {
     private void refuse(Element element) {
         String type = element.getAttributeNS(element.getOwnerDocument().getDocumentElement().getNamespaceURI(), "type");
         this.problems.add("不支持的元素 " + (type.isEmpty() ? element.getTagName() : type) + "「" + element.getAttribute("name") + "」（"
-                + this.xmiAttr(element, "id") + "，在 " + element.getTagName() + " 中）：XMI 导入只接受块、部件、端口、连接器、接口块、需求及其满足/验证/分配关系");
+                + this.xmiAttr(element, "id") + "，在 " + element.getTagName() + " 中）：XMI 导入只接受块、部件、端口、连接器、接口块、需求及其满足/验证/分配关系、交互");
     }
 
     /** {@code xmi:type} local name ("Class" for uml:Class). */
@@ -546,8 +632,10 @@ public final class XmiImporter {
     }
 
     /** Counted under the same kinds as the SysML v2 import, so the report reads the same. */
-    private static final Map<String, String> KIND = Map.of("PartDefinition", "part def", "Part", "part", "InterfaceDef", "port def", "Port", "port",
-            "Connection", "connection", "Requirement", "requirement", "Allocate", "allocation", "ItemFlow", "item flow");
+    private static final Map<String, String> KIND = Map.ofEntries(Map.entry("PartDefinition", "part def"), Map.entry("Part", "part"),
+            Map.entry("InterfaceDef", "port def"), Map.entry("Port", "port"), Map.entry("Connection", "connection"), Map.entry("Requirement", "requirement"),
+            Map.entry("Allocate", "allocation"), Map.entry("ItemFlow", "item flow"), Map.entry("Interaction", "occurrence def"), Map.entry("Lifeline", "lifeline"),
+            Map.entry("Message", "message"));
 
     private void count(ArchElement element) {
         this.counts.merge(KIND.getOrDefault(element.eClass().getName(), element.eClass().getName()), 1, Integer::sum);

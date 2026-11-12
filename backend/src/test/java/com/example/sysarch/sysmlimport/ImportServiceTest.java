@@ -164,12 +164,12 @@ class ImportServiceTest {
     @Test
     void foreignXmiCreatesNothing() {
         String xmi = "<xmi:XMI xmlns:xmi=\"http://www.omg.org/spec/XMI/20131001\" xmlns:uml=\"http://www.omg.org/spec/UML/20161101\"><uml:Model xmi:id=\"m\" name=\"M\">"
-                + "<packagedElement xmi:type=\"uml:Activity\" xmi:id=\"a\" name=\"Drive\"/><packagedElement xmi:type=\"uml:Interaction\" xmi:id=\"i\" name=\"Seq\"/>"
+                + "<packagedElement xmi:type=\"uml:Activity\" xmi:id=\"a\" name=\"Drive\"/><packagedElement xmi:type=\"uml:StateMachine\" xmi:id=\"i\" name=\"Seq\"/>"
                 + "</uml:Model></xmi:XMI>";
         ImportService.Job job = this.imports.submit(ImportService.Format.XMI, xmi, null, null, "x.xmi", "alice");
         assertEquals("FAILED", job.status());
         assertEquals(2, job.problems().size(), job.problems().toString());
-        assertTrue(job.problems().get(0).contains("uml:Activity「Drive」") && job.problems().get(1).contains("uml:Interaction「Seq」"));
+        assertTrue(job.problems().get(0).contains("uml:Activity「Drive」") && job.problems().get(1).contains("uml:StateMachine「Seq」"));
         verify(this.projects, never()).createProject(any());
     }
 }

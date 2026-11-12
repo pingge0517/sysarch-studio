@@ -432,6 +432,50 @@ public final class SysmlParser {
             this.bodyOrSemicolon(decl);
             return;
         }
+        // v1.4: interactions, in the form SysArch exports them (occurrence def + part lifelines + messages + successions)
+        if (first.is("occurrence") && this.peek(1).is("def")) {
+            this.next();
+            this.next();
+            Decl decl = this.declaration("occurrence def", first, container);
+            this.bodyOrSemicolon(decl);
+            return;
+        }
+        if (first.is("message")) {
+            this.next();
+            Decl decl = this.declaration("message", first, container);
+            if (this.peek().is(":")) {
+                this.next();
+                this.qualifiedName(); // a message's payload type: no sysarch counterpart
+            }
+            if (this.peek().is("from")) {
+                this.next();
+                decl.sourceEnd = this.featureChain();
+                if (!this.peek().is("to")) {
+                    this.problem(this.peek(), "message … from a 之后应是「to b」");
+                    this.skipBodyOrSemicolon();
+                    return;
+                }
+                this.next();
+                decl.targetEnd = this.featureChain();
+            }
+            this.bodyOrSemicolon(decl);
+            return;
+        }
+        if (first.is("first")) {
+            Decl decl = new Decl("succession", first.line());
+            container.children.add(decl);
+            this.next();
+            decl.sourceEnd = this.featureChain();
+            if (!this.peek().is("then")) {
+                this.problem(this.peek(), "first a 之后应是「then b」");
+                this.skipBodyOrSemicolon();
+                return;
+            }
+            this.next();
+            decl.targetEnd = this.featureChain();
+            this.bodyOrSemicolon(decl);
+            return;
+        }
         if (first.type() == T.IDENT && UNSUPPORTED.contains(first.text()) || first.type() == T.IDENT) {
             this.unsupported(first, UNSUPPORTED_LABELS.getOrDefault(first.text(), "「" + first.text() + "」声明"));
             return;

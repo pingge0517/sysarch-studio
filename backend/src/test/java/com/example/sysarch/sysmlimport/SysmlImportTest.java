@@ -66,6 +66,79 @@ class SysmlImportTest {
         assertEquals(before, after);
     }
 
+    /**
+     * v1.4: interactions round trip through SysML v2 text too: lifelines representing a block (typed) and a part (doc line),
+     * every message kind, a self-message, a lifeline of another layer with a stereotype, descriptions, time order.
+     */
+    @Test
+    void interactionsRoundTrip() throws IOException {
+        Resource model = resource(DomainControllerDemo.build());
+        PartDefinition fusionUnit = (PartDefinition) find(model, "PD-002");
+        Part planning = (Part) find(model, "PT-002");
+        com.example.sysarch.model.Interaction sq = F.createInteraction();
+        sq.setId("SQ-1");
+        sq.setName("目标发布");
+        sq.setLayer(Layer.LOGICAL);
+        sq.setDescription("每 50 ms 一轮");
+        com.example.sysarch.model.Lifeline a = lifeline("LL-1", "融合", fusionUnit);
+        com.example.sysarch.model.Lifeline b = lifeline("LL-2", "规划", planning);
+        com.example.sysarch.model.Lifeline c = lifeline("LL-3", "诊断", null);
+        c.setLayer(Layer.PHYSICAL);
+        c.getStereotypes().add("monitor");
+        c.setDescription("只读监视");
+        sq.getLifelines().addAll(List.of(a, b, c));
+        sq.getMessages().add(message("MS-1", "目标列表", com.example.sysarch.model.MessageKind.ASYNC, a, b));
+        sq.getMessages().add(message("MS-2", "请求轨迹()", com.example.sysarch.model.MessageKind.SYNC, b, a));
+        sq.getMessages().add(message("MS-3", "轨迹", com.example.sysarch.model.MessageKind.REPLY, a, b));
+        com.example.sysarch.model.Message self = message("MS-4", "自检", com.example.sysarch.model.MessageKind.SYNC, b, b);
+        self.setDescription("周期自检");
+        sq.getMessages().add(self);
+        sq.getMessages().add(message("MS-5", "上报", com.example.sysarch.model.MessageKind.ASYNC, b, c));
+        model.getContents().add(sq);
+
+        String text = SysmlV2Exporter.export("域控演示", List.of(model), SysmlV2Exporter.Scope.PROJECT, null, null);
+        Files.createDirectories(Path.of("build/sysml-export"));
+        Files.writeString(Path.of("build/sysml-export/interaction.sysml"), text, StandardCharsets.UTF_8);
+        assertTrue(text.contains("occurrence def <'SQ-1'> '目标发布' {"), text);
+        assertTrue(text.contains("part <'LL-1'> '融合' : '感知融合单元';"), "a lifeline representing a block is typed by it");
+        assertTrue(text.contains("message <'MS-1'> '目标列表' from 'LL-1' to 'LL-2' {"), "ends by short name");
+        assertTrue(text.contains("first 'MS-1' then 'MS-2';") && text.contains("first 'MS-4' then 'MS-5';"), "time order as successions");
+
+        SysmlParser.Parsed parsed = SysmlParser.parse(text);
+        assertEquals(List.of(), parsed.problems());
+        SysmlMapper.Mapped mapped = SysmlMapper.map(parsed.root(), Layer.LOGICAL);
+        assertEquals(List.of(), mapped.unmapped());
+        assertEquals(List.of(), mapped.defaultedLayer());
+        Map<String, ElementState> before = ModelSnapshot.capture(List.of(model));
+        Map<String, ElementState> after = ModelSnapshot.capture(List.of(resource(mapped.roots())));
+        assertEquals(diff(before, after), "", "no field differs");
+        assertEquals(before, after);
+        assertEquals(1, mapped.counts().get("occurrence def"));
+        assertEquals(3, mapped.counts().get("lifeline"));
+        assertEquals(5, mapped.counts().get("message"));
+    }
+
+    private static com.example.sysarch.model.Lifeline lifeline(String id, String name, com.example.sysarch.model.ArchElement represents) {
+        com.example.sysarch.model.Lifeline l = F.createLifeline();
+        l.setId(id);
+        l.setName(name);
+        l.setLayer(Layer.LOGICAL);
+        l.setRepresents(represents);
+        return l;
+    }
+
+    private static com.example.sysarch.model.Message message(String id, String name, com.example.sysarch.model.MessageKind kind,
+            com.example.sysarch.model.Lifeline from, com.example.sysarch.model.Lifeline to) {
+        com.example.sysarch.model.Message m = F.createMessage();
+        m.setId(id);
+        m.setName(name);
+        m.setLayer(Layer.LOGICAL);
+        m.setKind(kind);
+        m.setSender(from);
+        m.setReceiver(to);
+        return m;
+    }
+
     /** Every SysArch convention the exporter writes comes back (P2 T6, "无损往返"). */
     @Test
     void aRicherModelRoundTripsToo() throws IOException {
