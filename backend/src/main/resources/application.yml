@@ -67,6 +67,7 @@ sysarch:
     # frame-ancestors besides 'self'; empty = the Polarion origin of sysarch.polarion.base-url).
     polarion-sso-secret: ${SYSARCH_POLARION_SSO_SECRET:}
     cookie-same-site: ${SYSARCH_COOKIE_SAMESITE:Lax}
+    cookie-partitioned: ${SYSARCH_COOKIE_PARTITIONED:false}
     frame-ancestors: ${SYSARCH_FRAME_ANCESTORS:}
     # Origins whose pages may post the single sign-on form (the Polarion origin; comma separated).
     sso-origins: ${SYSARCH_SSO_ORIGINS:http://localhost}

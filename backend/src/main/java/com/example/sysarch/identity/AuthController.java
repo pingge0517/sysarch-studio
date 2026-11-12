@@ -80,8 +80,7 @@ public class AuthController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, properties.dev() ? "token or user is required" : "请填写你的 Polarion 个人访问令牌");
         }
         Instant expires = this.clock.instant().plus(properties.getSessionTtl());
-        ResponseCookie cookie = ResponseCookie.from(SessionCookies.COOKIE, this.cookies.issue(principal, expires)).httpOnly(true).sameSite(sameSite(properties)).path("/")
-                .secure(properties.isSecureCookie()).domain(domain(properties)).maxAge(properties.getSessionTtl()).build();
+        ResponseCookie cookie = sessionCookie(properties, this.cookies.issue(principal, expires), properties.getSessionTtl());
         Map<String, Object> body = me(properties, principal);
         body.put("expiresAt", expires.toString());
         return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookie.toString()).body(body);
@@ -90,8 +89,7 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(HttpServletResponse response) {
         AuthProperties properties = this.identities.properties();
-        ResponseCookie session = ResponseCookie.from(SessionCookies.COOKIE, "").httpOnly(true).sameSite(sameSite(properties)).path("/").secure(properties.isSecureCookie()).domain(domain(properties))
-                .maxAge(0).build();
+        ResponseCookie session = sessionCookie(properties, "", java.time.Duration.ZERO);
         ResponseCookie typed = ResponseCookie.from(CurrentUser.COOKIE, "").sameSite(sameSite(properties)).path("/").maxAge(0).build(); // dev mode's typed name
         return ResponseEntity.noContent().header(HttpHeaders.SET_COOKIE, session.toString()).header(HttpHeaders.SET_COOKIE, typed.toString()).build();
     }
@@ -103,6 +101,16 @@ public class AuthController {
 
     private static String domain(AuthProperties properties) {
         return properties.getCookieDomain() == null || properties.getCookieDomain().isBlank() ? null : properties.getCookieDomain().strip();
+    }
+
+    /**
+     * The session cookie, the same attributes for login, single sign-on and logout: HttpOnly, path /, SameSite, Secure,
+     * Domain, and {@code Partitioned} when configured (CHIPS: a cookie a browser keeps in a cross-site frame, keyed by
+     * the top-level site, where it blocks unpartitioned third-party cookies).
+     */
+    static ResponseCookie sessionCookie(AuthProperties properties, String value, java.time.Duration maxAge) {
+        return ResponseCookie.from(SessionCookies.COOKIE, value).httpOnly(true).sameSite(sameSite(properties)).path("/").secure(properties.isSecureCookie())
+                .partitioned(properties.isCookiePartitioned()).domain(domain(properties)).maxAge(maxAge).build();
     }
 
     private static String sameSite(AuthProperties properties) {
@@ -147,8 +155,7 @@ public class AuthController {
         }
         AuthProperties properties = this.identities.properties();
         Instant expires = this.clock.instant().plus(properties.getSessionTtl());
-        ResponseCookie cookie = ResponseCookie.from(SessionCookies.COOKIE, this.cookies.issue(principal, expires)).httpOnly(true).sameSite(sameSite(properties))
-                .path("/").secure(properties.isSecureCookie()).domain(domain(properties)).maxAge(properties.getSessionTtl()).build();
+        ResponseCookie cookie = sessionCookie(properties, this.cookies.issue(principal, expires), properties.getSessionTtl());
         this.logger.info("Polarion single sign-on: {}", principal.user());
         return ResponseEntity.status(HttpStatus.SEE_OTHER).header(HttpHeaders.SET_COOKIE, cookie.toString()).header(HttpHeaders.LOCATION, localPath(target))
                 .build();

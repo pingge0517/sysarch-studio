@@ -30,6 +30,7 @@ backend:
     # (Lax when Polarion and SysArch are hosts of one site; None, with SYSARCH_SECURE_COOKIE, otherwise).
     SYSARCH_FRAME_ANCESTORS: ""
     SYSARCH_COOKIE_SAMESITE: Lax
+    SYSARCH_COOKIE_PARTITIONED: "false"   # true (with SameSite None + Secure) when Polarion is another site
     # Polarion project -> Sirius project, one variable per bound project:
     # SYSARCH_POLARION_PROJECTS_SYSARCH: "domain controller"
     # Rollback switches (spec §10), "false" turns one feature off:

@@ -134,6 +134,21 @@ public class AuthProperties {
         this.cookieSameSite = cookieSameSite;
     }
 
+    /**
+     * Mark the session cookie {@code Partitioned} (CHIPS) when Polarion is another site: a browser that blocks
+     * third-party cookies still keeps a partitioned one in the frame. Needs {@code cookie-same-site: None} and
+     * {@code secure-cookie: true}.
+     */
+    private boolean cookiePartitioned = false;
+
+    public boolean isCookiePartitioned() {
+        return this.cookiePartitioned;
+    }
+
+    public void setCookiePartitioned(boolean cookiePartitioned) {
+        this.cookiePartitioned = cookiePartitioned;
+    }
+
     public String getFrameAncestors() {
         return this.frameAncestors;
     }

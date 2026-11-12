@@ -143,6 +143,22 @@ class PolarionSsoTest {
                 .polarionSso(issue("alice", now), "/").getStatusCode().value(), "single sign-on not configured");
     }
 
+    /** Polarion on another site: SameSite=None, Secure and, with cookie-partitioned, Partitioned (CHIPS). */
+    @Test
+    void theSessionCookieCanBePartitionedForAnotherSite() {
+        AuthProperties properties = new AuthProperties();
+        String lax = AuthController.sessionCookie(properties, "v", Duration.ofHours(8)).toString();
+        assertTrue(lax.contains("SameSite=Lax") && !lax.contains("Partitioned") && !lax.contains("Secure"), lax);
+
+        properties.setCookieSameSite("None");
+        properties.setSecureCookie(true);
+        properties.setCookiePartitioned(true);
+        String chips = AuthController.sessionCookie(properties, "v", Duration.ofHours(8)).toString();
+        assertTrue(chips.contains("SameSite=None") && chips.contains("Secure") && chips.contains("Partitioned") && chips.contains("HttpOnly"), chips);
+        assertTrue(AuthController.sessionCookie(properties, "", Duration.ZERO).toString().contains("Partitioned"),
+                "logout clears the partitioned cookie, which only a partitioned Set-Cookie can address");
+    }
+
     @Test
     void framingIsOnlyForUsAndPolarion() {
         assertEquals("frame-ancestors 'self' http://localhost", FrameAncestorsFilter.policy("", "http://localhost/polarion"));

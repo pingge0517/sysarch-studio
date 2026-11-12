@@ -70,15 +70,26 @@ Polarion 页面 ── iframe ──▶ /polarion/sysarch-sso/start?return=/?emb
 | `SYSARCH_SSO_ORIGINS` | 允许提交登录表单的 Polarion 源，例如 `https://polarion.example.com`（默认 `http://localhost`） |
 | `SYSARCH_FRAME_ANCESTORS` | 允许嵌入 SysArch 的源；默认取 `POLARION_BASE_URL` 的源 |
 | `SYSARCH_COOKIE_SAMESITE` | `Lax`（默认，Polarion 与 SysArch 同站，例如同一公司域名下的两个主机）；不同站时设 `None`，并同时设 `SYSARCH_SECURE_COOKIE=true` |
+| `SYSARCH_COOKIE_PARTITIONED` | `true` 时会话 Cookie 带 `Partitioned`（CHIPS），按嵌入它的站点分区：浏览器拦截第三方 Cookie 时仍能在框架里登录。不同站部署时建议与 `None`、`Secure` 一起使用 |
 | `SYSARCH_POLARION_PROJECTS_<ID>` | Polarion 项目对应的模型（已有配置） |
 
 外壳的 nginx 也要发送相同的 `frame-ancestors`：本地配置见 `frontend/nginx.conf`，Helm 用 `embed.polarionOrigin`。
 
-**同站部署**（推荐）：例如 `polarion.example.com` 与 `sysarch.example.com`。Cookie 用 `Lax` 即可在 iframe 中生效。不同站时，浏览器可能拦截 iframe 中的第三方 Cookie，嵌入后会显示“未登录”。
+**同站部署**（推荐）：例如 `polarion.example.com` 与 `sysarch.example.com`。Cookie 用 `Lax` 即可在 iframe 中生效。
+
+**不同站部署**（Polarion 与 SysArch 不在同一注册域下）：设 `SYSARCH_COOKIE_SAMESITE=None`、`SYSARCH_SECURE_COOKIE=true`（需要 HTTPS）、`SYSARCH_COOKIE_PARTITIONED=true`，并把 Polarion 的源加入 `SYSARCH_SSO_ORIGINS` 和 `SYSARCH_FRAME_ANCESTORS`。2026-11-12 在本机用 Chrome 实测（嵌入方为 `http://127.0.0.1:8099`，SysArch 为 `http://localhost:3000`，浏览器视为两个站点）：
+
+| Cookie 设置 | 登录请求 | 框架内调用接口 | 结论 |
+|---|---|---|---|
+| `SameSite=Lax`（默认） | 303 | 401 | 跨站框架里没有 Cookie，显示未登录 |
+| `None; Secure` | 303 | 已登录 | 浏览器允许第三方 Cookie 时可用 |
+| `None; Secure; Partitioned` | 303 | 已登录 | 可用；同时在顶层打开 SysArch 时仍是未登录，说明 Cookie 按嵌入站点分区，拦截第三方 Cookie 的浏览器也能用 |
+
+未测：在浏览器设置里关闭第三方 Cookie 后的情况（那是用户自己的浏览器设置），以及 Firefox、Safari。
 
 ## 5. 在 Polarion 中加入页面
 
-在项目里新建一个 Wiki / Rich Page，加一个 HTML（脚本）部件，内容如下（把 `sysarch` 换成 Polarion 项目 ID）：
+在项目里新建一个 LiveReport 页面（文档与页面 → 新建 → LiveReport Page），从部件目录加一个“Script - Block”部件，内容如下（把 `sysarch` 换成 Polarion 项目 ID），应用后保存：
 
 ```html
 <iframe src="/polarion/sysarch-sso/start?return=%2F%3Fembed%3D1%26polarionProject%3Dsysarch"
@@ -114,4 +125,6 @@ Polarion 页面 ── iframe ──▶ /polarion/sysarch-sso/start?return=/?emb
 - 已验证（2026-11-12）：单元测试（`PolarionSsoTest`、`AssertionsTest`、前端 `embed/api.test.ts`）；本机实际运行的后端，用扩展自己的签名代码生成凭证，Polarion 接口用本地桩代替：登录 303 并带上 Cookie 和角色、重放 401、其他源 403、Polarion 源调用其他接口 403、嵌入目标接口未登录 401、`frame-ancestors` 响应头。
 - 已验证（2026-11-12，本机 Polarion 2512，按第 3 节安装）：已登录 Polarion 的浏览器打开 `/polarion/sysarch-sso/start` 后直接进入 SysArch 嵌入页，显示 System Administrator，没有输入任何令牌；在 Polarion 页面（`http://localhost`）中用 iframe 打开同一地址：Polarion 起始页 → 表单提交到 SysArch（`/api/v1/auth/polarion-sso`）→ 嵌入页加载并读取用户和目标（均 200），用户确认框架内显示嵌入页，点“打开模型（Sirius Web）”后 Sirius Web 也在框架内打开。测试时 SysArch 的服务账号令牌临时用了个人令牌，并映射到一个不存在的 Polarion 项目，避免定时拉取碰到已有的绑定；测试项目和记录事后已删除。
 - 已验证（2026-11-12）Work Item 面板：在 sysarch 项目“架构元素”类型的表单布局中加入面板，新建一个测试工作项，并在 SysArch 中把它临时绑定到一个元素：打开该工作项，表单上出现“SysArch 架构”面板（865×262 的框架），框架内依次完成登录、加载嵌入页、读取用户和目标（均 200），目标为绑定的元素且已在模型中定位；用户确认面板显示正常。测试工作项、临时绑定和临时项目事后已删除，表单布局保留。
-- 未验证：Polarion 与 SysArch 不同站（需要 `SameSite=None` 和 HTTPS）时的第三方 Cookie 行为；在 Polarion 页面里保存的正式 Wiki 页面（测试只在浏览器里临时插入了 iframe，没有改动 Polarion 的内容）。
+- 已验证（2026-11-12）不同站部署的 Cookie 行为：见第 4 节的表格。
+- 已验证（2026-11-12）正式页面：在 sysarch 项目建了 LiveReport 页面“SysArch 架构”（Default Space），只含一个“Script - Block”部件，内容为第 5 节的 iframe；重新打开页面后框架显示 SysArch，SysArch 日志记录了单点登录。
+- 未验证：关闭第三方 Cookie 的浏览器设置、Firefox 和 Safari。
