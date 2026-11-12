@@ -39,6 +39,9 @@ public class AuditLog {
     /** A Sirius project was deleted and its SysArch data with it (detail: what was removed). */
     public static final String PROJECT_DELETE = "PROJECT_DELETE";
 
+    /** A Polarion project → model binding was set or removed on the admin page (P4 T1). */
+    public static final String PROJECT_BINDING_CHANGE = "PROJECT_BINDING_CHANGE";
+
     public record Entry(long id, String projectId, String actor, String action, String elementId, String detail, OffsetDateTime createdAt) {
     }
 

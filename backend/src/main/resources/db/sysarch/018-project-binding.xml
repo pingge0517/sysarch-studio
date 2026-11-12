@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- P4 T1: Polarion project → model bindings as data (spec P4 §2.1). On PostgreSQL the DDL is the spec's, verbatim in
+     018-project-binding.sql. H2, which only the tests use, does not know timestamptz: same table in its own types. -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <changeSet id="sysarch-018-project-binding" author="sysarch" dbms="postgresql">
+        <sqlFile path="018-project-binding.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
+    <changeSet id="sysarch-018-project-binding-h2" author="sysarch" dbms="h2">
+        <comment>The same table as 018-project-binding.sql for the tests' H2 (timestamptz → TIMESTAMP WITH TIME ZONE).</comment>
+        <createTable tableName="project_binding">
+            <column name="polarion_project" type="VARCHAR(255)"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="sirius_project" type="VARCHAR(64)"><constraints nullable="false"/></column>
+            <column name="created_by" type="VARCHAR(128)"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+            <column name="updated_by" type="VARCHAR(128)"/>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+        </createTable>
+        <createIndex tableName="project_binding" indexName="idx_project_binding_sirius"><column name="sirius_project"/></createIndex>
+    </changeSet>
+</databaseChangeLog>

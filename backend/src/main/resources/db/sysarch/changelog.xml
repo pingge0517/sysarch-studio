@@ -20,4 +20,5 @@
     <include file="db/sysarch/015-role-mapping.xml"/>
     <include file="db/sysarch/016-audit-append-only.xml"/>
     <include file="db/sysarch/017-element-comment.xml"/>
+    <include file="db/sysarch/018-project-binding.xml"/>
 </databaseChangeLog>

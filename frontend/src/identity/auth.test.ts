@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AccessGrant, Me } from './auth';
-import { badge, can, parseRoles } from './auth';
+import { badge, bindingUrl, can, parseRoles } from './auth';
 
 const me = (user: string | null): Me => ({ mode: 'polarion', user, name: user ? 'Rita' : null, source: 'polarion', globalRoles: [], projectRoles: {} });
 const reviewer: AccessGrant = {
@@ -29,5 +29,12 @@ describe('sign-in (P2 T8)', () => {
   it('reads dev-mode roles separated by commas or spaces', () => {
     expect(parseRoles('global:admin, sysarch/project_user，x')).toEqual(['global:admin', 'sysarch/project_user', 'x']);
     expect(parseRoles('  ')).toEqual([]);
+  });
+});
+
+describe('project bindings (P4 T1)', () => {
+  it('puts the Polarion project id into the path, encoded', () => {
+    expect(bindingUrl('sysarch')).toBe('/api/v1/project-bindings/sysarch');
+    expect(bindingUrl('a b/c')).toBe('/api/v1/project-bindings/a%20b%2Fc');
   });
 });

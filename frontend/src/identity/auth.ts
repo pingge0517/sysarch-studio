@@ -88,6 +88,37 @@ export async function deleteMapping(id: number): Promise<void> {
   return json(await fetch(`/api/v1/role-mappings/${id}`, { method: 'DELETE' }));
 }
 
+/** P4 T1: a Polarion project bound to a model; source = table (admin page) or environment (configuration). */
+export interface ProjectBinding {
+  polarionProject: string;
+  siriusProject: string;
+  source: 'table' | 'environment';
+  updatedBy: string | null;
+  updatedAt: string | null;
+}
+
+export async function listProjectBindings(): Promise<ProjectBinding[]> {
+  return json(await fetch('/api/v1/project-bindings'));
+}
+
+export async function putProjectBinding(polarionProject: string, siriusProject: string): Promise<ProjectBinding> {
+  return json(
+    await fetch(bindingUrl(polarionProject), {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ siriusProject }),
+    }),
+  );
+}
+
+export async function deleteProjectBinding(polarionProject: string): Promise<void> {
+  return json(await fetch(bindingUrl(polarionProject), { method: 'DELETE' }));
+}
+
+export function bindingUrl(polarionProject: string): string {
+  return '/api/v1/project-bindings/' + encodeURIComponent(polarionProject);
+}
+
 export async function listAudit(project: string, action: string): Promise<AuditEntry[]> {
   const query = new URLSearchParams();
   if (project) query.set('projectId', project);

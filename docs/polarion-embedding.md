@@ -71,7 +71,9 @@ Polarion 页面 ── iframe ──▶ /polarion/sysarch-sso/start?return=/?emb
 | `SYSARCH_FRAME_ANCESTORS` | 允许嵌入 SysArch 的源；默认取 `POLARION_BASE_URL` 的源 |
 | `SYSARCH_COOKIE_SAMESITE` | `Lax`（默认，Polarion 与 SysArch 同站，例如同一公司域名下的两个主机）；不同站时设 `None`，并同时设 `SYSARCH_SECURE_COOKIE=true` |
 | `SYSARCH_COOKIE_PARTITIONED` | `true` 时会话 Cookie 带 `Partitioned`（CHIPS），按嵌入它的站点分区：浏览器拦截第三方 Cookie 时仍能在框架里登录。不同站部署时建议与 `None`、`Secure` 一起使用 |
-| `SYSARCH_POLARION_PROJECTS_<ID>` | Polarion 项目对应的模型（已有配置） |
+| `SYSARCH_POLARION_PROJECTS_<ID>` | Polarion 项目对应的模型的默认值。P4 起管理员可在外壳的“角色与审计”页设置绑定，立即生效、不用重启，并覆盖这里的值（见下文） |
+
+**Polarion 项目与模型的绑定**（P4 T1）：外壳“角色与审计”页的“Polarion 项目与模型”。管理员选择模型并绑定，立即生效（Polarion 页面、工作项面板、同步都按新绑定）；一个模型只能绑定一个 Polarion 项目；每次修改写审计 `PROJECT_BINDING_CHANGE`。删除模型时它的绑定一并删除。已经登录的用户在新绑定的 Polarion 项目中的角色要在下次登录后生效（会话只保存已绑定项目的角色）。接口：`GET/PUT/DELETE /api/v1/project-bindings[/{polarionProject}]`。
 
 外壳的 nginx 也要发送相同的 `frame-ancestors`：本地配置见 `frontend/nginx.conf`，Helm 用 `embed.polarionOrigin`。
 

@@ -40,11 +40,11 @@ public class ProjectCleanup {
 
     /** What was removed for one deleted project. */
     public record Removed(String projectId, int branches, boolean workspaceOfOpenBranch, int baselines, int locks, int sessions, int reports,
-            int comments) {
+            int comments, int polarionBindings) {
 
         public String describe() {
             return "branches " + this.branches + ", baselines " + this.baselines + ", locks " + this.locks + ", sessions " + this.sessions + ", reports "
-                    + this.reports + ", comments " + this.comments + (this.workspaceOfOpenBranch ? "; was the workspace of an open branch (abandoned)" : "");
+                    + this.reports + ", comments " + this.comments + (this.polarionBindings > 0 ? ", Polarion bindings " + this.polarionBindings : "") + (this.workspaceOfOpenBranch ? "; was the workspace of an open branch (abandoned)" : "");
         }
     }
 
@@ -65,6 +65,14 @@ public class ProjectCleanup {
     private final AuditLog audit;
 
     private final Editors editors;
+
+    /** P4 T1: the table's Polarion bindings of a deleted model go too (optional, so tests can leave it out). */
+    private com.example.sysarch.access.ProjectBindings bindings;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    public void setBindings(com.example.sysarch.access.ProjectBindings bindings) {
+        this.bindings = bindings;
+    }
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
         Thread thread = new Thread(r, "sysarch-project-cleanup");
@@ -106,8 +114,9 @@ public class ProjectCleanup {
         int sessionRows = this.sessions.dropProject(projectId);
         int reportJobs = this.reports.dropProject(projectId);
         int commentRows = this.jdbc.sql("DELETE FROM element_comment WHERE project_id = :p").param("p", projectId).update();
+        int bindingRows = this.bindings == null ? 0 : this.bindings.dropSiriusProject(projectId);
         Removed removed = new Removed(projectId, branchRows.branches(), branchRows.workspaceOfOpenBranch(), baselineRows, lockRows, sessionRows, reportJobs,
-                commentRows);
+                commentRows, bindingRows);
         this.audit.append(projectId, actor, AuditLog.PROJECT_DELETE, null, removed.describe());
         return removed;
     }
