@@ -1,0 +1,54 @@
+{{- if .Values.monitoring.enabled }}
+# P4 T5 (spec P4 §4.2): Prometheus Operator objects. The backend answers /actuator/prometheus only with
+# SYSARCH_METRICS_TOKEN (config.MetricsTokenFilter); the ServiceMonitor sends it from the backend's secret.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "sysarch.name" . }}-backend
+  labels: {{- include "sysarch.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels: { app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/component: backend }
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: {{ .Values.monitoring.interval }}
+      authorization:
+        type: Bearer
+        credentials: { name: {{ .Values.backend.existingSecret }}, key: SYSARCH_METRICS_TOKEN }
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "sysarch.name" . }}-alerts
+  labels: {{- include "sysarch.labels" . | nindent 4 }}
+spec:
+  groups:
+    - name: sysarch
+      rules:
+        - alert: SysArchSlowRequests
+          expr: histogram_quantile(0.99, sum by (le) (rate(http_server_requests_seconds_bucket{uri!~"/actuator.*"}[5m]))) > {{ .Values.monitoring.p99Seconds }}
+          for: 5m
+          labels: { severity: warning }
+          annotations: { summary: "SysArch request latency P99 above {{ .Values.monitoring.p99Seconds }} s for 5 minutes" }
+        - alert: SysArchSyncPaused
+          expr: sysarch_sync_schedules_paused > 0
+          for: 1m
+          labels: { severity: warning }
+          annotations: { summary: "A scheduled Polarion pull is paused after repeated failures (resume: POST /api/v1/sync/status/resume)" }
+        - alert: SysArchHeapHigh
+          expr: max(jvm_gc_live_data_size_bytes) / max(jvm_gc_max_data_size_bytes) > {{ .Values.monitoring.heapLiveRatio }}
+          for: 10m
+          labels: { severity: warning }
+          annotations: { summary: "SysArch live heap after GC above {{ mulf .Values.monitoring.heapLiveRatio 100 }} % of the maximum" }
+        - alert: SysArchDiskLow
+          expr: min(disk_free_bytes / disk_total_bytes) < {{ .Values.monitoring.diskFreeRatio }}
+          for: 10m
+          labels: { severity: critical }
+          annotations: { summary: "Less than {{ mulf .Values.monitoring.diskFreeRatio 100 }} % free on the report volume (docs/monitoring.md: clean up, archive first)" }
+        - alert: SysArchReportsPiling
+          expr: sysarch_report_jobs_waiting > 10
+          for: 15m
+          labels: { severity: warning }
+          annotations: { summary: "More than 10 report jobs waiting for 15 minutes" }
+{{- end }}

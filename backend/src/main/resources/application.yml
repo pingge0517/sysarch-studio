@@ -34,7 +34,17 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        # P4 T5: prometheus answers only with SYSARCH_METRICS_TOKEN (config.MetricsTokenFilter)
+        include: health,info,prometheus
+  metrics:
+    distribution:
+      # P99 of request latency in Prometheus (histogram_quantile over the buckets)
+      percentiles-histogram:
+        http.server.requests: true
+    system:
+      diskspace:
+        # disk.free / disk.total for the volume holding the reports (alert below 15 %, docs/monitoring.md)
+        paths: ${SYSARCH_REPORT_DIR:data/reports}
   endpoint:
     health:
       probes:
@@ -53,6 +63,12 @@ sirius:
 
 # Our own settings. sysarch.view is not read by any code yet.
 sysarch:
+  # P4 T5: the bearer token Prometheus sends for /actuator/prometheus (unset = the endpoint answers 404).
+  metrics:
+    token: ${SYSARCH_METRICS_TOKEN:}
+  # P4 T5: the most the report directory may hold; above it the oldest finished reports go (audit REPORT_EXPIRE).
+  report:
+    max-total-size: ${SYSARCH_REPORT_MAX_TOTAL:5GB}
   # P2 T8: identity. polarion = a user is who their Polarion token says (login verifies it with Polarion; the browser
   # then keeps a signed session cookie; no token is stored anywhere). dev = a typed name (X-Sysarch-User / the
   # sysarch_user cookie, Polarion roles in X-Sysarch-Roles) for local and load tests only, never in production.
@@ -132,3 +148,12 @@ sysarch:
 logging:
   level:
     org.docx4j.convert.in.xhtml: ERROR
+  # P4 T5: with SYSARCH_LOG_FILE set the backend also logs to that file, rolled daily and by size, at most
+  # SYSARCH_LOG_TOTAL_CAP in all and SYSARCH_LOG_DAYS days (empty file = console only, as in containers).
+  file:
+    name: ${SYSARCH_LOG_FILE:}
+  logback:
+    rollingpolicy:
+      max-file-size: ${SYSARCH_LOG_FILE_SIZE:50MB}
+      total-size-cap: ${SYSARCH_LOG_TOTAL_CAP:2GB}
+      max-history: ${SYSARCH_LOG_DAYS:30}

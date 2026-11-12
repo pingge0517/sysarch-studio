@@ -176,6 +176,7 @@ public class ReportService {
             List<String> gaps = ((List<Map<String, Object>>) context.get("gaps")).stream().map(g -> String.valueOf(g.get("title"))).toList();
             this.jdbc.sql("UPDATE report_job SET status = 'DONE', finished_at = :at, pages = :pages, gaps = :gaps WHERE id = :id")
                     .param("at", OffsetDateTime.now(this.clock)).param("pages", rendered.pages()).param("gaps", this.write(gaps)).param("id", id).update();
+            this.enforceSizeCap(id);
         } catch (ReportExtractor.MissingException e) {
             this.fail(id, e.missing(), null);
         } catch (SnapshotModels.UnbuildableException e) {
@@ -235,6 +236,85 @@ public class ReportService {
             } catch (IOException e) {
                 this.logger.warn("Cannot delete report files {}: {}", dir, e.getMessage());
             }
+        }
+    }
+
+    /** P4 T5: the most the report directory may hold; 0 or less = no cap. */
+    private volatile long maxTotalBytes = 5L * 1024 * 1024 * 1024;
+
+    public void setMaxTotalBytes(long maxTotalBytes) {
+        this.maxTotalBytes = maxTotalBytes;
+    }
+
+    /**
+     * P4 T5 (spec P4 §4.3): when the report directory holds more than {@code sysarch.report.max-total-size}, the files of
+     * the oldest finished reports go until it fits (their jobs become EXPIRED, one {@code REPORT_EXPIRE} audit row says
+     * how many and how much). The report just written ({@code keep}) is never removed. Runs after each report and
+     * nightly. Returns how many reports were removed.
+     */
+    public int enforceSizeCap(String keep) {
+        long cap = this.maxTotalBytes;
+        if (cap <= 0) {
+            return 0;
+        }
+        long total = size(this.directory);
+        if (total <= cap) {
+            return 0;
+        }
+        long before = total;
+        List<String> oldest = this.jdbc.sql("SELECT id FROM report_job WHERE status = 'DONE' ORDER BY created_at, id").query(String.class).list();
+        int removed = 0;
+        for (String id : oldest) {
+            if (total <= cap) {
+                break;
+            }
+            if (id.equals(keep)) {
+                continue;
+            }
+            long freed = size(this.directory.resolve(id));
+            this.deleteFiles(id);
+            this.jdbc.sql("UPDATE report_job SET status = 'EXPIRED' WHERE id = :id").param("id", id).update();
+            total -= freed;
+            removed++;
+        }
+        if (removed > 0) {
+            String detail = "size cap " + human(cap) + ": removed " + removed + " reports, " + human(before) + " → " + human(total);
+            this.audit.append(null, "system", AuditLog.REPORT_EXPIRE, null, detail);
+            this.logger.info("Report directory over its cap: {}", detail);
+        }
+        return removed;
+    }
+
+    /** 1536 → "1.5 KB"; for the audit text. */
+    static String human(long bytes) {
+        if (bytes < 1024) {
+            return bytes + " B";
+        }
+        String[] units = { "KB", "MB", "GB", "TB" };
+        double value = bytes;
+        int unit = -1;
+        while (value >= 1024 && unit < units.length - 1) {
+            value /= 1024;
+            unit++;
+        }
+        return String.format(java.util.Locale.ROOT, "%.1f %s", value, units[unit]);
+    }
+
+    /** Bytes of the files under a directory (0 if it does not exist). */
+    static long size(Path dir) {
+        if (!Files.isDirectory(dir)) {
+            return 0;
+        }
+        try (Stream<Path> files = Files.walk(dir)) {
+            return files.filter(Files::isRegularFile).mapToLong(p -> {
+                try {
+                    return Files.size(p);
+                } catch (IOException e) {
+                    return 0;
+                }
+            }).sum();
+        } catch (IOException e) {
+            return 0;
         }
     }
 

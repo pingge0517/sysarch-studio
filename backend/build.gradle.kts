@@ -53,6 +53,7 @@ dependencies {
     // The Sirius Web UI (projects, explorer, diagrams), so the VSM diagrams can be used in a browser on :8080.
     runtimeOnly(libs.sirius.web.frontend)
     implementation(libs.spring.boot.starter.actuator)
+    implementation(libs.micrometer.registry.prometheus)
     // P2 T5: reports (templates, Word, PDF)
     implementation(libs.freemarker)
     // docx4j pulls ANTLR 3.5 (and 2.7) for Word field codes, which the XHTML import does not use; ANTLR 3.5 would

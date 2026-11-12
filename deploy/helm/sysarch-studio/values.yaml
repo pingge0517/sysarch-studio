@@ -30,6 +30,10 @@ backend:
     # (Lax when Polarion and SysArch are hosts of one site; None, with SYSARCH_SECURE_COOKIE, otherwise).
     SYSARCH_FRAME_ANCESTORS: ""
     SYSARCH_COOKIE_SAMESITE: Lax
+    # P4 T5: caps on what the backend writes to its volumes (logs only when SYSARCH_LOG_FILE is set)
+    SYSARCH_REPORT_MAX_TOTAL: 5GB
+    SYSARCH_LOG_TOTAL_CAP: 2GB
+    SYSARCH_LOG_DAYS: "30"
     SYSARCH_COOKIE_PARTITIONED: "false"   # true (with SameSite None + Secure) when Polarion is another site
     # Polarion project -> Sirius project, one variable per bound project:
     # SYSARCH_POLARION_PROJECTS_SYSARCH: "domain controller"
@@ -52,6 +56,16 @@ solver:
   resources:
     requests: { cpu: 100m, memory: 128Mi }
     limits: { cpu: "1", memory: 512Mi }
+
+# P4 T5: Prometheus Operator objects (ServiceMonitor + PrometheusRule). The backend serves /actuator/prometheus only
+# with SYSARCH_METRICS_TOKEN, which must be in backend.existingSecret; the ServiceMonitor sends it from that secret.
+monitoring:
+  enabled: false
+  interval: 30s
+  # alert thresholds (docs/monitoring.md)
+  p99Seconds: 0.5
+  heapLiveRatio: 0.75
+  diskFreeRatio: 0.15
 
 # Embedding in Polarion: the Polarion origin that may frame the shell (nginx frame-ancestors).
 embed:

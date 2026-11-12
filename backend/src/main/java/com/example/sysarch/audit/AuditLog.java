@@ -42,6 +42,9 @@ public class AuditLog {
     /** A Polarion project → model binding was set or removed on the admin page (P4 T1). */
     public static final String PROJECT_BINDING_CHANGE = "PROJECT_BINDING_CHANGE";
 
+    /** Reports removed because the report directory was over its size cap (P4 T5). */
+    public static final String REPORT_EXPIRE = "REPORT_EXPIRE";
+
     public record Entry(long id, String projectId, String actor, String action, String elementId, String detail, OffsetDateTime createdAt) {
     }
 

@@ -144,6 +144,8 @@ P2 是单实例、共用一个数据库，不能让两个版本同时写同一�
 
 ## 8. 日常检查
 
+监控指标、告警规则、日志和报告目录的上限，以及 Polarion 日志的保留建议见 [monitoring.md](monitoring.md)（P4 T5）。
+
 | 频率 | 检查 |
 |---|---|
 | 每天 | backend 日志没有持续的 `ERROR`；`Rejected edit` 告警和 `ACCESS_DENIED` 数量正常；Polarion 定时拉取没有暂停（Sirius 的 Validation 视图里没有红色"已暂停"条目） |

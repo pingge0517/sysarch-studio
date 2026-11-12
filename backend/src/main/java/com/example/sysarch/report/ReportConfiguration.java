@@ -53,14 +53,17 @@ public class ReportConfiguration {
      */
     @Bean
     public ReportService reportService(JdbcClient jdbc, ProjectModels models, BaselineRepository baselines, ReportRenderer renderer, AuditLog audit,
-            ObjectMapper json, @Value("${sysarch.report.dir:data/reports}") String dir, @Value("${sysarch.report.threads:2}") int threads) {
+            ObjectMapper json, @Value("${sysarch.report.dir:data/reports}") String dir, @Value("${sysarch.report.threads:2}") int threads,
+            @Value("${sysarch.report.max-total-size:5GB}") org.springframework.util.unit.DataSize maxTotal) {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(threads);
         executor.setMaxPoolSize(threads);
         executor.setQueueCapacity(200);
         executor.setThreadNamePrefix("report-");
         executor.initialize();
-        return new ReportService(jdbc, models, baselines, renderer, audit, json, Path.of(dir).toAbsolutePath(), executor, Clock.systemUTC());
+        ReportService service = new ReportService(jdbc, models, baselines, renderer, audit, json, Path.of(dir).toAbsolutePath(), executor, Clock.systemUTC());
+        service.setMaxTotalBytes(maxTotal.toBytes());
+        return service;
     }
 
     /** Housekeeping: interrupted jobs at start, expired files every night. */
@@ -86,6 +89,7 @@ public class ReportConfiguration {
         @Scheduled(cron = "${sysarch.report.retention-cron:0 15 3 * * *}")
         public void expire() {
             int expired = this.reports.expire();
+            this.reports.enforceSizeCap(null);
             if (expired > 0) {
                 this.logger.info("Deleted the files of {} report jobs older than 90 days", expired);
             }

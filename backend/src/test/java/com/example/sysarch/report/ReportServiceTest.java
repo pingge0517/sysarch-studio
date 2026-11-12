@@ -165,6 +165,35 @@ class ReportServiceTest {
         assertEquals("EXPIRED", this.reports.get(job.id()).status());
     }
 
+    /** P4 T5: over the size cap, the oldest finished reports go (never the one just written), audited once. */
+    @Test
+    void theReportDirectoryKeepsToItsSizeCap() throws Exception {
+        String[] ids = { "old-1", "old-2", "new-3" };
+        for (int i = 0; i < ids.length; i++) {
+            this.jdbc.sql("INSERT INTO report_job (id, project_id, source_label, template_id, cache_key, status, requested_by, created_at) "
+                    + "VALUES (:id, 'p-1', '当前模型', 'srs', :k, 'DONE', 'a', :at)").param("id", ids[i]).param("k", "k" + i)
+                    .param("at", OffsetDateTime.now(ZoneOffset.UTC).minusDays(10 - i)).update();
+            Path folder = Files.createDirectories(this.dir.resolve(ids[i]));
+            Files.write(folder.resolve("srs.pdf"), new byte[400_000]);
+        }
+        this.reports.setMaxTotalBytes(1_000_000);
+
+        assertEquals(1, this.reports.enforceSizeCap("new-3"), "1.2 MB over a 1 MB cap: the oldest goes");
+
+        assertEquals("EXPIRED", this.reports.get("old-1").status());
+        assertFalse(Files.exists(this.dir.resolve("old-1").resolve("srs.pdf")));
+        assertEquals("DONE", this.reports.get("old-2").status());
+        assertEquals(1, this.jdbc.sql("SELECT COUNT(*) FROM audit_log WHERE action = 'REPORT_EXPIRE'").query(Integer.class).single());
+        assertEquals("size cap 976.6 KB: removed 1 reports, 1.1 MB → 781.3 KB", this.jdbc.sql("SELECT detail FROM audit_log WHERE action = 'REPORT_EXPIRE'").query(String.class).single());
+        assertEquals("1.5 KB", ReportService.human(1536));
+
+        this.reports.setMaxTotalBytes(300_000);
+        assertEquals(1, this.reports.enforceSizeCap("new-3"), "the report just written stays even when it alone is over the cap");
+        assertEquals("DONE", this.reports.get("new-3").status());
+        this.reports.setMaxTotalBytes(0);
+        assertEquals(0, this.reports.enforceSizeCap(null), "0 = no cap");
+    }
+
     @Test
     void jobsARestartInterruptedAreFailed() {
         this.jdbc.sql("INSERT INTO report_job (id, project_id, source_label, template_id, cache_key, status, requested_by, created_at) "

@@ -56,6 +56,7 @@ kind: Service
 metadata:
   name: {{ include "sysarch.name" . }}-backend
   labels: {{- include "sysarch.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend   # selected by the ServiceMonitor (monitoring.yaml)
 spec:
   selector: { app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/component: backend }
   ports: [{ name: http, port: 8080, targetPort: http }]

@@ -37,6 +37,7 @@ Running the backend locally needs `POSTGRES_URL`, `POSTGRES_USER` and `POSTGRES_
 | `docs/` | `metamodel-and-views.md`: metamodel, field tables, view mapping, adding a view (T9) |
 | `docs/param-behavior.md` | P3 user guide (parametric view and solving, state machine / activity / use case, XMI) and the **three external limitations**: XMI round trips do not keep layers, solving needs an external back end, behaviour diagrams are not executed |
 | `docs/probes/` | P3 probes: A (sequence diagrams, No-Go) and B (geometry view, interview guide) |
+| `docs/monitoring.md` | Metrics (/actuator/prometheus with a token), alerts, caps on logs and reports, Polarion log retention advice (P4 T5) |
 | `docs/polarion-embedding.md` | Embedding SysArch in Polarion: the single sign-on extension (`polarion-sso/`), its installation, the SysArch settings and the embed page |
 | `solver/` | The spec's solver script (verbatim), the remote solver service and its Dockerfile (P3) |
 | `.github/workflows/ci.yml` | CI: tests, VSM determinism (sha256), refresh perf threshold (T9) |

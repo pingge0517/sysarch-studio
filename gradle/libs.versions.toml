@@ -32,6 +32,8 @@ openhtmltopdf = "1.1.103"
 [libraries]
 spring-boot-bom = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "spring-boot" }
 spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
+# P4 T5: /actuator/prometheus (version from the Spring Boot BOM)
+micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus" }
 spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 sirius-web-starter = { module = "org.eclipse.sirius:sirius-web-starter", version.ref = "sirius-web" }
