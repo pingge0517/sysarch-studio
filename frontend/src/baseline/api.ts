@@ -60,8 +60,11 @@ export async function locate(project: string, elementId: string): Promise<Locati
   return json(await fetch(`/api/v1/projects/${encodeURIComponent(project)}/elements/${encodeURIComponent(elementId)}/location`));
 }
 
-/** Sirius Web is served by the backend, by default on port 8080 of the same host (VITE_SIRIUS_URL overrides it). */
+/**
+ * Sirius Web's editor. Since P4 T3 the shell and Sirius' application are one application, so by default it is this
+ * origin; VITE_SIRIUS_URL still points elsewhere if needed (e.g. the backend's own copy of Sirius Web on :8080).
+ */
 export function siriusUrl(path: string): string {
-  const base = (import.meta.env.VITE_SIRIUS_URL as string | undefined) ?? `${window.location.protocol}//${window.location.hostname}:8080`;
+  const base = (import.meta.env.VITE_SIRIUS_URL as string | undefined) ?? window.location.origin;
   return base.replace(/\/+$/, '') + path;
 }

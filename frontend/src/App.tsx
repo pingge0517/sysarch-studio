@@ -18,8 +18,8 @@ import { ReportsPage } from './report/ReportsPage';
 import { ImportPage } from './sysmlimport/ImportPage';
 import { SequencePage } from './sequence/SequencePage';
 
-// TODO: mount the Sirius Web frontend components and register the BDD/IBD views. Until then the diagrams are
-// edited in Sirius Web's own UI (backend :8080); this shell hosts the P1 matrix pages.
+// The diagrams are edited in Sirius Web's own application, which since P4 T3 hosts this shell as its route /sysarch
+// (application/SysArchApplication.tsx): one application, one origin. The header links back to the models.
 
 const REFRESH_MS = 10_000;
 
@@ -177,6 +177,11 @@ export function App() {
     <div className="app">
       <header className="bar">
         <h1>SysArch Studio</h1>
+        {!document.body.classList.contains('embedded') && (
+          <a className="bar-link" href={workspace ? '/projects/' + encodeURIComponent(workspace) + '/edit' : '/projects'}>
+            {project ? '打开模型编辑器' : '全部模型'}
+          </a>
+        )}
         <label>
           项目
           <select

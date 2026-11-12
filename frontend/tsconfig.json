@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
@@ -9,7 +13,19 @@
     "noEmit": true,
     "isolatedModules": true,
     "skipLibCheck": true,
-    "types": ["vite/client"]
+    "types": [
+      "vite/client"
+    ],
+    "paths": {
+      "@eclipse-sirius/sirius-components-core": [
+        "./node_modules/@eclipse-sirius/sirius-components-core/dist/index.d.ts"
+      ],
+      "@eclipse-sirius/sirius-web-application": [
+        "./node_modules/@eclipse-sirius/sirius-web-application/dist/index.d.ts"
+      ]
+    }
   },
-  "include": ["src"]
+  "include": [
+    "src"
+  ]
 }

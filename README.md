@@ -19,7 +19,7 @@ Docker passes it as a build secret, so it is never stored in an image.
 ```bash
 export GITHUB_ACTOR=<github-user> GITHUB_TOKEN=<pat>   # or gpr.user / gpr.key in ~/.gradle/gradle.properties
 ./gradlew build
-cd frontend && npm ci && npm run dev                     # dev server on :3000, proxies to :8080
+cd frontend && NPM_TOKEN=$GITHUB_TOKEN npm ci && npm run dev   # :3000, proxies to :8080; NPM_TOKEN: Sirius Web's npm packages (GitHub Packages)
 ```
 
 Running the backend locally needs `POSTGRES_URL`, `POSTGRES_USER` and `POSTGRES_PASSWORD`.
@@ -32,7 +32,7 @@ Running the backend locally needs `POSTGRES_URL`, `POSTGRES_USER` and `POSTGRES_
 | `views/` | VSM YAML view definitions and their JSON Schema (T3–T5) |
 | `vsm-compiler/` | Generator from VSM YAML to `DiagramDescription` Java (T3) |
 | `backend/` | Spring Boot + Sirius Web app, Polarion proxy (`model`, `view`, `validation`, `link`, `sync`) |
-| `frontend/` | React shell, served by nginx on :3000 |
+| `frontend/` | The application on :3000 (nginx): Sirius Web's own application (project browser, diagram editor) hosting SysArch's pages at `/sysarch` (P4 T3), and the Polarion embed page `/?embed=1` |
 | `tests/acceptance/` | Acceptance scripts (spec §9), e.g. `ac1-health.sh` |
 | `docs/` | `metamodel-and-views.md`: metamodel, field tables, view mapping, adding a view (T9) |
 | `docs/param-behavior.md` | P3 user guide (parametric view and solving, state machine / activity / use case, XMI) and the **three external limitations**: XMI round trips do not keep layers, solving needs an external back end, behaviour diagrams are not executed |

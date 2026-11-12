@@ -39,7 +39,11 @@ services:
     ports: ["8080:8080"]
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      # Sirius Web's front-end packages come from GitHub Packages (P4 T3), the same token as the backend's
+      secrets:
+        - github_token
     depends_on: [backend]
     ports: ["3000:3000"]
 

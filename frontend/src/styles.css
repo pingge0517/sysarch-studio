@@ -576,3 +576,21 @@ body,
 .embed-links a:focus-visible {
   border-color: var(--ink);
 }
+
+/* ---- one interface (P4 T3): links between the shell and Sirius' application ---- */
+.bar-link,
+.sysarch-nav-link {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.bar-link:hover,
+.sysarch-nav-link:hover,
+.bar-link:focus-visible,
+.sysarch-nav-link:focus-visible {
+  text-decoration: underline;
+}
+.sysarch-nav-link {
+  margin-right: 16px;
+}
