@@ -40,4 +40,4 @@ dependencyResolutionManagement {
     }
 }
 
-include("metamodel", "backend", "vsm-compiler")
+include("metamodel", "backend", "vsm-compiler", "polarion-sso")

@@ -62,6 +62,14 @@ sysarch:
     session-ttl: ${SYSARCH_SESSION_TTL:PT8H}
     secure-cookie: ${SYSARCH_SECURE_COOKIE:false}
     cookie-domain: ${SYSARCH_COOKIE_DOMAIN:}
+    # Embedding in Polarion: single sign-on through the SysArch extension in Polarion (shared HMAC key; unset = off),
+    # the cookie's SameSite (Lax, or None when Polarion is another site) and who may frame our pages (CSP
+    # frame-ancestors besides 'self'; empty = the Polarion origin of sysarch.polarion.base-url).
+    polarion-sso-secret: ${SYSARCH_POLARION_SSO_SECRET:}
+    cookie-same-site: ${SYSARCH_COOKIE_SAMESITE:Lax}
+    frame-ancestors: ${SYSARCH_FRAME_ANCESTORS:}
+    # Origins whose pages may post the single sign-on form (the Polarion origin; comma separated).
+    sso-origins: ${SYSARCH_SSO_ORIGINS:http://localhost}
   # P2 T8 (spec §10 rollback points): switch one feature off without taking the release down.
   features:
     locks: ${SYSARCH_FEATURE_LOCKS:true}
@@ -115,3 +123,9 @@ sysarch:
     # R2 repair strategy, MODEL_WINS or POLARION_WINS, fixed per project (spec §7). One project can override it
     # with sysarch.consistency.strategies.<polarion project>.
     strategy: ${CONSISTENCY_STRATEGY:}
+
+# docx4j's XHTML import warns once per styled element ("Skipping outline-color .. (null value)": CSS properties Word
+# has no equivalent for): thousands of lines per report, hundreds of MB for a large SRS.
+logging:
+  level:
+    org.docx4j.convert.in.xhtml: ERROR

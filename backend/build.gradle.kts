@@ -78,6 +78,7 @@ dependencies {
     testImplementation(platform(libs.spring.boot.bom))
     testImplementation(libs.spring.boot.starter.test)
     testImplementation(libs.wiremock)
+    testImplementation(project(":polarion-sso")) // the extension's own assertion format, checked by PolarionSsoTest
     testImplementation(libs.h2)
     testRuntimeOnly(libs.junit.platform.launcher)
 }

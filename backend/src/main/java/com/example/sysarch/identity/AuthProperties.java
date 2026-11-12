@@ -87,4 +87,58 @@ public class AuthProperties {
     public boolean dev() {
         return this.mode == Mode.DEV;
     }
+
+    /**
+     * Polarion single sign-on (embedding in Polarion): the HMAC key shared with the SysArch extension installed in
+     * Polarion, which signs who is logged in there. Unset = no single sign-on (503); the token login still works.
+     */
+    private String polarionSsoSecret = "";
+
+    /** The longest an assertion may live (the extension issues them for 60 s). */
+    private Duration polarionSsoMaxAge = Duration.ofMinutes(2);
+
+    /**
+     * The session cookie's SameSite: {@code Lax} (default; enough when Polarion and SysArch are the same site, e.g.
+     * two hosts of one company domain) or {@code None} (Polarion on another site; needs {@code secure-cookie} and a
+     * browser that allows third-party cookies in the frame).
+     */
+    private String cookieSameSite = "Lax";
+
+    /**
+     * Who may show our pages in a frame: the CSP {@code frame-ancestors} sources besides {@code 'self'}, e.g. the
+     * Polarion origin. Empty = the origin of {@code sysarch.polarion.base-url}.
+     */
+    private String frameAncestors = "";
+
+    public String getPolarionSsoSecret() {
+        return this.polarionSsoSecret;
+    }
+
+    public void setPolarionSsoSecret(String polarionSsoSecret) {
+        this.polarionSsoSecret = polarionSsoSecret;
+    }
+
+    public Duration getPolarionSsoMaxAge() {
+        return this.polarionSsoMaxAge;
+    }
+
+    public void setPolarionSsoMaxAge(Duration polarionSsoMaxAge) {
+        this.polarionSsoMaxAge = polarionSsoMaxAge;
+    }
+
+    public String getCookieSameSite() {
+        return this.cookieSameSite;
+    }
+
+    public void setCookieSameSite(String cookieSameSite) {
+        this.cookieSameSite = cookieSameSite;
+    }
+
+    public String getFrameAncestors() {
+        return this.frameAncestors;
+    }
+
+    public void setFrameAncestors(String frameAncestors) {
+        this.frameAncestors = frameAncestors;
+    }
 }

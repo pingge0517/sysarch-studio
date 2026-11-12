@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Tests used logback's default (everything from DEBUG up). docx4j's XHTML import warns once per styled element
+     ("Skipping outline-color .. (null value)": CSS properties Word has no equivalent for), which in the 10,000-element
+     benchmark's 2,252-page SRS came to 344 MB of test output, stored twice by Gradle, and filled the disk (2026-11-12). -->
+<configuration>
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} -- %msg%n</pattern>
+    </encoder>
+  </appender>
+  <logger name="org.docx4j.convert.in.xhtml" level="ERROR"/>
+  <root level="INFO">
+    <appender-ref ref="CONSOLE"/>
+  </root>
+</configuration>

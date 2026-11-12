@@ -15,4 +15,10 @@ public class AuthConfiguration {
     public SessionCookies sessionCookies(AuthProperties properties) {
         return new SessionCookies(properties.getSessionSecret(), Clock.systemUTC());
     }
+
+    /** Embedding in Polarion: assertions signed by the SysArch extension in Polarion. */
+    @Bean
+    public PolarionSso polarionSso(AuthProperties properties) {
+        return new PolarionSso(properties.getPolarionSsoSecret(), properties.getPolarionSsoMaxAge(), Clock.systemUTC());
+    }
 }

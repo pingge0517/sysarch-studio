@@ -15,7 +15,8 @@ backend:
     limits: { memory: 3Gi }
   javaOpts: "-XX:MaxRAMPercentage=75"
   # Secret with POSTGRES_USER, POSTGRES_PASSWORD, SYSARCH_SESSION_SECRET and, optionally, POLARION_SYNC_TOKEN,
-  # POLARION_WEBHOOK_SECRET. kubectl create secret generic sysarch-backend --from-literal=...
+  # POLARION_WEBHOOK_SECRET, SYSARCH_POLARION_SSO_SECRET (embedding in Polarion: the key shared with the SysArch
+  # extension in Polarion; single sign-on also needs POLARION_SYNC_TOKEN to read the user's roles). kubectl create secret generic sysarch-backend --from-literal=...
   existingSecret: sysarch-backend
   env:
     POLARION_BASE_URL: https://polarion.example.com/polarion
@@ -25,6 +26,10 @@ backend:
     SYSARCH_SECURE_COOKIE: "true"         # behind HTTPS
     SYSARCH_COOKIE_DOMAIN: sysarch.example.com   # the shell and Sirius Web are two hosts of this domain
     CORS_ALLOWED_ORIGINS: https://sysarch.example.com
+    # Embedding in Polarion: who may frame SysArch (empty = the origin of POLARION_BASE_URL), and the cookie's SameSite
+    # (Lax when Polarion and SysArch are hosts of one site; None, with SYSARCH_SECURE_COOKIE, otherwise).
+    SYSARCH_FRAME_ANCESTORS: ""
+    SYSARCH_COOKIE_SAMESITE: Lax
     # Polarion project -> Sirius project, one variable per bound project:
     # SYSARCH_POLARION_PROJECTS_SYSARCH: "domain controller"
     # Rollback switches (spec §10), "false" turns one feature off:
@@ -46,6 +51,10 @@ solver:
   resources:
     requests: { cpu: 100m, memory: 128Mi }
     limits: { cpu: "1", memory: 512Mi }
+
+# Embedding in Polarion: the Polarion origin that may frame the shell (nginx frame-ancestors).
+embed:
+  polarionOrigin: https://polarion.example.com
 
 frontend:
   replicas: 2

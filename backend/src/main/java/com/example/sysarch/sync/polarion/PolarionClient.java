@@ -89,8 +89,18 @@ public class PolarionClient {
         if (!first.isTextual()) {
             return Optional.empty();
         }
-        String id = first.asText();
+        return this.user(first.asText(), token);
+    }
+
+    /**
+     * A user and their roles, read with any token allowed to read users (the service account's, for Polarion single
+     * sign-on): empty when Polarion has no such user.
+     */
+    public Optional<PolarionUser> user(String id, PolarionToken token) {
         HttpResponse<String> user = this.send(token, "GET", this.restRoot + "/users/" + encode(id) + "?fields%5Busers%5D=%40all", null);
+        if (user.statusCode() == 404) {
+            return Optional.empty();
+        }
         this.requireSuccess(user, "read user " + id);
         JsonNode data = this.read(user).path("data");
         String name = data.path("attributes").path("name").asText(id);

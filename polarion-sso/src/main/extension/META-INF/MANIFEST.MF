@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: SysArch Studio single sign-on
+Bundle-SymbolicName: com.example.sysarch.sso; singleton:=true
+Bundle-Version: 1.0.0
+Bundle-RequiredExecutionEnvironment: JavaSE-17
+Bundle-ClassPath: sysarch-sso.jar
+Require-Bundle: com.polarion.platform,
+ com.polarion.portal.tomcat
+Import-Package: javax.servlet,javax.servlet.http
+Eclipse-AutoStart: true
+Eclipse-BundleShape: dir

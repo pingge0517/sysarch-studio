@@ -144,6 +144,20 @@ public class Identities {
         return owner;
     }
 
+    /**
+     * The principal of a user Polarion single sign-on vouched for: their name and roles read with the service account
+     * ({@code POLARION_SYNC_TOKEN}), as a token login reads them with the user's own token.
+     *
+     * @throws IllegalStateException when no service account is configured
+     */
+    public Optional<Principal> fromPolarionUser(String userId) {
+        String service = this.sync.getSyncToken();
+        if (service == null || service.isBlank()) {
+            throw new IllegalStateException("Polarion 单点登录需要服务账号令牌 POLARION_SYNC_TOKEN 来读取用户角色");
+        }
+        return this.polarion.user(userId, new PolarionToken(service)).map(this::principal);
+    }
+
     private Optional<Principal> ask(PolarionToken token) {
         return this.polarion.currentUser(token).map(this::principal);
     }

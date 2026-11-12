@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+  <!-- Served by Polarion's Tomcat at /polarion/sysarch-sso, behind Polarion's login. -->
+  <extension point="com.polarion.portal.tomcat.webapps">
+    <webapp contextRoot="webapp" name="polarion/sysarch-sso"/>
+  </extension>
+</plugin>
