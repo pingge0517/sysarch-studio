@@ -23,6 +23,7 @@ backend:
     CONSISTENCY_STRATEGY: MODEL_WINS
     SYNC_RATE_LIMIT_RPS: "10"
     SYSARCH_AUTH_MODE: polarion          # never dev in a shared deployment
+    SYSARCH_ANONYMOUS_READ: "false"     # reading needs sign-in (P4 T8, security review F4)
     SYSARCH_SECURE_COOKIE: "true"         # behind HTTPS
     SYSARCH_COOKIE_DOMAIN: sysarch.example.com   # the shell and Sirius Web are two hosts of this domain
     CORS_ALLOWED_ORIGINS: https://sysarch.example.com

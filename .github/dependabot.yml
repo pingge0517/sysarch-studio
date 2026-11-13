@@ -1,0 +1,32 @@
+# P4 T8 (security finding F6): weekly update proposals for the dependencies. Security alerts themselves are a repository
+# setting (Settings → Code security → Dependabot alerts), switched on by the repository owner.
+# Sirius Web and Spring Boot are pinned on purpose (docs/sirius-upgrade-2026.11.md): only patch updates are proposed
+# for them, and upgrades go through the documented upgrade task.
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "org.eclipse.sirius:*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "org.springframework.boot*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+  - package-ecosystem: npm
+    directory: "/frontend"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "@eclipse-sirius/*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly

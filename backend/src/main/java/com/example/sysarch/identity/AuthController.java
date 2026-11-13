@@ -179,6 +179,8 @@ public class AuthController {
         body.put("source", principal == null ? null : principal.source());
         body.put("globalRoles", principal == null ? List.of() : principal.globalRoles().stream().sorted().toList());
         body.put("projectRoles", principal == null ? Map.of() : principal.projectRoles());
+        // P4 T8 (F4): may this deployment be read without signing in? The application shows the sign-in page otherwise.
+        body.put("anonymousRead", properties.getAnonymousRead() != null ? properties.getAnonymousRead() : properties.dev());
         return body;
     }
 }

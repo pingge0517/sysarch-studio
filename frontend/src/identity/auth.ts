@@ -10,6 +10,13 @@ export interface Me {
   source: string | null;
   globalRoles: string[];
   projectRoles: Record<string, string[]>;
+  /** P4 T8: reading without sign-in is allowed (dev mode, or SYSARCH_ANONYMOUS_READ=true); otherwise the application asks to sign in. */
+  anonymousRead?: boolean;
+}
+
+/** Whether the application has to show the sign-in page before Sirius' application (P4 T8, finding F4). */
+export function needsSignIn(me: Me | null): boolean {
+  return me !== null && !me.user && me.anonymousRead !== true;
 }
 
 export interface AccessGrant {
@@ -129,7 +136,8 @@ export async function listAudit(project: string, action: string): Promise<AuditE
 /** What the header shows for a user in a project: "Rita（评审人）", or a sign-in hint. */
 export function badge(me: Me | null, grant: AccessGrant | null): string {
   if (!me || !me.user) {
-    return '未登录（只能查看）';
+    // reading without sign-in only where the deployment allows it (P4 T8)
+    return me && me.anonymousRead ? '未登录（只能查看）' : '未登录';
   }
   return grant ? `${me.name ?? me.user}（${grant.roleLabel}）` : (me.name ?? me.user);
 }

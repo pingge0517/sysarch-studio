@@ -149,6 +149,19 @@ public class AuthProperties {
         this.cookiePartitioned = cookiePartitioned;
     }
 
+    /**
+     * P4 T8 (F4): may reads go without sign-in? Unset = no in polarion mode, yes in dev mode ({@link ReadAccessFilter}).
+     */
+    private Boolean anonymousRead;
+
+    public Boolean getAnonymousRead() {
+        return this.anonymousRead;
+    }
+
+    public void setAnonymousRead(Boolean anonymousRead) {
+        this.anonymousRead = anonymousRead;
+    }
+
     public String getFrameAncestors() {
         return this.frameAncestors;
     }

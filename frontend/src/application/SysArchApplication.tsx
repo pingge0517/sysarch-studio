@@ -11,6 +11,7 @@ import 'react-resizable/css/styles.css';
 import '../../node_modules/@eclipse-sirius/sirius-components-portals/dist/sirius-components-portals.css';
 import { App } from '../App';
 import { mergeComponents, mergeData } from './merge';
+import { SignInGate } from './SignInGate';
 
 /**
  * One interface (P4 T3, spec P4 §3): Sirius Web's own application (project browser, diagram editor, explorer,
@@ -41,5 +42,9 @@ const mergeStrategy: ExtensionRegistryMergeStrategy = {
 export function SysArchApplication() {
   const httpOrigin = window.location.origin;
   const wsOrigin = httpOrigin.replace(/^http/, 'ws');
-  return <SiriusWebApplication httpOrigin={httpOrigin} wsOrigin={wsOrigin} extensionRegistry={registry} extensionRegistryMergeStrategy={mergeStrategy} />;
+  return (
+    <SignInGate>
+      <SiriusWebApplication httpOrigin={httpOrigin} wsOrigin={wsOrigin} extensionRegistry={registry} extensionRegistryMergeStrategy={mergeStrategy} />
+    </SignInGate>
+  );
 }

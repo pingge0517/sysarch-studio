@@ -47,7 +47,7 @@ P2 只跑一个 backend 实例：编辑会话的开启在 JVM 内串行（见 CL
 
 ### 2.3 身份与权限
 
-- **生产只用 `SYSARCH_AUTH_MODE=polarion`（默认）。** 用户粘贴自己的 Polarion 个人访问令牌，后端向 Polarion 查令牌主人和他的角色，签发 8 小时的 HttpOnly cookie。令牌用完即丢，服务端和 cookie 里都不保存。`dev` 模式按名字登录，只用于本机测试和压测。
+- **生产只用 `SYSARCH_AUTH_MODE=polarion`（默认）。** 用户粘贴自己的 Polarion 个人访问令牌，后端向 Polarion 查令牌主人和他的角色，签发 8 小时的 HttpOnly cookie。令牌用完即丢，服务端和 cookie 里都不保存。`dev` 模式按名字登录，只用于本机测试和压测。**读取同样需要登录**（P4 T8）：Polarion 模式下，未登录访问 `/api/**` 和 `/subscriptions` 返回 401（登录接口、Polarion webhook、图标和 `/actuator` 除外），界面先显示登录页；`SYSARCH_ANONYMOUS_READ=true` 恢复匿名读取，只应在可信网络中使用。
 - 工具角色由表 `role_mapping` 决定，不写在代码里。初始行：Polarion 全局 `admin` 和项目 `project_admin` 对应项目管理员，`project_user` 对应架构师，`project_reviewer` 对应评审人，`project_observer` 对应观察者；未绑定 Polarion 的项目里，所有已登录用户都是架构师；其余情况为观察者。管理员在外壳的"角色与审计"页或 `/api/v1/role-mappings` 修改，每次修改都记审计。
 - 用户在 Polarion 里的角色变了，要重新登录才生效（cookie 里带的是登录时的角色）。映射表的修改立即生效。
 

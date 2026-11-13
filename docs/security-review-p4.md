@@ -9,9 +9,9 @@
 | F1 | `POST /api/v1/sync/status/resume` 没有权限检查：任何人（包括未登录者）都能恢复一个因连续失败而暂停的 Polarion 定时拉取 | 中 | **已修复**：需要该 Polarion 项目的同步权限；实测未登录返回 403，并写入审计 `ACCESS_DENIED` |
 | F2 | 响应缺少 `X-Content-Type-Options: nosniff` 和 `Referrer-Policy` | 低 | **已修复**：后端每个响应都带上；nginx 和 Helm 的前端配置也加上了 |
 | F3 | 前端依赖 React Router 6.26.0（Sirius 固定的版本）有已公开的开放重定向和 XSS 漏洞（npm audit：3 个 high） | 高 | **已修复**：升级到 6.30.6（仍是 6.x，Sirius 只把它声明为 peer，因此只有一份）；构建和测试通过，浏览器中验证路由正常（`/`→项目列表、`/sysarch`、编辑器） |
-| F4 | **读取不需要登录**：未登录者可以通过 Sirius 的 GraphQL 读取所有模型，也可以调用导出、表格、追溯、时序图等读取接口 | 高（取决于部署环境） | **待决定**，见第 3 节 |
+| F4 | **读取不需要登录**：未登录者可以通过 Sirius 的 GraphQL 读取所有模型，也可以调用导出、表格、追溯、时序图等读取接口 | 高（取决于部署环境） | **已修复**（方案 1，按推荐）：Polarion 模式下读取需要登录，见第 3 节 |
 | F5 | `uuid` < 11.1.1（经 `@ObeoNetwork/react-trello`）：v3/v5/v6 在传入缓冲区时缺少边界检查 | 中 | 接受：没有可用的修复版本；该组件（看板视图）我们不使用，也不向它传入缓冲区。Sirius 升级后再看 |
-| F6 | Java 依赖还没有做漏洞扫描 | — | **待做**：需要下载扫描工具和漏洞库，见第 5 节 |
+| F6 | Java 依赖还没有做漏洞扫描 | — | **部分完成**：已加入 `.github/dependabot.yml`；安全警报需要仓库所有者在设置中开启，见第 5 节 |
 
 此外确认没有问题的方面：CSRF（第 4 节）、写接口的权限（第 2 节，F1 修复之后）、文件路径、XML 外部实体、SVG 与报告的转义、单点登录凭证、求解沙箱、审计只追加。
 
@@ -44,7 +44,13 @@
 | `POST /api/v1/export/sysmlv2`、`/export/xmi` | 只读，没有检查 | 归入 F4 |
 | `GET /actuator/prometheus` | 指标令牌 | ✓（P4 T5） |
 
-## 3. F4：读取不需要登录（需要决定）
+## 3. F4：读取不需要登录（已按方案 1 修复）
+
+**实现**（`identity.ReadAccessFilter`）：Polarion 模式下，未登录访问 `/api/**` 和 GraphQL 订阅 `/subscriptions` 返回 401（JSON，提示登录方式）。例外：登录接口 `/api/v1/auth/**`、Polarion webhook（有签名校验）、Sirius 的图标 `/api/images/**`、CORS 预检；`/actuator` 不在 `/api` 下（健康检查开放，指标需要令牌）。静态页面本身不含模型数据：应用加载前先问 `/api/v1/auth/me`，未登录就显示登录页（`SignInGate`），从 Polarion 页面或工作项面板进入时经单点登录自动登录。开关 `SYSARCH_ANONYMOUS_READ`：不设置时 Polarion 模式关闭匿名读取，dev 模式开启（本机测试和压测脚本不受影响）；设为 `true` 恢复原来的行为。
+
+**实测**（Polarion 模式，本机 Polarion 2512）：未登录时 GraphQL 401、SysML 导出 401、WebSocket 握手 401；健康检查 200、图标 200、未签名的 webhook 400（签名校验照旧）；带 Polarion 令牌（Bearer）GraphQL 200；浏览器未登录打开 `/projects` 显示登录页而不是 Sirius 的应用，经 `/polarion/sysarch-sso/start?return=/projects` 自动登录后显示项目列表和导航链接。
+
+修复前的情况和当时的方案如下。
 
 现状：Sirius Web 本身没有读取权限的概念，P2 T8 只对写操作做了检查。因此任何能访问 SysArch 地址的人，不登录也能读取所有模型：项目列表、图、属性、导出文件、表格、追溯和报告列表等。实测：未登录时 GraphQL 能返回项目列表，SysML 导出返回 200 和模型文本。
 
@@ -77,3 +83,5 @@
 - 用 OSV-Scanner 扫描 Gradle 依赖（下载一个约 20 MB 的工具）。
 
 建议先启用 Dependabot，再在 CI 中加一项扫描，发现高危漏洞时让构建失败（P4 规格 §5.2）。
+
+**已做**：`.github/dependabot.yml` 每周检查 Gradle 和 npm 依赖、每月检查 GitHub Actions；Sirius Web、Spring Boot 只建议补丁版本（升级走单独的升级任务，见 `docs/sirius-upgrade-2026.11.md`），React 不建议大版本。**仍需仓库所有者**：在 GitHub 仓库 Settings → Code security 中开启 Dependabot alerts 和 security updates；Dependabot 访问 GitHub Packages 上的 Sirius 包需要在仓库的 Dependabot secrets 中配置令牌，否则只会跳过这些包。CI 中的扫描（会让构建失败的那一种）还没有加：需要下载工具，等你决定。

@@ -85,6 +85,8 @@ sysarch:
     cookie-same-site: ${SYSARCH_COOKIE_SAMESITE:Lax}
     cookie-partitioned: ${SYSARCH_COOKIE_PARTITIONED:false}
     frame-ancestors: ${SYSARCH_FRAME_ANCESTORS:}
+    # P4 T8 (F4): reading without sign-in (true/false; empty = false in polarion mode, true in dev mode)
+    anonymous-read: ${SYSARCH_ANONYMOUS_READ:}
     # Origins whose pages may post the single sign-on form (the Polarion origin; comma separated).
     sso-origins: ${SYSARCH_SSO_ORIGINS:http://localhost}
   # P2 T8 (spec §10 rollback points): switch one feature off without taking the release down.
