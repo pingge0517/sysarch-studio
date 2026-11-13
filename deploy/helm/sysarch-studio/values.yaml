@@ -2,10 +2,10 @@
 # and name them below.
 
 image:
-  backend: registry.example.com/sysarch/backend:0.3.0
-  frontend: registry.example.com/sysarch/frontend:0.3.0
+  backend: registry.example.com/sysarch/backend:0.7.0
+  frontend: registry.example.com/sysarch/frontend:0.7.0
   postgres: postgres:16
-  solver: registry.example.com/sysarch/solver:0.4.0   # solver/Dockerfile
+  solver: registry.example.com/sysarch/solver:0.4.0   # solver/Dockerfile (unchanged since P3 T4)
   pullPolicy: IfNotPresent
 
 backend:

@@ -126,3 +126,29 @@ jobs:
           name: osv-results
           path: osv-results.json
           if-no-files-found: ignore
+
+  # P4 T4 (P4-AC-4, the part without a cluster): the Helm chart lints strictly and renders with the default values,
+  # with every optional part on (monitoring: ServiceMonitor + PrometheusRule) and with every optional part off.
+  # Helm is pinned and checked against its published SHA-256. Installing it into a cluster is still manual (T4).
+  helm:
+    runs-on: ubuntu-latest
+    env:
+      HELM_VERSION: v3.22.1
+      HELM_SHA256: 896cf63684a42a723d61c980369d6e588330927deb13676ca0d85006dd6da0ea
+    steps:
+      - uses: actions/checkout@v4
+      - name: Helm (pinned, checksum verified)
+        run: |
+          curl -sSfL -o helm.tar.gz "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz"
+          echo "${HELM_SHA256}  helm.tar.gz" | sha256sum -c -
+          tar -xzf helm.tar.gz linux-amd64/helm
+      - name: Lint
+        run: |
+          ./linux-amd64/helm lint deploy/helm/sysarch-studio --strict
+          ./linux-amd64/helm lint deploy/helm/sysarch-studio --strict --set monitoring.enabled=true
+      - name: Render
+        run: |
+          ./linux-amd64/helm template t deploy/helm/sysarch-studio > /dev/null
+          ./linux-amd64/helm template t deploy/helm/sysarch-studio --set monitoring.enabled=true | grep -q "kind: PrometheusRule"
+          ./linux-amd64/helm template t deploy/helm/sysarch-studio --set solver.enabled=false --set postgres.enabled=false \
+            --set backup.enabled=false --set ingress.enabled=false > /dev/null
