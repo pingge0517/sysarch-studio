@@ -162,6 +162,20 @@ public class AuthProperties {
         this.anonymousRead = anonymousRead;
     }
 
+    /**
+     * P4 T8 (ZAP baseline): the rest of the Content-Security-Policy, before {@code frame-ancestors} (which
+     * {@link FrameAncestorsFilter} always appends). Empty = {@link FrameAncestorsFilter#DEFAULT_POLICY}.
+     */
+    private String contentSecurityPolicy = "";
+
+    public String getContentSecurityPolicy() {
+        return this.contentSecurityPolicy;
+    }
+
+    public void setContentSecurityPolicy(String contentSecurityPolicy) {
+        this.contentSecurityPolicy = contentSecurityPolicy;
+    }
+
     public String getFrameAncestors() {
         return this.frameAncestors;
     }

@@ -11,7 +11,8 @@
 | F3 | 前端依赖 React Router 6.26.0（Sirius 固定的版本）有已公开的开放重定向和 XSS 漏洞（npm audit：3 个 high） | 高 | **已修复**：升级到 6.30.6（仍是 6.x，Sirius 只把它声明为 peer，因此只有一份）；构建和测试通过，浏览器中验证路由正常（`/`→项目列表、`/sysarch`、编辑器） |
 | F4 | **读取不需要登录**：未登录者可以通过 Sirius 的 GraphQL 读取所有模型，也可以调用导出、表格、追溯、时序图等读取接口 | 高（取决于部署环境） | **已修复**（方案 1，按推荐）：Polarion 模式下读取需要登录，见第 3 节 |
 | F5 | `uuid` < 11.1.1（经 `@ObeoNetwork/react-trello`）：v3/v5/v6 在传入缓冲区时缺少边界检查 | 中 | 接受：没有可用的修复版本；该组件（看板视图）我们不使用，也不向它传入缓冲区。Sirius 升级后再看 |
-| F6 | Java 依赖没有做漏洞扫描。用 OSV-Scanner 扫描后发现 **102 条已知漏洞，其中 56 条高危**，几乎都来自 Spring Boot 3.5.5 带来的 Tomcat、Spring Framework、Jackson、Spring GraphQL 等版本 | 高 | **已修复**：升级到 Spring Boot 3.5.16，再覆盖 5 个补丁版本，降到 5 条，均已说明理由并列入忽略清单；CI 新增第 4 道关卡，有高危即失败；另加 Dependabot。见第 5 节 |
+| F6 | Java 依赖没有做漏洞扫描。用 OSV-Scanner 扫描后发现 **102 条已知漏洞，其中 56 条高危**，几乎都来自 Spring Boot 3.5.5 带来的 Tomcat、Spring Framework、Jackson、Spring GraphQL 等版本 | 高 | **已修复**：升级到 Spring Boot 3.5.16，再覆盖 5 个补丁版本，降到 5 条，均已说明理由并列入忽略清单；CI 新增第 4 道关卡，有高危即失败；另加 Dependabot。见第 6 节 |
+| F7 | ZAP baseline：CSP 只有 `frame-ancestors` 一条，没有限制脚本、连接和资源的来源（ZAP 10055，中危） | 中 | **已修复**：完整的 CSP（只允许本站的脚本、连接、图片和字体；不允许插件、外部 `<base>` 和向外站提交表单），后端、nginx、Helm 一致；保留样式的 inline（Sirius 的 MUI/emotion 需要），见第 5 节 |
 
 此外确认没有问题的方面：CSRF（第 4 节）、写接口的权限（第 2 节，F1 修复之后）、文件路径、XML 外部实体、SVG 与报告的转义、单点登录凭证、求解沙箱、审计只追加。
 
@@ -74,7 +75,24 @@
 - **审计**：PostgreSQL 触发器拒绝 UPDATE、DELETE 和 TRUNCATE，只有归档脚本能删除一年以前的记录（P2 T8）。
 - **密钥**：每次提交前都检查过暂存的改动里没有令牌和密钥；`.env` 不进入版本库；`.npmrc` 只引用环境变量。
 
-## 5. 依赖扫描（F6）
+## 5. ZAP baseline 被动扫描（F7）
+
+**工具与范围**：ZAP 2.17.0（`ZAP_2.17.0_Crossplatform.zip`，SHA-256 与官方发布一致，在 `C:\ZAPCheck`，用本机 JDK 21 运行，`-silent` 不做任何更新检查或外部请求）。自动化计划 `C:\ZAPCheck\run\baseline.yaml`：只扫本机自己的两个服务（后端 :8080 和外壳 :3000），传统爬虫（不提交表单）加被动扫描，**不做主动扫描**，不发攻击请求。后端为 Polarion 模式（读取需要登录）。
+
+**第一次**（2026-11-13）：:8080 的 CSP 只有 `frame-ancestors`，ZAP 报 4 条 10055（中危：没有 `default-src`，等于脚本、样式、连接都不受限）；:3000 缺 CSP、防点击劫持和 nosniff，原因是 `vite preview` 不读 `nginx.conf`（生产环境由 nginx 发送这些头）；其余是压缩后 JS 的误报（时间戳、可疑注释、现代 Web 应用）。
+
+**修复**：
+
+- `FrameAncestorsFilter.DEFAULT_POLICY`：`default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'`，后面仍接按 Polarion 地址算出的 `frame-ancestors`；`SYSARCH_CSP` 可整体替换（`frame-ancestors` 总会追加）。`frontend/nginx.conf` 和 Helm 的前端配置用同一条策略。
+- `vite.config.ts`：`vite preview` 从 `nginx.conf` 的 `add_header` 行读取并发送相同的头，本机预览与生产一致。
+
+**浏览器检查**（无头 Chrome，DevTools 协议，页面脚本运行前注册 `securitypolicyviolation` 监听；后端 dev 模式，策略相同）：:3000 的项目列表、项目编辑器的两张图（BDD 画出 45 个节点，图经 GraphQL WebSocket 订阅送达）、外壳 `/sysarch`、报告、时序图、基线页、嵌入页，以及 :8080 上 Sirius 自带的项目列表和编辑器，都正常显示。每页只有同一条违规：Sirius 打包的一个库用 `Function("return this")` / `eval("this")` 取全局对象，被拦下后在 `catch` 中改用 `window`，功能不受影响，因此**不放开** `unsafe-eval`。
+
+**第二次**：:3000 和 :8080 各剩 1 条 10055「style-src unsafe-inline」（中危，**接受**：MUI/emotion 在运行时插入 `<style>`；改用 nonce 需要改 Sirius 的应用），以及上面的误报。没有高危或其他中危。
+
+**未覆盖**：两个前端都是单页应用，传统爬虫只能爬到 29 个 URL；需要登录的 API 在 Polarion 模式下对爬虫返回 401。部署到试点环境（nginx、TLS）后应再扫一次。
+
+## 6. 依赖扫描（F6）
 
 **工具**：OSV-Scanner v2.7.0（Google 开源；本机在 `C:\OSVScanner`，CI 中固定同一版本并校验 SHA-256）。它把依赖的包名和版本号（公开坐标，不含代码）发给 OSV 漏洞库查询。Gradle 没有锁文件，所以新加的任务 `./gradlew osvLockfile` 把每个模块实际解析出的运行时依赖写成 `build/osv/gradle.lockfile`，只供扫描用，不参与依赖解析；npm 直接扫描 `frontend/package-lock.json`。Eclipse OCL 来自 p2 仓库，没有 Maven 坐标，扫描不到。
 

@@ -170,7 +170,12 @@ class PolarionSsoTest {
         filter.doFilter(new org.springframework.mock.web.MockHttpServletRequest("GET", "/api/v1/reports/x/files/html"), response,
                 new org.springframework.mock.web.MockFilterChain());
 
-        assertEquals("frame-ancestors 'self' http://localhost", response.getHeader("Content-Security-Policy"));
+        assertEquals(FrameAncestorsFilter.DEFAULT_POLICY + "; frame-ancestors 'self' http://localhost", response.getHeader("Content-Security-Policy"));
+        assertTrue(response.getHeader("Content-Security-Policy").contains("script-src 'self';"), "no inline scripts, no eval");
+
+        AuthProperties custom = new AuthProperties();
+        custom.setContentSecurityPolicy("default-src 'self';  ");
+        assertEquals("default-src 'self'; frame-ancestors 'self' http://localhost", new FrameAncestorsFilter(custom, polarion).policy(), "SYSARCH_CSP");
         assertEquals("nosniff", response.getHeader("X-Content-Type-Options"));
         assertEquals("strict-origin-when-cross-origin", response.getHeader("Referrer-Policy"));
     }
