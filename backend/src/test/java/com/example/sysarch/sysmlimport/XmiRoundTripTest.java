@@ -183,6 +183,34 @@ class XmiRoundTripTest {
         this.roundTrip("case-03-requirement", XmiRoundTripTest::requirements);
     }
 
+    /**
+     * A part without a type (allowed while modelling, created by the IBD's 新建部件, marked red) is exported as a composite
+     * property without a type; our own export imports it again (found by the end-to-end test, 2026-11-13), while the
+     * same element in another tool's file stays refused.
+     */
+    @Test
+    void anUntypedPartRoundTripsInOurOwnExportOnly() {
+        PartDefinition system = block("PD-1", "系统", Layer.LOGICAL);
+        Part untyped = F.createPart();
+        untyped.setId("PT-1");
+        untyped.setName("part4");
+        system.getOwnedParts().add(untyped);
+        Resource original = resource(List.of(system));
+        String xmi = XmiExporter.export("untyped", List.of(original));
+
+        XmiImporter.Result result = XmiImporter.read(xmi, Layer.LOGICAL);
+        assertEquals(List.of(), result.problems(), "our own export is accepted");
+        Part back = ((PartDefinition) result.mapped().roots().get(0)).getOwnedParts().get(0);
+        assertEquals("part4", back.getName());
+        assertEquals(null, back.getTypedBy(), "still without a type");
+        assertEquals(ModelSnapshot.capture(List.of(original)), ModelSnapshot.capture(List.of(resource(result.mapped().roots()))), "nothing else changed");
+
+        String foreign = xmi.replaceAll("<xmi:Documentation[^>]*>[\\s\\S]*?</xmi:Documentation>", "<xmi:Documentation exporter=\"Other\"/>")
+                .replaceAll("<xmi:Documentation[^>]*/>", "<xmi:Documentation exporter=\"Other\"/>");
+        XmiImporter.Result refused = XmiImporter.read(foreign, Layer.LOGICAL);
+        assertTrue(String.join("\n", refused.problems()).contains("它没有类型"), "another tool's untyped property is refused: " + refused.problems());
+    }
+
     private void roundTrip(String name, Supplier<List<EObject>> model) throws IOException {
         Resource original = resource(model.get());
         String first = XmiExporter.export(name, List.of(original));

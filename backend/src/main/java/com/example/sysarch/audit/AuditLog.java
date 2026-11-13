@@ -69,8 +69,12 @@ public class AuditLog {
         if (action != null) {
             sql.append(" AND action = :action");
         }
-        sql.append(" ORDER BY created_at DESC, id DESC");
-        var statement = this.jdbc.sql(sql.toString());
+        // The limit is in the SQL and the rows are read as a list. It was .stream().limit(): JdbcClient's stream holds
+        // the result set and its connection until the stream is closed, and nothing closed it, so every call leaked one
+        // pooled connection; ten calls of GET /api/v1/audit exhausted the pool and every database access then hung for
+        // 30 s (found by the end-to-end test, 2026-11-13).
+        sql.append(" ORDER BY created_at DESC, id DESC LIMIT :limit");
+        var statement = this.jdbc.sql(sql.toString()).param("limit", Math.max(1, Math.min(limit, 1000)));
         if (projectId != null) {
             statement = statement.param("p", projectId);
         }
@@ -78,6 +82,6 @@ public class AuditLog {
             statement = statement.param("action", action);
         }
         return statement.query((rs, n) -> new Entry(rs.getLong(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5), rs.getString(6),
-                rs.getObject(7, OffsetDateTime.class))).stream().limit(Math.max(1, Math.min(limit, 1000))).toList();
+                rs.getObject(7, OffsetDateTime.class))).list();
     }
 }

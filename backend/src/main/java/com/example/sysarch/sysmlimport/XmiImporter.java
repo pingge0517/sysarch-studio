@@ -63,6 +63,9 @@ public final class XmiImporter {
     /** xmi:id -> SysML stereotype local name applied to it (Block, Requirement, Satisfy …), and the application. */
     private final Map<String, String> stereotypeOf = new HashMap<>();
 
+    /** The file says it was written by SysArch Studio ({@code xmi:Documentation exporter}). */
+    private boolean ownExport;
+
     private final Map<String, Element> applicationOf = new HashMap<>();
 
     private final Map<String, EObject> imported = new HashMap<>();
@@ -134,6 +137,9 @@ public final class XmiImporter {
                 this.stereotypeApplication(child);
             } else if (isXmi(ns) && List.of("Documentation", "Extension").contains(child.getLocalName())) {
                 // our head notice, or another tool's extension
+                if ("Documentation".equals(child.getLocalName()) && XmiExporter.EXTENDER.equals(child.getAttribute("exporter"))) {
+                    this.ownExport = true;
+                }
             } else {
                 this.ignored.add("已忽略：" + child.getTagName() + "（其他配置文件的构造型应用或工具数据）");
             }
@@ -339,7 +345,11 @@ public final class XmiImporter {
         }
         Element typeElement = typeRef == null ? null : this.byId.get(typeRef);
         boolean blockTyped = typeElement != null && "Block".equals(this.stereotypeOf.get(typeRef));
-        if (!"composite".equals(attribute.getAttribute("aggregation")) || !blockTyped) {
+        // A part without a type (allowed while modelling, marked red) is exported as a composite property without a type;
+        // our own export must import again (found by the end-to-end test, 2026-11-13). Other tools' untyped properties
+        // stay refused: there they are value or reference properties as often as parts.
+        boolean ownUntypedPart = this.ownExport && typeRef == null && "composite".equals(attribute.getAttribute("aggregation"));
+        if (!"composite".equals(attribute.getAttribute("aggregation")) || !(blockTyped || ownUntypedPart)) {
             this.problems.add("不支持的属性「" + attribute.getAttribute("name") + "」（" + this.xmiAttr(attribute, "id") + "）：只导入以 «Block» 为类型的组合属性（部件）"
                     + (typeRef == null ? "，它没有类型" : blockTyped ? "，它不是组合" : "，它的类型不是 «Block»（值属性、引用属性不导入）"));
             return;
@@ -348,7 +358,9 @@ public final class XmiImporter {
         this.common(attribute, part);
         part.setMultiplicity(this.multiplicity(attribute));
         block.getOwnedParts().add(part);
-        this.afterwards.add(() -> part.setTypedBy((PartDefinition) this.imported.get(typeRef)));
+        if (typeRef != null) {
+            this.afterwards.add(() -> part.setTypedBy((PartDefinition) this.imported.get(typeRef)));
+        }
         this.count(part);
     }
 

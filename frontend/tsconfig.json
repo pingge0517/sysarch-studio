@@ -20,6 +20,9 @@
       "@eclipse-sirius/sirius-components-core": [
         "./node_modules/@eclipse-sirius/sirius-components-core/dist/index.d.ts"
       ],
+      "@eclipse-sirius/sirius-components-diagrams": [
+        "./node_modules/@eclipse-sirius/sirius-components-diagrams/dist/index.d.ts"
+      ],
       "@eclipse-sirius/sirius-web-application": [
         "./node_modules/@eclipse-sirius/sirius-web-application/dist/index.d.ts"
       ]
