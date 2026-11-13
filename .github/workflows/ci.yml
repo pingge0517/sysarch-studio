@@ -1,4 +1,4 @@
-# CI (spec T9 step 3): three gates, all must be green.
+# CI (spec T9 step 3): three gates, all must be green (P4 T8 adds a fourth, the dependency scan, as its own job).
 #   1. gradle tests          ./gradlew test
 #   2. VSM determinism       two generations and the committed view/generated have the same sha256
 #   3. perf threshold        IbdSyncTest's refresh report: median < 800 ms, P95 < 2000 ms
@@ -82,3 +82,47 @@ jobs:
           NPM_TOKEN: ${{ secrets.GPR_TOKEN }}   # Sirius Web's front-end packages (GitHub Packages), P4 T3
       - run: npm test
       - run: npm run build
+
+  # P4 T8 (security review F6; spec P4 §5.2): dependency scan, high-severity vulnerabilities block the build.
+  # Gradle has no lockfiles, so `osvLockfile` writes each module's resolved runtime dependencies for the scan; npm uses
+  # frontend/package-lock.json. OSV-Scanner is pinned and checked against its published SHA-256. Ignored entries, each
+  # with a reason and a review date: tools/osv/osv-scanner.toml. The scanner sends package names and versions (public
+  # coordinates, no code) to the OSV database.
+  dependency-scan:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_ACTOR: ${{ secrets.GPR_USER }}
+      GITHUB_TOKEN: ${{ secrets.GPR_TOKEN }}
+      OSV_SCANNER_VERSION: v2.7.0
+      OSV_SCANNER_SHA256: 160c6253e2922e9e0a6a9771c5c4c40a4b3c6090b34a3cdd5e80c96cc2e4218b
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Resolved Gradle dependencies for the scan
+        run: ./gradlew osvLockfile --console=plain
+      - name: OSV-Scanner (pinned, checksum verified)
+        run: |
+          curl -sSfL -o osv-scanner "https://github.com/google/osv-scanner/releases/download/${OSV_SCANNER_VERSION}/osv-scanner_linux_amd64"
+          echo "${OSV_SCANNER_SHA256}  osv-scanner" | sha256sum -c -
+          chmod +x osv-scanner
+      - name: "Gate 4: no high-severity vulnerability"
+        run: |
+          ./osv-scanner scan source --config tools/osv/osv-scanner.toml --format json \
+            -L backend/build/osv/gradle.lockfile -L metamodel/build/osv/gradle.lockfile \
+            -L vsm-compiler/build/osv/gradle.lockfile -L polarion-sso/build/osv/gradle.lockfile \
+            -L frontend/package-lock.json > osv-results.json || true
+          node tools/osv/gate.mjs osv-results.json
+      - name: Scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: osv-results
+          path: osv-results.json
+          if-no-files-found: ignore

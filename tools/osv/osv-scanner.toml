@@ -1,0 +1,33 @@
+# OSV-Scanner ignore list (P4 T8, security review F6). Every entry: why it does not apply to SysArch or cannot be fixed
+# now, and a date by which it is looked at again (ignoreUntil: after it the entry no longer applies and the CI gate
+# fails again). Review all entries when Sirius Web is upgraded (docs/sirius-upgrade-2026.11.md): most go away there.
+
+# Spring Framework 6.2.19 is the last 6.2 release on Maven Central; both are fixed only in 7.0.9 (Spring Boot 4, which
+# Sirius Web 2025.8.x does not run on).
+[[IgnoredVulns]]
+id = "GHSA-pc63-qcmh-9cmg"
+ignoreUntil = 2027-02-13T00:00:00Z
+reason = "XsltView path limitation: SysArch and Sirius Web register no XsltView / XsltViewResolver (Spring Boot does not auto-configure one). Fixed only in Spring 7 (Sirius upgrade)."
+
+[[IgnoredVulns]]
+id = "GHSA-j9f9-w8pj-32f8"
+ignoreUntil = 2027-02-13T00:00:00Z
+reason = "SSE stream corruption when rendering view fragments: SysArch renders no fragments over SSE (no SseEmitter / FragmentsRendering; Sirius uses GraphQL over WebSocket). Fixed only in Spring 7 (Sirius upgrade)."
+
+# React Router 6.30.6 is the last 6.x; both fixed only in 7.18.0. Sirius Web 2025.8.11 declares react-router-dom 6.x as
+# a peer, so 7.x waits for the Sirius upgrade.
+[[IgnoredVulns]]
+id = "GHSA-337j-9hxr-rhxg"
+ignoreUntil = 2027-02-13T00:00:00Z
+reason = "deserializeErrors() runs only when hydrating a data router from server-rendered state; SysArch and Sirius render on the client with <BrowserRouter> (no SSR, no hydrationData). Medium; fixed only in 7.x."
+
+[[IgnoredVulns]]
+id = "GHSA-wrjc-x8rr-h8h6"
+ignoreUntil = 2027-02-13T00:00:00Z
+reason = "Open redirect via backslash in <Link>/useNavigate: needs an attacker-chosen path passed to navigation; the shell navigates only to its own constant routes, and the single sign-on return path is checked on the server (AuthController.localPath refuses backslashes). Medium; fixed only in 7.x."
+
+# uuid 3.4.0 comes with @ObeoNetwork/react-trello (Sirius' deck representation); no fixed 3.x and react-trello pins it.
+[[IgnoredVulns]]
+id = "GHSA-w5hq-g745-h8pq"
+ignoreUntil = 2027-02-13T00:00:00Z
+reason = "Missing bounds check only when a caller passes its own buffer to v3/v5/v6; react-trello calls v4 without a buffer, and SysArch offers no deck representation. Accepted in the security review (F5)."

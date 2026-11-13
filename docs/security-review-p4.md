@@ -11,7 +11,7 @@
 | F3 | 前端依赖 React Router 6.26.0（Sirius 固定的版本）有已公开的开放重定向和 XSS 漏洞（npm audit：3 个 high） | 高 | **已修复**：升级到 6.30.6（仍是 6.x，Sirius 只把它声明为 peer，因此只有一份）；构建和测试通过，浏览器中验证路由正常（`/`→项目列表、`/sysarch`、编辑器） |
 | F4 | **读取不需要登录**：未登录者可以通过 Sirius 的 GraphQL 读取所有模型，也可以调用导出、表格、追溯、时序图等读取接口 | 高（取决于部署环境） | **已修复**（方案 1，按推荐）：Polarion 模式下读取需要登录，见第 3 节 |
 | F5 | `uuid` < 11.1.1（经 `@ObeoNetwork/react-trello`）：v3/v5/v6 在传入缓冲区时缺少边界检查 | 中 | 接受：没有可用的修复版本；该组件（看板视图）我们不使用，也不向它传入缓冲区。Sirius 升级后再看 |
-| F6 | Java 依赖还没有做漏洞扫描 | — | **部分完成**：已加入 `.github/dependabot.yml`；安全警报需要仓库所有者在设置中开启，见第 5 节 |
+| F6 | Java 依赖没有做漏洞扫描。用 OSV-Scanner 扫描后发现 **102 条已知漏洞，其中 56 条高危**，几乎都来自 Spring Boot 3.5.5 带来的 Tomcat、Spring Framework、Jackson、Spring GraphQL 等版本 | 高 | **已修复**：升级到 Spring Boot 3.5.16，再覆盖 5 个补丁版本，降到 5 条，均已说明理由并列入忽略清单；CI 新增第 4 道关卡，有高危即失败；另加 Dependabot。见第 5 节 |
 
 此外确认没有问题的方面：CSRF（第 4 节）、写接口的权限（第 2 节，F1 修复之后）、文件路径、XML 外部实体、SVG 与报告的转义、单点登录凭证、求解沙箱、审计只追加。
 
@@ -74,7 +74,43 @@
 - **审计**：PostgreSQL 触发器拒绝 UPDATE、DELETE 和 TRUNCATE，只有归档脚本能删除一年以前的记录（P2 T8）。
 - **密钥**：每次提交前都检查过暂存的改动里没有令牌和密钥；`.env` 不进入版本库；`.npmrc` 只引用环境变量。
 
-## 5. 待做：Java 依赖扫描
+## 5. 依赖扫描（F6）
+
+**工具**：OSV-Scanner v2.7.0（Google 开源；本机在 `C:\OSVScanner`，CI 中固定同一版本并校验 SHA-256）。它把依赖的包名和版本号（公开坐标，不含代码）发给 OSV 漏洞库查询。Gradle 没有锁文件，所以新加的任务 `./gradlew osvLockfile` 把每个模块实际解析出的运行时依赖写成 `build/osv/gradle.lockfile`，只供扫描用，不参与依赖解析；npm 直接扫描 `frontend/package-lock.json`。Eclipse OCL 来自 p2 仓库，没有 Maven 坐标，扫描不到。
+
+**首次扫描**（2026-11-13）：后端 262 个包、前端 331 个包，102 条已知漏洞，CVSS ≥ 7 的 56 条。其中有 Tomcat 10.1.44 的认证绕过（DIGEST、FORM 认证、安全约束未生效）、Spring GraphQL 1.4.1 的跨站 WebSocket 劫持、Spring Boot Actuator 的认证绕过、Jackson 2.19.2 的多态类型校验绕过等。
+
+**处理**：
+
+| 依赖 | 之前 | 之后 | 方式 |
+|---|---|---|---|
+| Spring Boot（BOM） | 3.5.5 | **3.5.16** | 3.5 线最后一个补丁，仍与 Sirius Web 2025.8.11 同一主次版本；带来 Spring Framework 6.2.19、Spring GraphQL 1.4.6、Micrometer 1.15.12、Logback 1.5.34、Spring Data 2025.0.13 |
+| Tomcat | 10.1.44 | **10.1.61** | 覆盖 BOM（10.1.55 还不够） |
+| Jackson | 2.19.2 | **2.21.7** | 覆盖 BOM |
+| FreeMarker | 2.3.34 | **2.3.35** | 覆盖 BOM |
+| PostgreSQL 驱动 | 42.7.7 | **42.7.12** | 覆盖 BOM |
+| Log4j API | 2.24.3 | **2.25.5** | 覆盖 BOM |
+| Guava | 32.1.3 | **33.7.2** | 原先为 Eclipse OCL / Xtext 固定的版本；OCL 测试全部通过 |
+
+覆盖版本写在 `gradle/libs.versions.toml` 的 `security-*` 条目里，由根构建脚本作用于所有 Java 模块；BOM 跟上之后删掉对应条目。
+
+**剩下 5 条**，都写进 `tools/osv/osv-scanner.toml`，每条附理由，到 2027-02-13 复查（过期后关卡会再次失败）：Spring Framework 的 XsltView 和 SSE 片段渲染两条（只在 Spring 7 修复，我们不用这两个功能）、React Router 的两条中危（只在 7.x 修复，需要服务端渲染或攻击者控制的跳转路径）、uuid（即 F5）。这些大多会随 Sirius 升级消失。
+
+**回归**（升级后）：`./gradlew build` 通过，475 个测试（含 vsm-compiler）；后端启动正常，日志无 ERROR；`run-p3.sh` 全部通过（P3-AC-1..5、7、8，P2-AC-1..9，P0 AC-1..6，P1 7/7）；30 人并发写入压测在同一台机器上和升级前对照，每轮约 3000 次写入，全部成功、无丢失更新，P99 升级前 237 / 172 ms、升级后 312 / 179 / 229 ms（每次启动后第一轮都偏高），差别在机器波动范围内。
+
+**CI**：`.github/workflows/ci.yml` 新增任务 `dependency-scan`（第 4 道关卡）：生成 Gradle 依赖清单 → 下载固定版本的 OSV-Scanner 并校验 SHA-256 → 扫描 → `tools/osv/gate.mjs` 判定：CVSS ≥ 7（或没有评分）且不在忽略清单里就失败，中低危只列出不阻断；扫描结果作为构建产物上传。
+
+**本机复现**：
+
+```bash
+./gradlew osvLockfile
+/c/OSVScanner/osv-scanner.exe scan source --config tools/osv/osv-scanner.toml --format json \
+  -L backend/build/osv/gradle.lockfile -L metamodel/build/osv/gradle.lockfile -L vsm-compiler/build/osv/gradle.lockfile \
+  -L polarion-sso/build/osv/gradle.lockfile -L frontend/package-lock.json > build/osv-results.json
+node tools/osv/gate.mjs build/osv-results.json
+```
+
+以下是最初的选项说明。
 
 前端已用 `npm audit` 扫描（第 1 节 F3、F5）。Java 依赖（Spring Boot、Sirius、EMF、docx4j、openhtmltopdf 等）还没有扫描。可选：
 
