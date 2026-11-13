@@ -34,7 +34,14 @@ public class SyncStatusController {
 
     private final ScheduledPull scheduler;
 
-    public SyncStatusController(SyncStatusStore store, SyncProperties properties, ScheduledPull scheduler) {
+    private final com.example.sysarch.access.Access access;
+
+    private final jakarta.servlet.http.HttpServletRequest request;
+
+    public SyncStatusController(SyncStatusStore store, SyncProperties properties, ScheduledPull scheduler, com.example.sysarch.access.Access access,
+            jakarta.servlet.http.HttpServletRequest request) {
+        this.access = Objects.requireNonNull(access);
+        this.request = Objects.requireNonNull(request);
         this.store = Objects.requireNonNull(store);
         this.properties = Objects.requireNonNull(properties);
         this.scheduler = Objects.requireNonNull(scheduler);
@@ -52,6 +59,9 @@ public class SyncStatusController {
     @PostMapping("/resume")
     public Status resume(@RequestParam("projectId") String projectId) {
         this.requireMapped(projectId);
+        // P4 T8 (security review): resuming a paused scheduled pull is a sync decision, so SYNC in the Polarion project, as
+        // push and pull; before, anyone (even anonymous) could resume it.
+        this.access.requirePolarion(this.request, projectId, com.example.sysarch.access.Permission.SYNC);
         this.store.resume(projectId);
         return this.status(projectId);
     }

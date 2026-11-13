@@ -159,6 +159,22 @@ class PolarionSsoTest {
                 "logout clears the partitioned cookie, which only a partitioned Set-Cookie can address");
     }
 
+    /** P4 T8: every response carries the framing policy, no MIME sniffing and a restrained referrer. */
+    @Test
+    void everyResponseCarriesTheSecurityHeaders() throws Exception {
+        SyncProperties polarion = new SyncProperties();
+        polarion.setBaseUrl("http://localhost/polarion");
+        FrameAncestorsFilter filter = new FrameAncestorsFilter(new AuthProperties(), polarion);
+        org.springframework.mock.web.MockHttpServletResponse response = new org.springframework.mock.web.MockHttpServletResponse();
+
+        filter.doFilter(new org.springframework.mock.web.MockHttpServletRequest("GET", "/api/v1/reports/x/files/html"), response,
+                new org.springframework.mock.web.MockFilterChain());
+
+        assertEquals("frame-ancestors 'self' http://localhost", response.getHeader("Content-Security-Policy"));
+        assertEquals("nosniff", response.getHeader("X-Content-Type-Options"));
+        assertEquals("strict-origin-when-cross-origin", response.getHeader("Referrer-Policy"));
+    }
+
     @Test
     void framingIsOnlyForUsAndPolarion() {
         assertEquals("frame-ancestors 'self' http://localhost", FrameAncestorsFilter.policy("", "http://localhost/polarion"));

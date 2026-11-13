@@ -37,6 +37,7 @@ Running the backend locally needs `POSTGRES_URL`, `POSTGRES_USER` and `POSTGRES_
 | `docs/` | `metamodel-and-views.md`: metamodel, field tables, view mapping, adding a view (T9) |
 | `docs/param-behavior.md` | P3 user guide (parametric view and solving, state machine / activity / use case, XMI) and the **three external limitations**: XMI round trips do not keep layers, solving needs an external back end, behaviour diagrams are not executed |
 | `docs/probes/` | P3 probes: A (sequence diagrams, No-Go) and B (geometry view, interview guide) |
+| `docs/security-review-p4.md` | Security review (P4 T8): every write endpoint and its permission check, findings and their status, the open read-access decision |
 | `docs/sirius-upgrade-2026.11.md` | Sirius Web 2026.11.0 upgrade rehearsal (P4 T7): Spring Boot 4.1.1, 70 compile errors in 9 adapter files, frontend unchanged; stay on 2025.8.11 for now |
 | `docs/monitoring.md` | Metrics (/actuator/prometheus with a token), alerts, caps on logs and reports, Polarion log retention advice (P4 T5) |
 | `docs/polarion-embedding.md` | Embedding SysArch in Polarion: the single sign-on extension (`polarion-sso/`), its installation, the SysArch settings and the embed page |

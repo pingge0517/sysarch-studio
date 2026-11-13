@@ -78,6 +78,13 @@ public class FrameAncestorsFilter extends OncePerRequestFilter {
         if (!response.containsHeader(HEADER)) {
             response.setHeader(HEADER, this.policy);
         }
+        // P4 T8 (security review): no MIME sniffing (reports and SVGs carry model text), no full URLs to other sites
+        if (!response.containsHeader("X-Content-Type-Options")) {
+            response.setHeader("X-Content-Type-Options", "nosniff");
+        }
+        if (!response.containsHeader("Referrer-Policy")) {
+            response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+        }
         chain.doFilter(request, response);
     }
 }
