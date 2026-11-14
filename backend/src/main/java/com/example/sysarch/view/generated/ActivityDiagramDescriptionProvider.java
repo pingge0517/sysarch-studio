@@ -17,6 +17,7 @@ public class ActivityDiagramDescriptionProvider implements IDiagramDescriptionPr
             .synchronizationKind(SynchronizationKind.AUTO)
             .refreshPolicy(RefreshPolicy.incremental(2000))
             .partitionSize(200)
+            .layoutDirection(LayoutDirection.RIGHT)
             .autoExpand("actions", 1)
             .addNode(NodeStyle.builder("action")
                 .appliesTo("sysarch::Action")

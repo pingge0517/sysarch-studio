@@ -91,6 +91,26 @@ class SequenceRendererTest {
         assertEquals(svg, this.renderer.svg(door()), "deterministic");
     }
 
+    /** Browser test 2026-11-14: a message to itself on the last lifeline had its label cut off by the frame. */
+    @Test
+    void aSelfMessageLabelStaysInsideTheFrame() {
+        Interaction interaction = F.createInteraction();
+        interaction.setName("短");
+        Lifeline a = lifeline("A", "驾驶员", null);
+        Lifeline b = lifeline("B", "门控", null);
+        interaction.getLifelines().addAll(java.util.List.of(a, b));
+        interaction.getMessages().add(message("M1", "请求开门", MessageKind.SYNC, a, b));
+        interaction.getMessages().add(message("M3", "自检并记录诊断结果", MessageKind.ASYNC, b, b));
+        String svg = this.renderer.svg(interaction);
+        java.util.regex.Matcher frame = java.util.regex.Pattern.compile("<rect x=\"(\\d+)\" y=\"\\d+\" width=\"(\\d+)\"").matcher(svg.substring(svg.indexOf("<rect x=")));
+        assertTrue(frame.find(), svg);
+        int frameRight = Integer.parseInt(frame.group(1)) + Integer.parseInt(frame.group(2));
+        java.util.regex.Matcher label = java.util.regex.Pattern.compile("<text x=\"(\\d+)\"[^>]*text-anchor=\"start\"[^>]*>2: 自检并记录诊断结果</text>").matcher(svg);
+        assertTrue(label.find(), svg);
+        int labelRight = Integer.parseInt(label.group(1)) + this.renderer.textWidth("2: 自检并记录诊断结果");
+        assertTrue(labelRight <= frameRight, "label ends at " + labelRight + ", frame at " + frameRight);
+    }
+
     @Test
     void thePngHasTheSameLayoutAndTextIsDrawn() throws Exception {
         byte[] png = this.renderer.png(door());

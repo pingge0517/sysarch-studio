@@ -15,6 +15,7 @@ representations:
       mode: "incremental"
       budgetMs: 2000
     partitionSize: 200
+    layoutDirection: "RIGHT"
     autoExpand:
       - feature: "states"
         maxDepth: 1

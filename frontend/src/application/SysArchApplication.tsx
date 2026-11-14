@@ -12,6 +12,8 @@ import 'react-resizable/css/styles.css';
 // not in the package's exports, so by path
 import '../../node_modules/@eclipse-sirius/sirius-components-portals/dist/sirius-components-portals.css';
 import { App } from '../App';
+import { diagramPanelActionExtensionPoint } from '@eclipse-sirius/sirius-components-diagrams';
+import { AutoArrange } from './AutoArrange';
 import { EllipseNodeConverter } from './EllipseNodeConverter';
 import { mergeComponents, mergeData } from './merge';
 import { SignInGate } from './SignInGate';
@@ -36,6 +38,9 @@ registry.addComponent(navigationBarRightContributionExtensionPoint, {
     </a>
   ),
 });
+
+// a new diagram is arranged once when it first opens (AutoArrange)
+registry.addComponent(diagramPanelActionExtensionPoint, { identifier: 'sysarch_auto_arrange', Component: AutoArrange });
 
 const mergeStrategy: ExtensionRegistryMergeStrategy = {
   mergeComponentExtensions: (_identifier, existing, added) => mergeComponents(existing, added),

@@ -467,6 +467,31 @@ class SiriusRenderingTest {
         return part;
     }
 
+    /** Display quality (2026-11-14): inputs start on the west side, outputs on the east, and a part with ports is wider. */
+    @Test
+    void inputPortsStartWestOutputsEast() {
+        Part ctrl = this.part("ctrl", this.engine);
+        Port in = this.port("rx", "CAN");
+        in.setDirection(com.example.sysarch.model.PortDirection.IN);
+        Port out = this.port("tx", "CAN");
+        out.setDirection(com.example.sysarch.model.PortDirection.OUT);
+        Port both = this.port("diag", "CAN");
+        both.setDirection(com.example.sysarch.model.PortDirection.INOUT);
+        ctrl.getPorts().addAll(List.of(in, out, both));
+        this.vehicle.getOwnedParts().add(ctrl);
+
+        Diagram diagram = this.render(this.ibd, this.vehicle, Optional.empty());
+
+        Node part = diagram.getNodes().get(0).getChildNodes().get(0);
+        java.util.Map<String, org.eclipse.sirius.components.diagrams.components.BorderNodePosition> sides = new java.util.HashMap<>();
+        part.getBorderNodes().forEach(port -> sides.put(port.getTargetObjectId(), port.getInitialBorderNodePosition()));
+        assertEquals(org.eclipse.sirius.components.diagrams.components.BorderNodePosition.WEST, sides.get(in.getId()));
+        assertEquals(org.eclipse.sirius.components.diagrams.components.BorderNodePosition.EAST, sides.get(out.getId()));
+        assertEquals(org.eclipse.sirius.components.diagrams.components.BorderNodePosition.EAST, sides.get(both.getId()));
+        assertEquals(3, part.getBorderNodes().size(), "every port drawn once");
+        assertEquals(SiriusDiagramDescriptionFactory.WIDTH_WITH_PORTS, part.getDefaultWidth());
+    }
+
     private Port port(String name, String interfaceType) {
         Port port = FACTORY.createPort();
         port.setId("PO-" + ++this.counter);

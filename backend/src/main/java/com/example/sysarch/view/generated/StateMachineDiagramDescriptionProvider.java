@@ -17,6 +17,7 @@ public class StateMachineDiagramDescriptionProvider implements IDiagramDescripti
             .synchronizationKind(SynchronizationKind.AUTO)
             .refreshPolicy(RefreshPolicy.incremental(2000))
             .partitionSize(200)
+            .layoutDirection(LayoutDirection.RIGHT)
             .autoExpand("states", 1)
             .addNode(NodeStyle.builder("state")
                 .appliesTo("sysarch::State")

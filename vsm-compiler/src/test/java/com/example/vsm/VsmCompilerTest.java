@@ -325,19 +325,19 @@ class VsmCompilerTest {
     @Test
     void aWhenMayOnlyNameAttributesOfItsClass() throws IOException {
         this.edit(STATE_MACHINE, "        when: \"isInitial\"", "        when: \"layer == 'SYSTEM' and source\"");
-        this.assertFails(STATE_MACHINE + ":31 invalid when \"layer == 'SYSTEM' and source\": 'source' is not allowed: it is not an attribute of the element");
+        this.assertFails(STATE_MACHINE + ":32 invalid when \"layer == 'SYSTEM' and source\": 'source' is not allowed: it is not an attribute of the element");
     }
 
     @Test
     void aWhenFlagMustBeBoolean() throws IOException {
         this.edit(STATE_MACHINE, "        when: \"isInitial\"", "        when: \"doBehavior\"");
-        this.assertFails(STATE_MACHINE + ":31 'doBehavior' is not boolean");
+        this.assertFails(STATE_MACHINE + ":32 'doBehavior' is not boolean");
     }
 
     @Test
     void anEdgeContainmentMustHoldTheEdge() throws IOException {
         this.edit(STATE_MACHINE, "        containmentFeature: \"transitions\"", "        containmentFeature: \"states\"");
-        this.assertFails(STATE_MACHINE + ":79 sysarch:Transition cannot be stored in sysarch:StateMachine.states");
+        this.assertFails(STATE_MACHINE + ":80 sysarch:Transition cannot be stored in sysarch:StateMachine.states");
     }
 
     // =========================================================== P1 T3: layer views, filters, defaults, templates
@@ -505,6 +505,18 @@ class VsmCompilerTest {
     @Test
     void diagramFieldsAreNotAllowedOnTables() throws IOException {
         this.edit(MATRIX, "    kind: \"table\"\n", "    kind: \"table\"\n    synchronization: \"auto\"\n");
+        this.assertFails(MATRIX + ":12 schema");
+    }
+
+    /** 2026-11-14 (display quality): the behaviour views declare the direction they are arranged in; tables cannot. */
+    @Test
+    void layoutDirectionIsADiagramField() throws IOException {
+        assertEquals(VsmCompiler.OK, this.compile(this.output("out")).exitCode());
+        for (String provider : List.of("StateMachine", "Activity", "UseCase")) {
+            assertTrue(Files.readString(this.output("out").resolve(provider + "DiagramDescriptionProvider.java")).contains(".layoutDirection(LayoutDirection.RIGHT)"), provider);
+        }
+        assertFalse(Files.readString(this.output("out").resolve("IbdDiagramDescriptionProvider.java")).contains("layoutDirection"), "verbatim views keep Sirius' default");
+        this.edit(MATRIX, "    kind: \"table\"\n", "    kind: \"table\"\n    layoutDirection: \"DOWN\"\n");
         this.assertFails(MATRIX + ":12 schema");
     }
 

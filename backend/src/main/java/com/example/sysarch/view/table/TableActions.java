@@ -97,6 +97,7 @@ public final class TableActions {
         }
         Resource resource = row.eResource() != null ? row.eResource() : column.eResource();
         resource.getContents().add(element);
+        com.example.sysarch.BusinessIds.assign(element); // browser test B2: AL-004, not the UUID
         return new Outcome(true, List.of());
     }
 

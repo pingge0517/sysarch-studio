@@ -169,6 +169,7 @@ final class ToolFactory {
             setName(child, layerViewName(container.get(), child, tool)); // P1 trial T9-03: "逻辑组件 4", not "part4"
             createType(container.get(), child, tool.defaults());
         }
+        com.example.sysarch.BusinessIds.assign(child); // browser test B2: PT-004, not the UUID
         return SiriusDiagramDescriptionFactory.semanticChange();
     }
 
@@ -187,6 +188,7 @@ final class ToolFactory {
         var contents = anchor.get().eResource().getContents();
         setName(element, defaultName(type, (int) contents.stream().filter(type::isInstance).count() + 1));
         contents.add(element);
+        com.example.sysarch.BusinessIds.assign(element);
         return SiriusDiagramDescriptionFactory.semanticChange();
     }
 
@@ -209,6 +211,7 @@ final class ToolFactory {
         applyDefaults(type, defaults);
         setName(type, name(element));
         container.eResource().getContents().add(type);
+        com.example.sysarch.BusinessIds.assign(type);
         element.eSet(typedBy, type);
     }
 
@@ -281,10 +284,12 @@ final class ToolFactory {
             @SuppressWarnings("unchecked")
             List<EObject> contents = (List<EObject>) root.get().eGet(containment);
             contents.add(connection);
+            com.example.sysarch.BusinessIds.assign(connection);
             return SiriusDiagramDescriptionFactory.semanticChange();
         }
         // Connections have no container in the metamodel: they live at the top of the document of the ports.
         from.get().eResource().getContents().add(connection);
+        com.example.sysarch.BusinessIds.assign(connection);
         return SiriusDiagramDescriptionFactory.semanticChange();
     }
 

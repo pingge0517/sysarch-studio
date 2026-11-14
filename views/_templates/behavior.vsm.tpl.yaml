@@ -15,6 +15,7 @@ representations:
       mode: "incremental"
       budgetMs: 2000
     partitionSize: ${partitionSize}
+    layoutDirection: "RIGHT"
     autoExpand:
       - feature: "${nodesFeature}"
         maxDepth: 1

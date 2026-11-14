@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
+import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
@@ -160,7 +161,20 @@ public final class SiriusDiagramDescriptionFactory {
                 .edgeDescriptions(edgeDescriptions)
                 .dropHandler(vm -> new Failure("此图不支持拖放"))
                 .iconURLsProvider(vm -> List.of())
+                // 2026-11-14 (display quality): Sirius' arrange-all (ELK layered) runs in the view's direction; the single
+                // interface also runs it once on a new diagram (frontend AutoArrange)
+                .arrangeLayoutDirection(arrangeDirection(source.layoutDirection()))
                 .build();
+    }
+
+    static org.eclipse.sirius.components.diagrams.ArrangeLayoutDirection arrangeDirection(com.example.sysarch.view.api.LayoutDirection direction) {
+        if (direction == null) {
+            // no direction in the YAML (the verbatim spec views cannot carry one): left to right, the reading direction of
+            // flows, connections and transitions. With inputs on the west and outputs on the east of every block
+            // (borderPositions), ELK lays IBDs and parametric diagrams out along the data flow; before that split it did not.
+            return org.eclipse.sirius.components.diagrams.ArrangeLayoutDirection.RIGHT;
+        }
+        return org.eclipse.sirius.components.diagrams.ArrangeLayoutDirection.valueOf(direction.name());
     }
 
     /** P3 (spec §9): "（分区 2/5：第 201–400 个…）" after the frame's name when a large diagram shows one partition. */
@@ -171,6 +185,15 @@ public final class SiriusDiagramDescriptionFactory {
     }
 
     // ---- Nodes ----
+
+    /** Default height for an inside label of this text: 22 px a line plus padding, at least Sirius' 70. */
+    static int heightFor(String label) {
+        int lines = label == null || label.isEmpty() ? 1 : (int) label.lines().count();
+        return Math.max(70, lines * 22 + 30);
+    }
+
+    /** Default width of a node that carries ports or parameters on its border (Sirius' default: 150). */
+    static final int WIDTH_WITH_PORTS = 220;
 
     private NodeDescription nodeDescription(DiagramDescription source, String id, NodeStyle style, SynchronizationPolicy policy,
             Function<VariableManager, List<?>> semanticElements, List<NodeDescription> borders) {
@@ -185,18 +208,29 @@ public final class SiriusDiagramDescriptionFactory {
                 .borderNodeDescriptions(borders)
                 .deleteHandler(this::deleteElement)
                 .labelEditHandler(this::rename)
-                .initialChildBorderNodePositions(Map.of());
+                .initialChildBorderNodePositions(borderPositions(borders));
         if (style.width() != null) {
             builder.defaultWidthProvider(vm -> style.width());
+        } else if (!borders.isEmpty()) {
+            // 2026-11-14 (display quality): ports and parameters sit on the east border with their label centred below them,
+            // so half the label lies inside the owner; a wider default keeps the owner's centred text clear of it
+            // (parametric blocks, IBD parts). Sirius' own default is 150.
+            builder.defaultWidthProvider(vm -> WIDTH_WITH_PORTS);
         }
         if (style.height() != null) {
             builder.defaultHeightProvider(vm -> style.height());
+        } else if (style.labelPosition() != LabelPosition.OUTSIDE) {
+            // 2026-11-14 (display quality): tall enough for the label, its sub-label and every compartment line (a
+            // parametric block lists its parameters); Sirius' default (70) let the last lines run below the border
+            builder.defaultHeightProvider(vm -> heightFor(this.labelText(source, vm)));
         }
         LabelStyleDescription labelStyle = labelStyle(style.headerBold(), style.italic());
         if (style.labelPosition() == LabelPosition.OUTSIDE) {
             builder.outsideLabelDescriptions(List.of(OutsideLabelDescription.newOutsideLabelDescription(id + "/label")
                     .textProvider(vm -> this.labelText(source, vm))
                     .styleDescriptionProvider(vm -> labelStyle)
+                    // only BOTTOM_MIDDLE: Sirius 2025.8's frontend draws no outside label at BOTTOM_BEGIN / BOTTOM_END (tried for
+                    // ports on 2026-11-14: the labels disappeared)
                     .outsideLabelLocation(OutsideLabelLocation.BOTTOM_MIDDLE)
                     .overflowStrategy(LabelOverflowStrategy.NONE)
                     .textAlign(LabelTextAlign.CENTER)
@@ -224,7 +258,7 @@ public final class SiriusDiagramDescriptionFactory {
                 .borderNodeDescriptions(borders)
                 .deleteHandler(vm -> new Failure("不能在图中删除图的根元素"))
                 .labelEditHandler(this::rename)
-                .initialChildBorderNodePositions(Map.of())
+                .initialChildBorderNodePositions(borderPositions(borders))
                 .build();
     }
 
@@ -239,6 +273,19 @@ public final class SiriusDiagramDescriptionFactory {
             if (onContainer || styleType.getEStructuralFeature(style.affiliationFeature()) instanceof EReference affiliation
                     && affiliation.getEReferenceType().isSuperTypeOf(parentType)) {
                 String id = diagramId + "/node/" + parentStyleId + "/border/" + style.id();
+                if (styleType.getEStructuralFeature(DIRECTION) instanceof EAttribute) {
+                    // 2026-11-14 (display quality): inputs on the west side, outputs (and INOUT) on the east, so a connection or
+                    // binding runs from one block's east side to the next one's west side instead of around the blocks. IN gets
+                    // its own description (placed WEST by the parent); the others keep the old id, so their saved layout stays.
+                    String inId = diagramId + "/node/" + parentStyleId + "/border-in/" + style.id();
+                    NodeDescription in = this.nodeDescription(source, inId, style, policy, vm -> this.borderElements(source, vm, style, true), List.of());
+                    NodeDescription rest = this.nodeDescription(source, id, style, policy, vm -> this.borderElements(source, vm, style, false), List.of());
+                    result.add(in);
+                    result.add(rest);
+                    all.add(in);
+                    all.add(rest);
+                    continue;
+                }
                 NodeDescription description = this.nodeDescription(source, id, style, policy,
                         vm -> selfElement(vm).map(parent -> this.elements(source, vm, style.id(), DiagramProjector.elementId(parent))).orElse(List.of()), List.of());
                 result.add(description);
@@ -246,6 +293,28 @@ public final class SiriusDiagramDescriptionFactory {
             }
         }
         return result;
+    }
+
+    private static final String DIRECTION = "direction";
+
+    /** Border elements of one style under the current parent: the inputs, or all the others. */
+    private List<EObject> borderElements(DiagramDescription source, VariableManager vm, NodeStyle style, boolean inputs) {
+        return selfElement(vm).map(parent -> this.elements(source, vm, style.id(), DiagramProjector.elementId(parent))).orElse(List.of()).stream()
+                .filter(element -> isInput(element) == inputs).toList();
+    }
+
+    static boolean isInput(EObject element) {
+        return element.eClass().getEStructuralFeature(DIRECTION) instanceof EAttribute direction && "IN".equals(String.valueOf(element.eGet(direction)));
+    }
+
+    /** Where a parent puts its border nodes when they are first drawn: inputs WEST, everything else EAST. */
+    static Map<String, org.eclipse.sirius.components.diagrams.components.BorderNodePosition> borderPositions(List<NodeDescription> borders) {
+        Map<String, org.eclipse.sirius.components.diagrams.components.BorderNodePosition> positions = new HashMap<>();
+        for (NodeDescription border : borders) {
+            positions.put(border.getId(), border.getId().contains("/border-in/") ? org.eclipse.sirius.components.diagrams.components.BorderNodePosition.WEST
+                    : org.eclipse.sirius.components.diagrams.components.BorderNodePosition.EAST);
+        }
+        return positions;
     }
 
     /** Projected elements of one style under one parent ({@code parentId} null: top level). */

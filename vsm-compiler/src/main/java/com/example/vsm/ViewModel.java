@@ -22,7 +22,7 @@ public final class ViewModel {
 
     public record Diagram(String sourceFile, String className, String id, String label, String domainType, String synchronization,
             Integer refreshBudgetMs, List<AutoExpand> autoExpands, List<Filter> filters, List<Node> nodes, List<Edge> edges,
-            List<Tool> tools, Integer partitionSize) {
+            List<Tool> tools, Integer partitionSize, String layoutDirection) {
     }
 
     public record AutoExpand(String feature, int maxDepth) {
@@ -146,7 +146,7 @@ public final class ViewModel {
                 r.items("filters").stream().map(f -> new Filter(f.text("id"), f.text("label"), f.text("expression"), layerScope(f.text("expression")))).toList(),
                 java.util.stream.Stream.concat(r.items("nodeStyles").stream(), r.items("nodeStylesExtra").stream()).map(ViewModel::node).toList(), // P3 T3
                 r.items("edgeStyles").stream().map(ViewModel::edge).toList(),
-                r.items("tools").stream().map(ViewModel::tool).toList(), r.integer("partitionSize"));
+                r.items("tools").stream().map(ViewModel::tool).toList(), r.integer("partitionSize"), r.text("layoutDirection"));
     }
 
     private static Node node(YamlNode n) {

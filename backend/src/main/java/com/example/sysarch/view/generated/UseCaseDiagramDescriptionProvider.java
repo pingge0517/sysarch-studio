@@ -17,6 +17,7 @@ public class UseCaseDiagramDescriptionProvider implements IDiagramDescriptionPro
             .synchronizationKind(SynchronizationKind.AUTO)
             .refreshPolicy(RefreshPolicy.incremental(2000))
             .partitionSize(200)
+            .layoutDirection(LayoutDirection.RIGHT)
             .autoExpand("actors", 1)
             .addNode(NodeStyle.builder("useCase")
                 .appliesTo("sysarch::UseCase")

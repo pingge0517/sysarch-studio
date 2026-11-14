@@ -25,6 +25,9 @@ public class ${d.className()} implements IDiagramDescriptionProvider {
 <#if d.partitionSize()??>
             .partitionSize(${d.partitionSize()})
 </#if>
+<#if d.layoutDirection()??>
+            .layoutDirection(LayoutDirection.${d.layoutDirection()})
+</#if>
 <#list d.autoExpands() as a>
             .autoExpand(${q(a.feature())}, ${a.maxDepth()})
 </#list>

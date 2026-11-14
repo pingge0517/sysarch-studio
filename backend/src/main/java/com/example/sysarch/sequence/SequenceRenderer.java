@@ -111,6 +111,11 @@ public final class SequenceRenderer {
     record Row(int index, String label, MessageKind kind, int from, int to, int y) {
     }
 
+    /** The width the layout reserves for a text (the same font metrics). */
+    int textWidth(String text) {
+        return new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB).createGraphics().getFontMetrics(this.font).stringWidth(text);
+    }
+
     record Layout(String title, List<Column> columns, List<Row> rows, List<String> notDrawn, int[] columnWidths, int width, int height, int bottom) {
     }
 
@@ -140,7 +145,10 @@ public final class SequenceRenderer {
                 continue;
             }
             rows.add(new Row(number, label, message.getKind(), from, to, FIRST_ROW + rows.size() * ROW));
-            int labelRight = Math.min(columns.get(from).x(), columns.get(to).x()) + metrics.stringWidth(label) + 20;
+            // a message to itself draws its label right of its loop (x + 41, see draw); it was measured from the lifeline,
+            // so a long self-message label ran past the frame (browser test 2026-11-14)
+            int labelLeft = from == to ? columns.get(from).x() + 41 : Math.min(columns.get(from).x(), columns.get(to).x());
+            int labelRight = labelLeft + metrics.stringWidth(label) + 20;
             x = Math.max(x, labelRight);
         }
         int bottom = FIRST_ROW + Math.max(1, rows.size()) * ROW;
