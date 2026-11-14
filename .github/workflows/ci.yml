@@ -27,7 +27,7 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
 
       # P2 T5: report PDFs embed a CJK TrueType font (sysarch.report.fonts); Droid Sans Fallback is one on Ubuntu.
       - name: CJK font for report PDFs
@@ -101,7 +101,7 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
