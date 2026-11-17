@@ -12,6 +12,15 @@
   background: var(--paper);
 }
 
+.sync-page { overflow: auto; height: 100%; }
+.sync-page .panel { margin-bottom: 16px; }
+.sync-page .row { margin: 12px 0; }
+.sync-page .sync-table { max-height: 360px; overflow: auto; }
+.sync-page .sync-table input[type='checkbox'] { min-width: 0; }
+.sync-confirm { background: var(--wash); padding: 12px; }
+.sync-confirm button { margin-right: 12px; }
+.sync-issue { border-top: 1px solid var(--line); padding: 8px 0; }
+
 * {
   box-sizing: border-box;
 }

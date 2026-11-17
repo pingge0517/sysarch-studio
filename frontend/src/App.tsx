@@ -17,6 +17,7 @@ import { effectiveProject, trunks } from './branch/workspaces';
 import { ReportsPage } from './report/ReportsPage';
 import { ImportPage } from './sysmlimport/ImportPage';
 import { SequencePage } from './sequence/SequencePage';
+import { SyncPage } from './sync/SyncPage';
 
 // The diagrams are edited in Sirius Web's own application, which since P4 T3 hosts this shell as its route /sysarch
 // (application/SysArchApplication.tsx): one application, one origin. The header links back to the models.
@@ -49,7 +50,7 @@ export function App() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
   const [table, setTable] = useState(param('table') || 'allocation-matrix');
-  const [view, setView] = useState(['baselines', 'locks', 'branches', 'reports', 'sequence', 'import', 'comments', 'admin'].includes(param('view')) ? param('view') : 'matrix');
+  const [view, setView] = useState(['baselines', 'locks', 'branches', 'reports', 'sequence', 'import', 'comments', 'admin', 'sync'].includes(param('view')) ? param('view') : 'matrix');
   const [me, setMe] = useState<Me | null>(null);
   const [grant, setGrant] = useState<AccessGrant | null>(null);
   const user = me?.user ?? '';
@@ -222,6 +223,7 @@ export function App() {
             <option value="locks">编辑锁</option>
             <option value="branches">分支</option>
             <option value="reports">报告</option>
+            <option value="sync">Polarion 同步</option>
             <option value="sequence">时序图（只读）</option>
             <option value="import">导入（SysML v2 / XMI）</option>
             <option value="comments">评论</option>
@@ -281,6 +283,7 @@ export function App() {
         {project && view === 'baselines' && <BaselinePage project={workspace} />}
         {project && view === 'locks' && <LocksPage project={workspace} user={user} />}
         {project && view === 'reports' && <ReportsPage project={workspace} />}
+        {project && view === 'sync' && <SyncPage key={`${workspace}:${user}`} project={workspace} user={user} grant={grant} />}
         {project && view === 'sequence' && <SequencePage project={workspace} />}
         {project && view === 'comments' && <CommentsPage project={workspace} grant={grant} />}
         {view === 'admin' && <AdminPage project={project ? workspace : ''} />}

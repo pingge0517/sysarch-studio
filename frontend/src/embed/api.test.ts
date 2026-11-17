@@ -28,6 +28,9 @@ describe('embedding in Polarion', () => {
     const matrix = all.find((l) => l.label === '分配矩阵')!;
     expect(new URLSearchParams(matrix.href.slice(2)).get('embed')).toBe('1');
     expect(new URLSearchParams(matrix.href.slice(2)).get('project')).toBe('p-1');
+    const sync = all.find((l) => l.label === 'Polarion 同步')!;
+    expect(new URLSearchParams(sync.href.slice(2)).get('view')).toBe('sync');
+    expect(new URLSearchParams(sync.href.slice(2)).get('polarionProject')).toBe('sysarch');
   });
 
   it('without a bound element offers the model only', () => {

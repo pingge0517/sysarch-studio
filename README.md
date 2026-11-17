@@ -39,12 +39,17 @@ Running the backend locally needs `POSTGRES_URL`, `POSTGRES_USER` and `POSTGRES_
 | `docs/probes/` | P3 probes: A (sequence diagrams, No-Go) and B (geometry view, interview guide) |
 | `docs/p4-pilot-report.md` | P4 pilot report (template, filled in during the 4-week pilot): preparation, coverage, issues by week, operations, release checks |
 | `docs/e2e-test-report.md` | End-to-end test of every implemented feature (P0-P4) on one instance in production configuration: 95 API + 26 UI checks, regression, multi-user load; 3 defects found and fixed |
-| `docs/security-review-p4.md` | Security review (P4 T8): every write endpoint and its permission check, findings and their status, the open read-access decision |
+| `docs/security-review-p4.md` | Security review: write permissions, project-scoped REST/GraphQL/WebSocket reads, findings and deployment boundaries |
 | `docs/sirius-upgrade-2026.11.md` | Sirius Web 2026.11.0 upgrade rehearsal (P4 T7): Spring Boot 4.1.1, 70 compile errors in 9 adapter files, frontend unchanged; stay on 2025.8.11 for now |
 | `docs/monitoring.md` | Metrics (/actuator/prometheus with a token), alerts, caps on logs and reports, Polarion log retention advice (P4 T5) |
 | `docs/polarion-embedding.md` | Embedding SysArch in Polarion: the single sign-on extension (`polarion-sso/`), its installation, the SysArch settings and the embed page |
 | `solver/` | The spec's solver script (verbatim), the remote solver service and its Dockerfile (P3) |
 | `.github/workflows/ci.yml` | CI: tests, VSM determinism (sha256), refresh perf threshold (T9) |
+
+The **Polarion 同步** view under **SysArch 表格与报告** now provides element selection, push preflight and confirmation,
+pull, Work Item binding/unbinding, and online consistency checks with per-issue repairs. SSO users authorize API access
+with their own PAT, held only in the current page's memory. Branches must be merged before syncing. See
+`docs/layers-and-trace.md` §3.3 for the workflow and its authentication boundaries.
 
 ## Demo data
 

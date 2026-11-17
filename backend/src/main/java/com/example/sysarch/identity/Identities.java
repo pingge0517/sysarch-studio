@@ -86,6 +86,36 @@ public class Identities {
         return this.properties;
     }
 
+    /** WebSocket messages have handshake headers rather than a servlet request; apply the same identity rules. */
+    public Optional<Principal> resolveHeaders(org.springframework.http.HttpHeaders headers) {
+        java.util.function.Function<String, String> cookieValue = name -> {
+            for (String line : headers.getOrEmpty("Cookie")) {
+                for (String entry : line.split(";")) {
+                    int equals = entry.indexOf('=');
+                    if (equals > 0 && entry.substring(0, equals).trim().equals(name)) return entry.substring(equals + 1).trim();
+                }
+            }
+            return null;
+        };
+        Optional<Principal> session = this.cookies.read(cookieValue.apply(SessionCookies.COOKIE));
+        if (session.isPresent()) return session;
+        PolarionToken token = PolarionToken.fromAuthorizationHeader(headers.getFirst("Authorization"));
+        if (token != null) {
+            try { return this.fromToken(token); } catch (RuntimeException e) { return Optional.empty(); }
+        }
+        if (this.properties.dev()) {
+            String name = CurrentUser.clean(headers.getFirst(CurrentUser.HEADER));
+            String roles = headers.getFirst(ROLES_HEADER);
+            if (name != null) return Optional.of(Principal.dev(name, roles == null ? List.of() : Arrays.asList(roles.split(","))));
+            String typed = cookieValue.apply(CurrentUser.COOKIE);
+            if (typed != null) {
+                name = CurrentUser.clean(URLDecoder.decode(typed, StandardCharsets.UTF_8));
+                if (name != null) return Optional.of(Principal.dev(name, List.of()));
+            }
+        }
+        return Optional.empty();
+    }
+
     /** The request's principal, empty for an anonymous request. */
     public Optional<Principal> resolve(HttpServletRequest request) {
         Optional<Principal> session = this.cookies.read(cookie(request, SessionCookies.COOKIE));

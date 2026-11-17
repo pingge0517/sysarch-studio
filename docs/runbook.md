@@ -45,11 +45,26 @@ P2 只跑一个 backend 实例：编辑会话的开启在 JVM 内串行（见 CL
 
 见 CLAUDE.md"Running locally without Docker"：PostgreSQL 16 作为系统服务，`java -jar backend-*.jar`，环境变量从 `.env` 来。
 
+本机 2026-11-17 部署记录见 `docs/e2e-test-report.md` §11。本次新增的本机脚本均从 `.env` 读取密钥，不把密钥写进命令参数：
+
+- `tools/prepare-local-deployment.mjs`：复制候选包／前端、归档当前 Git 提交、备份数据库，生成部署清单；首次使用后需限制部署目录 ACL，并构建回滚包。
+- `tools/start-local-backend.mjs <部署目录> candidate|rollback`：核对 JAR 校验和后启动后台进程。必须先确认旧实例已停止，避免两个实例共用数据库。当前本机配置关闭定时拉取，开启真实 Polarion 身份验证及项目隔离。
+- `tests/e2e/deployed-smoke.mjs <部署目录>`：真实管理员联调，只创建唯一编号的临时数据，并按记录的精确 ID 清理。`--verify-cleanup` 只读复核清理结果。
+- `tools/checkpoint-local-deployment.mjs <部署目录>`：验证完成后再保存一份最新数据库备份及校验和。
+
+部署目录包含数据库备份和运行密钥，保持管理员限制访问，不加入版本库。回滚包对应准备时的 Git 提交；部署清单不替代版本发布记录。当前是本机后台进程部署，未新建 Windows 自动启动服务或 Kubernetes release。
+
 ### 2.3 身份与权限
 
 - **生产只用 `SYSARCH_AUTH_MODE=polarion`（默认）。** 用户粘贴自己的 Polarion 个人访问令牌，后端向 Polarion 查令牌主人和他的角色，签发 8 小时的 HttpOnly cookie。令牌用完即丢，服务端和 cookie 里都不保存。`dev` 模式按名字登录，只用于本机测试和压测。**读取同样需要登录**（P4 T8）：Polarion 模式下，未登录访问 `/api/**` 和 `/subscriptions` 返回 401（登录接口、Polarion webhook、图标和 `/actuator` 除外），界面先显示登录页；`SYSARCH_ANONYMOUS_READ=true` 恢复匿名读取，只应在可信网络中使用。
 - 工具角色由表 `role_mapping` 决定，不写在代码里。初始行：Polarion 全局 `admin` 和项目 `project_admin` 对应项目管理员，`project_user` 对应架构师，`project_reviewer` 对应评审人，`project_observer` 对应观察者；未绑定 Polarion 的项目里，所有已登录用户都是架构师；其余情况为观察者。管理员在外壳的"角色与审计"页或 `/api/v1/role-mappings` 修改，每次修改都记审计。
 - 用户在 Polarion 里的角色变了，要重新登录才生效（cookie 里带的是登录时的角色）。映射表的修改立即生效。
+
+**项目读取隔离（2026-11-16）**：绑定 Polarion 的模型只允许该 Polarion 项目中有角色的成员读取，或由 `role_mapping` 中命名的全局角色（`global:<id>`）显式授权。默认的 `* / * → OBSERVER` 不再赋予跨项目可见性；观察者只是在已获准进入项目后拥有只读能力。分支继承主干可见性。项目列表、绑定列表和分支列表过滤不可见项目；矩阵、追溯、导出、基线对比、报告下载和原生 Sirius 下载均检查项目范围，GraphQL 的直接查询和 WebSocket 订阅也受检查。
+
+未绑定模型仍按显式的 `(unbound)` 映射共享：初始 `(unbound) / * → ARCHITECT` 允许所有已登录用户访问这一共享区；若部署不需要共享区，移除此行并使用命名的全局角色授权。`SYSARCH_ANONYMOUS_READ=true` 是旧匿名模式的显式退出开关，会放开匿名读取；正式隔离部署保持该变量不设置。导入任务的诊断只允许提交者和全局管理员读取。
+
+权限来自登录时保存的 Polarion 项目角色，粒度为整个模型项目，不替代 Polarion 单个工作项的字段级或对象级权限。新增项目绑定或修改 Polarion 成员角色后，请重新登录。订阅会在每条事件发出前重新检查会话有效性和当前工具映射；工具映射变更即时生效，Polarion 成员变更仍以重新登录后的角色为准。
 
 ## 3. 备份
 

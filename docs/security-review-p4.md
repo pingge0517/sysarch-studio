@@ -47,6 +47,12 @@
 
 ## 3. F4：读取不需要登录（已按方案 1 修复）
 
+**后续补齐（2026-11-16）**：原先只做登录检查的范围已扩展到项目级读取隔离。实现为 `access.ProjectReadAccess`（成员与显式授权判断）、`ProjectReadWeb`（REST 路由、请求体与列表）、`identity.GraphQLReadInstrumentation`（解析后字段参数、项目列表与订阅事件），通过 `GraphQLReadConfiguration` 追加到 Sirius 的 GraphQL bean；不修改上游代码。
+
+绑定项目的默认观察者角色不再构成成员证明。项目别名、编辑上下文、报告任务、基线及分支都解析到实际项目后检查；跨项目基线对比要求两端均可读。GraphQL 使用运行时已解析参数，因此别名、片段和内联参数不绕过检查；WebSocket 从验证过的握手 Cookie/PAT 获取身份，每个订阅事件重新鉴权。请求的身份优先于任何 WebSocket 线程残留身份，单次身份交接在 GraphQL 执行前即清除。
+
+未绑定模型保持已有 `(unbound)` 显式共享策略，匿名读取开关也保持原有部署语义；这些不是私有项目区。部署边界和成员角色生效时间见 `runbook.md` §2.3。原生项目分页沿用上游游标，过滤后每页可能少于请求数量；未授权的项目节点不返回。
+
 **实现**（`identity.ReadAccessFilter`）：Polarion 模式下，未登录访问 `/api/**` 和 GraphQL 订阅 `/subscriptions` 返回 401（JSON，提示登录方式）。例外：登录接口 `/api/v1/auth/**`、Polarion webhook（有签名校验）、Sirius 的图标 `/api/images/**`、CORS 预检；`/actuator` 不在 `/api` 下（健康检查开放，指标需要令牌）。静态页面本身不含模型数据：应用加载前先问 `/api/v1/auth/me`，未登录就显示登录页（`SignInGate`），从 Polarion 页面或工作项面板进入时经单点登录自动登录。开关 `SYSARCH_ANONYMOUS_READ`：不设置时 Polarion 模式关闭匿名读取，dev 模式开启（本机测试和压测脚本不受影响）；设为 `true` 恢复原来的行为。
 
 **实测**（Polarion 模式，本机 Polarion 2512）：未登录时 GraphQL 401、SysML 导出 401、WebSocket 握手 401；健康检查 200、图标 200、未签名的 webhook 400（签名校验照旧）；带 Polarion 令牌（Bearer）GraphQL 200；浏览器未登录打开 `/projects` 显示登录页而不是 Sirius 的应用，经 `/polarion/sysarch-sso/start?return=/projects` 自动登录后显示项目列表和导航链接。

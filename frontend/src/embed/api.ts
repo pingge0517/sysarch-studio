@@ -55,5 +55,6 @@ export function links(target: EmbedTarget, sirius: (path: string) => string = si
   result.push({ label: '需求追踪', href: shell('matrix', { table: 'requirement-trace' }) });
   result.push({ label: '基线与差异', href: shell('baselines') });
   result.push({ label: '报告', href: shell('reports') });
+  result.push({ label: 'Polarion 同步', href: shell('sync') });
   return result;
 }
