@@ -4,6 +4,7 @@ import { App } from './App';
 import { EmbedPage } from './embed/EmbedPage';
 import { embedParams } from './embed/api';
 import './styles.css';
+import { ModelStorePage } from './modelstore/ModelStorePage';
 
 // loaded only outside embed mode: the Polarion embed page does not need Sirius' application (about 4.5 MB)
 const SysArchApplication = lazy(() => import('./application/SysArchApplication').then((m) => ({ default: m.SysArchApplication })));
@@ -19,6 +20,7 @@ if (embed) {
 }
 
 createRoot(document.getElementById('root')!).render(
+  window.location.pathname === '/polarion-models' ? <StrictMode><main className="content"><ModelStorePage /></main></StrictMode> :
   embed ? <StrictMode>{search.has('view') ? <App /> : <EmbedPage params={embed} />}</StrictMode> : (
     <Suspense fallback={null}>
       <SysArchApplication />

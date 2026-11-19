@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "1.0",
+  "installationMode": "diff-only",
+  "common": {"sysarchManaged": "boolean", "sysarchSchemaVersion": "string", "sysarchModelUuid": "string"},
+  "types": {
+    "sysarchModel": {
+      "sysarchHeadVersion": "integer", "sysarchHeadCommitId": "string",
+      "sysarchHeadManifestAttachment": "string", "sysarchHeadManifestHash": "string", "sysarchHeadManifestBytes": "integer"
+    },
+    "sysarchElement": {"sysarchElementUuid": "string", "sysarchElementKind": "string", "sysarchPayload": "text"},
+    "sysarchRelation": {"sysarchElementUuid": "string", "sysarchElementKind": "string", "sysarchPayload": "text"},
+    "sysarchDiagram": {"sysarchElementUuid": "string", "sysarchElementKind": "string", "sysarchPayload": "text"},
+    "sysarchCommit": {"sysarchCommitId": "string", "sysarchCommandId": "string", "sysarchRequestHash": "string", "sysarchManifestHash": "string"},
+    "sysarchBaseline": {"sysarchBaselineUuid": "string", "sysarchCommitId": "string"}
+  },
+  "requirements": {
+    "uniformManagedModelReadBoundary": true,
+    "externalRequirementBodiesInSnapshot": false,
+    "publishedCommitMutation": "denied",
+    "nativeManagedFieldEdit": "blocked-or-drift-detected",
+    "missingSchemaIsNotEmptyModel": true
+  }
+}

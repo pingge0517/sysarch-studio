@@ -12,6 +12,7 @@ const COLUMN_HEADER_HEIGHT = 150;
 
 interface Props {
   matrix: Matrix;
+  readOnly?: boolean;
   /** Runs an action on a cell; resolves to the refusal reasons (empty when it was applied). */
   onAction: (option: CellOption, cell: Cell) => Promise<ValidationError[]>;
 }
@@ -28,7 +29,7 @@ interface Menu {
  * click a cell to create or remove a link. Only the visible part of the grid is in the DOM (T4 step 4), so a 50 × 50
  * matrix renders a few hundred cells, not 2500.
  */
-export function MatrixView({ matrix, onAction }: Props) {
+export function MatrixView({ matrix, onAction, readOnly = false }: Props) {
   const body = useRef<HTMLDivElement>(null);
   const [scroll, setScroll] = useState({ left: 0, top: 0 });
   const [viewport, setViewport] = useState({ width: 800, height: 500 });
@@ -96,6 +97,7 @@ export function MatrixView({ matrix, onAction }: Props) {
         <button
           key={key}
           type="button"
+          disabled={readOnly}
           className={`cell${isMarked ? ' marked' : ''}${crosshair ? ' crosshair' : ''}${busy === key ? ' busy' : ''}`}
           style={{ left: c * COLUMN_WIDTH, top: r * ROW_HEIGHT, width: COLUMN_WIDTH, height: ROW_HEIGHT, color: matrix.markColor ?? undefined }}
           title={`${row.label} → ${column.label}`}

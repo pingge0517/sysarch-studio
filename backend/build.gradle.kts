@@ -193,3 +193,13 @@ tasks.named<ProcessResources>("processResources") {
         into("solver")
     }
 }
+
+// Explicit live acceptance only; ordinary check/test never creates remote fixtures.
+tasks.register<JavaExec>("polarionLiveReadAcceptance") {
+    group = "verification"
+    description = "Reconstructs disposable models on the dedicated localhost Polarion test projects and cleans them up."
+    dependsOn(tasks.named("testClasses"))
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("com.example.sysarch.storage.polarion.PolarionLiveReadAcceptance")
+    workingDir(rootProject.projectDir)
+}

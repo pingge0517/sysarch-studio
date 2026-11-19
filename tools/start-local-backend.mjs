@@ -11,7 +11,9 @@ const mode = process.argv[3] ?? 'candidate';
 if (!dir.startsWith(resolve('build/deployments') + sep) || !['candidate', 'rollback'].includes(mode)) throw new Error('Invalid deployment directory or mode');
 const manifestPath = resolve(dir, 'manifest.json');
 const manifest = JSON.parse(readFileSync(manifestPath, 'utf8').replace(/^\uFEFF/, ''));
-const jar = resolve(dir, mode + '.jar');
+const filename = mode === 'candidate' ? (manifest.candidateFile ?? 'candidate.jar') : 'rollback.jar';
+if (!/^[A-Za-z0-9._-]+\.jar$/.test(filename)) throw new Error('Invalid reviewed artifact filename');
+const jar = resolve(dir, filename);
 const expected = mode === 'candidate' ? manifest.candidateSha256 : manifest.rollbackSha256;
 if (!expected || createHash('sha256').update(readFileSync(jar)).digest('hex') !== expected) throw new Error('JAR hash differs from deployment manifest');
 const config = readLocalEnv();
@@ -29,6 +31,7 @@ const env = { ...process.env, ...config,
   SYSARCH_SESSION_SECRET: config.SYSARCH_SESSION_SECRET || secrets.sessionSecret,
   SYSARCH_METRICS_TOKEN: config.SYSARCH_METRICS_TOKEN || secrets.metricsToken,
   SYSARCH_SCHEDULED_PULL: 'false',
+  SYSARCH_POLARION_STORE_ENABLED: mode === 'candidate' && manifest.modelStoreReadEnabled === true ? 'true' : 'false',
   SYSARCH_REPORT_DIR: config.SYSARCH_REPORT_DIR || resolve('data/reports'),
 };
 const python = 'C:/SysArchSolver/python/python.exe';

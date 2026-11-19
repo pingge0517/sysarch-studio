@@ -14,6 +14,10 @@ const run = (exe, args, env = process.env) => {
   if (result.status !== 0 || result.error) throw new Error(`${exe} failed: ${result.error?.message ?? result.stderr}`);
   return result.stdout?.trim();
 };
+// Restrict the directory before writing database backups or later runtime secrets.
+const sid=run('whoami.exe',['/user','/fo','csv','/nh']).match(/S-1-\d+(?:-\d+)+/)?.[0];
+if(!sid) throw new Error('Could not resolve deployment owner');
+run('icacls.exe',[dir,'/inheritance:r','/grant:r',`*${sid}:(OI)(CI)F`,'*S-1-5-18:(OI)(CI)F','*S-1-5-32-544:(OI)(CI)F']);
 cpSync('backend/build/libs/backend-0.1.0-SNAPSHOT.jar', resolve(dir, 'candidate.jar'));
 cpSync('frontend/dist', resolve(dir, 'frontend-dist'), { recursive: true });
 run('git', ['archive', '--format=zip', '--output', resolve(dir, 'rollback-source.zip'), 'HEAD']);

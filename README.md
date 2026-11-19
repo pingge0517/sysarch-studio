@@ -3,6 +3,18 @@
 A web-native, layered system-architecture modeling tool built on Sirius Web, with two-way
 binding to Polarion. The spec is in `p0-spec-sysarch-vsm.md`. P0 runs as tasks T1–T9 (spec §8).
 
+The Polarion model-store work is tracked in [implementation status](docs/polarion-store/implementation-status.md).
+Detached read browsing is available at `/polarion-models` when `SYSARCH_POLARION_STORE_ENABLED=true`, using the caller's
+PAT and the [read-only identity extension](polarion-model-store/README.md). The local test deployment has this enabled;
+see its [browser acceptance report](docs/polarion-store/M2-readonly-browser-2026-11-18.md) and
+[historical requirement acceptance](docs/polarion-store/M2-requirement-history-2026-11-19.md). Read-only allocation/trace
+matrices and server-side Sirius diagram data are covered by [projection acceptance](docs/polarion-store/M2-read-projections-2026-11-19.md).
+The five native Sirius read-only canvases are now available; see [native canvas acceptance](docs/polarion-store/M2-native-canvas-2026-11-19.md).
+Displayed results now expire on failed authorization checks, disconnect or page hiding; see [read lifecycle acceptance](docs/polarion-store/M2-read-lifecycle-2026-11-19.md).
+Existing LOCAL persistence
+remains unchanged; remote model writes and migration are not enabled. See the [snapshot format](docs/polarion-store/snapshot-format.md)
+and [capability probe record](docs/polarion-store/M0-capability-report.md) before extending the implementation.
+
 ## Start in 3 lines
 
 ```bash

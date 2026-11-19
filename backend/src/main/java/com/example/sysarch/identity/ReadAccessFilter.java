@@ -52,6 +52,13 @@ public class ReadAccessFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
+        String path=request.getRequestURI().substring(request.getContextPath().length());
+        // These two detached read routes independently verify this PAT through the SDK identity bridge.
+        // They do not expose any Sirius/local data and must work without user-directory listing permission.
+        if("GET".equals(request.getMethod()) && path.matches("/api/v1/model-store/projects/[A-Za-z0-9_-]{1,128}/models(?:/[A-Za-z0-9_-]{1,128}/(?:snapshot|views/[A-Za-z0-9_-]{1,128}))?")
+                && com.example.sysarch.sync.polarion.PolarionToken.fromAuthorizationHeader(request.getHeader("Authorization"))!=null) {
+            chain.doFilter(request,response); return;
+        }
         if (CurrentUser.principal(request).isEmpty()) {
             // the status itself, not sendError (Sirius' SPA route would answer /error with 200, see MetricsTokenFilter)
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

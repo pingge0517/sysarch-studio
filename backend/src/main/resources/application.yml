@@ -63,6 +63,11 @@ sirius:
 
 # Our own settings. sysarch.view is not read by any code yet.
 sysarch:
+  # Enables detached read browsing and internal adapters; never grants remote writes or migrates a model.
+  polarion-store:
+    enabled: ${SYSARCH_POLARION_STORE_ENABLED:false}
+    # Directional server allowlist: model project -> permitted external requirement projects; same project is allowed.
+    requirement-projects: {}
   # P4 T5: the bearer token Prometheus sends for /actuator/prometheus (unset = the endpoint answers 404).
   metrics:
     token: ${SYSARCH_METRICS_TOKEN:}

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee" version="4.0">
+  <display-name>SysArch M0 dedicated test probe</display-name>
+  <!-- Authentication is explicit SDK AccessToken validation on EVERY request; no browser-cookie fallback. -->
+  <servlet>
+    <servlet-name>probe</servlet-name>
+    <servlet-class>com.example.sysarch.probe.ProbeServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>probe</servlet-name>
+    <url-pattern>/*</url-pattern>
+  </servlet-mapping>
+</web-app>

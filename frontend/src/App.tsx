@@ -18,6 +18,7 @@ import { ReportsPage } from './report/ReportsPage';
 import { ImportPage } from './sysmlimport/ImportPage';
 import { SequencePage } from './sequence/SequencePage';
 import { SyncPage } from './sync/SyncPage';
+import { ModelStorePage } from './modelstore/ModelStorePage';
 
 // The diagrams are edited in Sirius Web's own application, which since P4 T3 hosts this shell as its route /sysarch
 // (application/SysArchApplication.tsx): one application, one origin. The header links back to the models.
@@ -50,7 +51,7 @@ export function App() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
   const [table, setTable] = useState(param('table') || 'allocation-matrix');
-  const [view, setView] = useState(['baselines', 'locks', 'branches', 'reports', 'sequence', 'import', 'comments', 'admin', 'sync'].includes(param('view')) ? param('view') : 'matrix');
+  const [view, setView] = useState(['baselines', 'locks', 'branches', 'reports', 'sequence', 'import', 'comments', 'admin', 'sync', 'model-store'].includes(param('view')) ? param('view') : 'matrix');
   const [me, setMe] = useState<Me | null>(null);
   const [grant, setGrant] = useState<AccessGrant | null>(null);
   const user = me?.user ?? '';
@@ -224,6 +225,7 @@ export function App() {
             <option value="branches">分支</option>
             <option value="reports">报告</option>
             <option value="sync">Polarion 同步</option>
+            <option value="model-store">Polarion 模型（只读）</option>
             <option value="sequence">时序图（只读）</option>
             <option value="import">导入（SysML v2 / XMI）</option>
             <option value="comments">评论</option>
@@ -269,7 +271,7 @@ export function App() {
       )}
 
       <main className="content">
-        {!project && view !== 'import' && view !== 'admin' && <p className="hint">选择一个 Sirius 项目。</p>}
+        {!project && view !== 'import' && view !== 'admin' && view !== 'model-store' && <p className="hint">选择一个 Sirius 项目。</p>}
         {view === 'import' && (
           <ImportPage
             onOpen={(id) => {
@@ -287,6 +289,7 @@ export function App() {
         {project && view === 'sequence' && <SequencePage project={workspace} />}
         {project && view === 'comments' && <CommentsPage project={workspace} grant={grant} />}
         {view === 'admin' && <AdminPage project={project ? workspace : ''} />}
+        {view === 'model-store' && <ModelStorePage />}
         {project && view === 'branches' && <BranchesPage trunk={project} current={branch ? branchId : ''} onSwitch={(id) => void switchTo(id)} />}
         {project && view === 'matrix' && matrix && <MatrixView matrix={matrix} onAction={onAction} />}
         {project && view === 'matrix' && !matrix && !error && <p className="hint">加载中…</p>}

@@ -103,17 +103,27 @@ public final class SiriusDiagramDescriptionFactory {
     private final DiagramFilterState filters;
 
     private final ToolFactory tools;
+    private final boolean readOnly;
 
     /** Ports of the last rejected connection, shared with the connect tool (AC-5). */
     private final DropRejections rejections = new DropRejections();
 
     public SiriusDiagramDescriptionFactory(EPackage ePackage, IIdentityService identityService, ProjectionCache projections, DiagramFilterState filters,
             ConstraintValidator validator) {
+        this(ePackage,identityService,projections,filters,validator,false);
+    }
+    private SiriusDiagramDescriptionFactory(EPackage ePackage,IIdentityService identityService,ProjectionCache projections,DiagramFilterState filters,
+            ConstraintValidator validator,boolean readOnly) {
         this.ePackage = Objects.requireNonNull(ePackage);
         this.identityService = Objects.requireNonNull(identityService);
         this.projections = Objects.requireNonNull(projections);
         this.filters = Objects.requireNonNull(filters);
-        this.tools = new ToolFactory(filters, Objects.requireNonNull(validator), this.rejections);
+        this.readOnly=readOnly;
+        this.tools = readOnly ? null : new ToolFactory(filters, Objects.requireNonNull(validator), this.rejections);
+    }
+    /** Pure read descriptions: no edit palette and no OCL edit-validation environment is allocated. */
+    public static SiriusDiagramDescriptionFactory readOnly(EPackage ePackage,IIdentityService identityService,ProjectionCache projections,DiagramFilterState filters) {
+        return new SiriusDiagramDescriptionFactory(ePackage,identityService,projections,filters,null,true);
     }
 
     public static String diagramDescriptionId(DiagramDescription source) {
@@ -156,7 +166,7 @@ public final class SiriusDiagramDescriptionFactory {
                 .targetObjectIdProvider(vm -> self(vm).map(this.identityService::getId).orElse(null))
                 .canCreatePredicate(vm -> self(vm).filter(domainClass::isInstance).isPresent())
                 .labelProvider(vm -> vm.get(org.eclipse.sirius.components.diagrams.description.DiagramDescription.LABEL, String.class).orElse(source.label()))
-                .palettes(List.of(this.tools.palette(source, diagramId, allNodeDescriptions, description -> this.elementType(source, domainClass, description))))
+                .palettes(this.readOnly ? List.of() : List.of(this.tools.palette(source, diagramId, allNodeDescriptions, description -> this.elementType(source, domainClass, description))))
                 .nodeDescriptions(topLevel)
                 .edgeDescriptions(edgeDescriptions)
                 .dropHandler(vm -> new Failure("此图不支持拖放"))
@@ -206,8 +216,8 @@ public final class SiriusDiagramDescriptionFactory {
                 .semanticElementsProvider(semanticElements)
                 .styleProvider(vm -> nodeStyle(style, this.rejected(vm)))
                 .borderNodeDescriptions(borders)
-                .deleteHandler(this::deleteElement)
-                .labelEditHandler(this::rename)
+                .deleteHandler(vm -> this.readOnly ? new Failure("只读投影") : this.deleteElement(vm))
+                .labelEditHandler((vm,label) -> this.readOnly ? new Failure("只读投影") : this.rename(vm,label))
                 .initialChildBorderNodePositions(borderPositions(borders));
         if (style.width() != null) {
             builder.defaultWidthProvider(vm -> style.width());
@@ -257,7 +267,7 @@ public final class SiriusDiagramDescriptionFactory {
                 .childNodeDescriptions(children)
                 .borderNodeDescriptions(borders)
                 .deleteHandler(vm -> new Failure("不能在图中删除图的根元素"))
-                .labelEditHandler(this::rename)
+                .labelEditHandler((vm,label) -> this.readOnly ? new Failure("只读投影") : this.rename(vm,label))
                 .initialChildBorderNodePositions(borderPositions(borders))
                 .build();
     }
@@ -380,7 +390,7 @@ public final class SiriusDiagramDescriptionFactory {
                         .textProvider(vm -> edgeRef(vm).map(EdgeRef::label).orElse(""))
                         .styleDescriptionProvider(vm -> labelStyle)
                         .build())
-                .deleteHandler(vm -> edgeRef(vm).map(ref -> this.deleteEdge(ref, style)).orElse(new Failure("未找到连线")))
+                .deleteHandler(vm -> this.readOnly ? new Failure("只读投影") : edgeRef(vm).map(ref -> this.deleteEdge(ref, style)).orElse(new Failure("未找到连线")))
                 .build();
     }
 

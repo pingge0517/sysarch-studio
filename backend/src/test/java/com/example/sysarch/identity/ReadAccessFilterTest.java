@@ -60,4 +60,20 @@ class ReadAccessFilterTest {
         strictDev.setAnonymousRead(false);
         assertEquals(401, status(new ReadAccessFilter(strictDev), "POST", "/api/graphql", false), "can be required in dev mode too");
     }
+
+    @Test
+    void onlyExactReadBrowserGetRoutesDelegatePatValidationToTheController() throws Exception {
+        var filter=new ReadAccessFilter(new AuthProperties());
+        for(String path:List.of("/api/v1/model-store/projects/alpha/models","/api/v1/model-store/projects/alpha/models/A-1/snapshot",
+                "/api/v1/model-store/projects/alpha/models/A-1/views/bdd",
+                "/api/v1/model-store/projects/alpha/models/unsafe/export","/api/graphql")) {
+            for(String method:List.of("GET","POST")) {
+                var request=new MockHttpServletRequest(method,path); request.addHeader("Authorization","Bearer fixture");
+                var response=new MockHttpServletResponse(); var chain=new MockFilterChain(); filter.doFilter(request,response,chain);
+                boolean delegated=method.equals("GET") && (path.endsWith("/models") || path.endsWith("/snapshot") || path.endsWith("/views/bdd"));
+                assertEquals(delegated,chain.getRequest()!=null,path+" "+method);
+            }
+        }
+        assertEquals(401,status(filter,"GET","/api/v1/model-store/projects/alpha/models",false));
+    }
 }

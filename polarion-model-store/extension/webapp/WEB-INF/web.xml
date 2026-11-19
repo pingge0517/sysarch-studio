@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee" version="4.0">
+  <display-name>SysArch model read identity</display-name>
+  <servlet>
+    <servlet-name>identity</servlet-name>
+    <servlet-class>com.example.sysarch.polarion.model.IdentityServlet</servlet-class>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+  <servlet-mapping><servlet-name>identity</servlet-name><url-pattern>/identity</url-pattern></servlet-mapping>
+  <servlet-mapping><servlet-name>identity</servlet-name><url-pattern>/revision</url-pattern></servlet-mapping>
+</web-app>
