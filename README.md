@@ -4,6 +4,8 @@ A web-native, layered system-architecture modeling tool built on Sirius Web, wit
 binding to Polarion. The spec is in `p0-spec-sysarch-vsm.md`. P0 runs as tasks T1–T9 (spec §8).
 
 The Polarion model-store work is tracked in [implementation status](docs/polarion-store/implementation-status.md).
+The [M3 durable command gate foundation](docs/polarion-store/M3-command-gate-2026-11-19.md) is implemented and tested in isolation; production remote writes remain disabled.
+The internal [command protocol and candidate preparation](docs/polarion-store/M3-command-protocol-2026-11-19.md) support rename and attribute validation. The [Polarion receipt lookup](docs/polarion-store/M3-receipt-lookup-2026-11-19.md) reads the receipt for the current model head and reports it as unattested. Authoritative replay and the command endpoint are pending.
 Detached read browsing is available at `/polarion-models` when `SYSARCH_POLARION_STORE_ENABLED=true`, using the caller's
 PAT and the [read-only identity extension](polarion-model-store/README.md). The local test deployment has this enabled;
 see its [browser acceptance report](docs/polarion-store/M2-readonly-browser-2026-11-18.md) and

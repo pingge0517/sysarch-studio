@@ -2,6 +2,8 @@
 
 状态：最小探针已实测通过，未用于正式模型服务。
 
+2026-11-19：新增内部持久命令闸门与默认锁定的 Liquibase 020，真实跨 JVM PostgreSQL 专项 10/10；尚未接入正式 SDK 命令服务或生产协调器。见 [M3 协调基础](M3-command-gate-2026-11-19.md)。
+
 真实探针已证实：两个并发事务均通过 expectedVersion 检查后，落败事务停在 Polarion SVN 驱动的 `JavaSvnDriver.delayBeforeCommitRestart`，60 秒内不返回。SDK 的原子回滚可用，但它本身不足以提供本应用所需的有界冲突语义。
 
 新增 SysMLTool 自身 PostgreSQL 中的持久命令闸门，仅保存模型键、请求／命令 ID、主体和 ACTIVE／UNKNOWN 状态。它不保存模型，且不连接 Polarion 数据库。Polarion SDK 仍负责模型的原子提交和权限。

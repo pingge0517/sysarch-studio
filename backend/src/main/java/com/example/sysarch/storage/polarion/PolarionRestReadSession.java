@@ -1,6 +1,8 @@
 package com.example.sysarch.storage.polarion;
 
 import com.example.sysarch.storage.ModelCodec;
+import com.example.sysarch.storage.command.CommandReceiptCodec;
+import com.example.sysarch.storage.command.CommittedCommandVerifier.Receipt;
 import com.example.sysarch.storage.polarion.PolarionSnapshotLoader.Failure;
 import com.example.sysarch.storage.polarion.PolarionSnapshotLoader.ReadFailure;
 import com.example.sysarch.storage.polarion.PolarionSnapshotManifest.*;
@@ -20,6 +22,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.List;
 import java.util.ArrayList;
@@ -145,6 +148,72 @@ public final class PolarionRestReadSession implements PolarionModelReadSession, 
     public void requireCurrentRead(Item item) {
         if (item.revision() != null) throw new ReadFailure(Failure.SCHEMA);
         resource(item, "id");
+    }
+
+    /** Exact-scope candidate discovery; a search miss never proves transaction rollback. */
+    Optional<Item> findCommandRecord(String project,UUID modelUuid,UUID commandId) {
+        new Item(project,"validation",null);Objects.requireNonNull(modelUuid);Objects.requireNonNull(commandId);
+        String fields="id,type,sysarchManaged,sysarchSchemaVersion,sysarchModelUuid,sysarchCommandId";
+        String query="type:sysarchCommit AND sysarchManaged:true AND sysarchModelUuid:\""+modelUuid+"\" AND sysarchCommandId:\""+commandId+"\"";
+        String path="/projects/"+encode(project)+"/workitems?query="+encode(query)+"&sort=id&fields%5Bworkitems%5D="+encode(fields)+"&page%5Bnumber%5D=1&page%5Bsize%5D=2";
+        try {
+            JsonNode document=json.readTree(get(path,PolarionSnapshotLoader.MAX_MANIFEST_BYTES,true)),rows=document.path("data"),next=document.path("links").path("next");
+            if(!rows.isArray() || document.has("errors")) throw new ReadFailure(Failure.SCHEMA);
+            if(rows.size()>1 || hasNextPage(next)) throw new ReadFailure(Failure.INCOMPLETE);
+            if(rows.isEmpty()) return Optional.empty();
+            JsonNode row=rows.get(0),attrs=row.path("attributes");String identity=text(row,"id");
+            if(!"workitems".equals(text(row,"type")) || !identity.startsWith(project+"/")) throw new ReadFailure(Failure.IDENTITY);
+            requireCommitIdentity(attrs,modelUuid,commandId);
+            return Optional.of(new Item(project,identity.substring(project.length()+1),null));
+        } catch(ReadFailure failure) {throw failure;}
+        catch(Exception failure) {throw new ReadFailure(Failure.SCHEMA);}
+    }
+
+    public static final String COMMAND_RECEIPT_ATTACHMENT="sysarch-command-receipt.json";
+    /** Reads bounded machine metadata from a fixed attachment at an SDK-pinned revision. Not a transaction attestation. */
+    Receipt commandReceipt(Item pinned,UUID modelUuid,UUID commandId) {
+        if(pinned.revision()==null) throw new ReadFailure(Failure.SCHEMA);
+        requireCurrentRead(pinned.current());
+        JsonNode attrs=resource(pinned,"type,sysarchManaged,sysarchSchemaVersion,sysarchModelUuid,sysarchCommandId,sysarchCommitId,sysarchRequestHash,sysarchManifestHash").path("attributes");
+        requireCommitIdentity(attrs,modelUuid,commandId);
+        String attachmentId=receiptAttachmentId(pinned);
+        byte[] bytes=get(itemPath(pinned)+"/attachments/"+encode(attachmentId)+"/content"+query(pinned,null),CommandReceiptCodec.MAX_BYTES,false);
+        Receipt receipt;
+        try {receipt=new CommandReceiptCodec().read(bytes);}
+        catch(CommandReceiptCodec.InvalidReceipt failure) {throw new ReadFailure(Failure.SCHEMA);}
+        if(!modelUuid.equals(receipt.modelUuid()) || !commandId.equals(receipt.commandId()) || !uuid(attrs,"sysarchCommitId").equals(receipt.commitId())
+            || !text(attrs,"sysarchRequestHash").equals(receipt.requestHash()) || !text(attrs,"sysarchManifestHash").equals(receipt.manifestHash())) throw new ReadFailure(Failure.IDENTITY);
+        return receipt;
+    }
+    private String receiptAttachmentId(Item pinned) {
+        String path=itemPath(pinned)+"/attachments"+query(pinned,null)
+            +"&fields%5Bworkitem_attachments%5D=fileName&page%5Bsize%5D=16";
+        byte[] bytes=get(path,CommandReceiptCodec.MAX_BYTES,true);
+        try {
+            JsonNode document=json.readTree(bytes), rows=document.path("data");
+            if(!rows.isArray() || document.has("errors")) throw new ReadFailure(Failure.SCHEMA);
+            if(rows.size()>=16 || hasNextPage(document.path("links").path("next"))) throw new ReadFailure(Failure.INCOMPLETE);
+            String prefix=pinned.project()+"/"+pinned.workItem()+"/", found=null;
+            for(JsonNode row:rows) {
+                String identity=text(row,"id");
+                if(!"workitem_attachments".equals(text(row,"type")) || !identity.startsWith(prefix)) throw new ReadFailure(Failure.IDENTITY);
+                if(!COMMAND_RECEIPT_ATTACHMENT.equals(text(row.path("attributes"),"fileName"))) continue;
+                if(found!=null) throw new ReadFailure(Failure.INCOMPLETE);
+                found=identity.substring(prefix.length());
+                if(!found.matches("[A-Za-z0-9_-][A-Za-z0-9_.-]{0,254}")) throw new ReadFailure(Failure.IDENTITY);
+            }
+            if(found==null) throw new ReadFailure(Failure.INCOMPLETE);
+            return found;
+        } catch(ReadFailure failure) {throw failure;}
+        catch(Exception failure) {throw new ReadFailure(Failure.SCHEMA);}
+    }
+    private static boolean hasNextPage(JsonNode next) {
+        return !next.isMissingNode() && !next.isNull() && !(next.isTextual() && next.textValue().isBlank());
+    }
+    private static void requireCommitIdentity(JsonNode attrs,UUID modelUuid,UUID commandId) {
+        if(!"sysarchCommit".equals(text(attrs,"type")) || !attrs.path("sysarchManaged").isBoolean() || !attrs.path("sysarchManaged").booleanValue()
+            || !ModelCodec.SCHEMA.equals(text(attrs,"sysarchSchemaVersion"))) throw new ReadFailure(Failure.SCHEMA);
+        if(!modelUuid.equals(uuid(attrs,"sysarchModelUuid")) || !commandId.equals(uuid(attrs,"sysarchCommandId"))) throw new ReadFailure(Failure.IDENTITY);
     }
 
     @Override

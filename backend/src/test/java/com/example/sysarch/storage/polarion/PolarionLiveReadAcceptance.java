@@ -264,6 +264,64 @@ public final class PolarionLiveReadAcceptance {
         require(response.statusCode()==403 && "no-store".equals(response.headers().firstValue("Cache-Control").orElse("")),"Unavailable dependency did not block deployed read");
         require(!new String(response.body(),StandardCharsets.UTF_8).contains(body),"Denied response leaked previously readable body");
     }
+    private static void receipts(Account account,Account other,Location location) throws Exception {
+        try(var session=account.session()) {
+            var loaded=new PolarionSnapshotLoader(CODEC).load(location,session);var head=loaded.head();
+            var snapshot=CODEC.capture(location.modelUuid(),loaded.model().documents(),loaded.model().identities());
+            UUID commandId=UUID.randomUUID();
+            byte[] request=JSON.writeValueAsBytes(Map.of("commandId",commandId,"expectedVersion",head.version()-1,"schemaVersion","1.0","operations",List.of(
+                Map.of("kind","RenameElement","elementUuid",snapshot.nodes().getFirst().uuid(),"name","Receipt observation fixture"))));
+            var protocol=new com.example.sysarch.storage.command.ModelCommandProtocol();
+            var bound=protocol.bind(location.modelUuid(),session.verifiedSubject(),request);
+            var receipt=new com.example.sysarch.storage.command.CommittedCommandVerifier.Receipt("1.0",location.modelUuid(),commandId,session.verifiedSubject(),bound.requestHash(),
+                head.version()-1,head.version(),head.commitId(),head.manifest().sha256());
+            Map<String,Object> fields=Map.of("sysarchModelUuid",location.modelUuid().toString(),"sysarchCommandId",commandId.toString(),"sysarchCommitId",head.commitId().toString(),
+                "sysarchRequestHash",bound.requestHash(),"sysarchManifestHash",head.manifest().sha256());
+            String id=account.create("sysarchCommit",fields);Item current=new Item(account.project,id,null);
+            account.upload(id,PolarionRestReadSession.COMMAND_RECEIPT_ATTACHMENT,JSON.writeValueAsBytes(receipt));
+            Item initial=session.pinCurrentRevision(current);
+            try {require(receipt.equals(session.commandReceipt(initial,location.modelUuid(),commandId)),"Receipt payload differs");}
+            catch(PolarionSnapshotLoader.ReadFailure failure) {
+                throw new IllegalStateException("Direct receipt rejected: "+failure.failure().name());
+            }
+            var lookup=new PolarionCommandReceiptLookup(new PolarionSnapshotLoader(CODEC));
+            Optional<PolarionCommandReceiptLookup.Observation> observed=Optional.empty();long deadline=System.nanoTime()+Duration.ofSeconds(30).toNanos();
+            do {
+                try {observed=lookup.observe(location,bound,session);}
+                catch(PolarionSnapshotLoader.ReadFailure failure) {throw new IllegalStateException("Receipt observation rejected: "+failure.failure().name());}
+                if(observed.isPresent()) break;Thread.sleep(200);
+            } while(System.nanoTime()<deadline);
+            require(observed.isPresent() && receipt.equals(observed.get().receipt()),"Real receipt observation failed");
+            require(observed.get().commitRecord().revision().matches("[0-9]{1,20}"),"Receipt has no actual SDK revision");
+            record(account.project,"receipt-real-rest-and-sdk-pinned-revision",true);
+            require(observed.get().assurance()==PolarionCommandReceiptLookup.Assurance.UNATTESTED
+                && observed.get().gateOutcome()==com.example.sysarch.storage.command.DurableCommandGate.Outcome.UNKNOWN,"Native fixture incorrectly certified as a commit");
+            record(account.project,"receipt-native-fixture-never-unlocks-command-gate",true);
+            var changed=protocol.bind(location.modelUuid(),session.verifiedSubject(),new String(request,StandardCharsets.UTF_8).replace("Receipt observation fixture","Different fixture").getBytes(StandardCharsets.UTF_8));
+            org.junit.jupiter.api.Assertions.assertThrows(com.example.sysarch.storage.command.CommittedCommandVerifier.Conflict.class,()->lookup.observe(location,changed,session));
+            record(account.project,"receipt-same-command-different-request-conflict",true);
+            try(var foreign=other.session()) {
+                var foreignBound=protocol.bind(location.modelUuid(),foreign.verifiedSubject(),request);
+                var denied=org.junit.jupiter.api.Assertions.assertThrows(PolarionSnapshotLoader.ReadFailure.class,()->lookup.observe(location,foreignBound,foreign));
+                require(denied.failure()==PolarionSnapshotLoader.Failure.DENIED,"Foreign account read receipt through model");
+                record(other.project,"receipt-cross-project-access-denied",true);
+            }
+            String duplicate=account.create("sysarchCommit",fields);boolean rejected=false;deadline=System.nanoTime()+Duration.ofSeconds(30).toNanos();
+            do {
+                try {session.findCommandRecord(account.project,location.modelUuid(),commandId);}
+                catch(PolarionSnapshotLoader.ReadFailure failure) {if(failure.failure()!=PolarionSnapshotLoader.Failure.INCOMPLETE) throw failure;rejected=true;}
+                if(rejected) break;Thread.sleep(200);
+            } while(System.nanoTime()<deadline);
+            require(rejected,"Duplicate command records were not rejected");record(account.project,"receipt-duplicate-command-records-denied",true);account.deleteOwned(duplicate);
+            Item pinned=observed.get().commitRecord();
+            account.json("PATCH",account.base()+"/"+id,Map.of("data",wire("workitems",account.project+"/"+id,Map.of("sysarchRequestHash","c".repeat(64)))),204);
+            Item altered=session.pinCurrentRevision(current);require(!altered.revision().equals(pinned.revision()),"Receipt revision did not advance");
+            var invalid=org.junit.jupiter.api.Assertions.assertThrows(PolarionSnapshotLoader.ReadFailure.class,()->session.commandReceipt(altered,location.modelUuid(),commandId));
+            require(invalid.failure()==PolarionSnapshotLoader.Failure.IDENTITY,"Altered receipt fields were accepted");
+            require(receipt.equals(session.commandReceipt(pinned,location.modelUuid(),commandId)),"Original receipt revision changed");
+            record(account.project,"receipt-current-field-drift-denied-and-history-pinned",true);
+        }
+    }
     private static int nativeAttachment(Account account,Attachment attachment) throws Exception {
         Item owner=attachment.owner();
         var request=HttpRequest.newBuilder(URI.create(SERVER+"/rest/v1/projects/"+owner.project()+"/workitems/"+owner.workItem()+"/attachments/"+attachment.attachmentId()+"/content"))
@@ -413,6 +471,7 @@ public final class PolarionLiveReadAcceptance {
                 Location first = fixture(a), second = fixture(b);
                 discover(a,first); discover(b,second);
                 controller(a,first,false); controller(b,second,false); controller(b,first,true);
+                if("true".equals(System.getenv("SYSARCH_M3_RECEIPTS"))) receipts(a,b,first);
                 if("true".equals(System.getenv("SYSARCH_M2_REQUIREMENTS"))) history(a,b,second);
                 if("true".equals(System.getenv("SYSARCH_M2_VIEWS"))) views(a,b);
                 if("true".equals(System.getenv("SYSARCH_M2_DEPLOYED_UI"))) {

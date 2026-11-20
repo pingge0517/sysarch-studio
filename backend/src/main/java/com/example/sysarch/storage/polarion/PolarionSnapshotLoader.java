@@ -96,9 +96,7 @@ public final class PolarionSnapshotLoader {
         for (var reference : manifest.requirements()) {
             var node = nodes.get(reference.uuid());
             if (!"Requirement".equals(node.type())) reject(Failure.IDENTITY);
-            var attributes = node.attributes();
-            if (Set.of("text", "description", "reqId", "workItemId").stream().anyMatch(attributes::containsKey)
-                    || attributes.containsKey("name") && !attributes.get("name").equals(List.of("Requirement reference"))) {
+            if (!ExternalRequirementContent.referenceOnly(node)) {
                 reject(Failure.EXTERNAL_REQUIREMENT_BODY);
             }
         }

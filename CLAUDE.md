@@ -4,6 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Current state
 
+**M3 follow-up (2026-11-20, pending deployment).** The durable gate, migration 020, command protocol and isolated rename and attribute candidates are implemented. The Polarion lookup reads current-head receipt attachments and returns `UNATTESTED`. Java check passed 649 tests and the performance gates. PostgreSQL coordination passed 12/12 using fixture receipts, and the Polarion lookup passed 6/6 receipt checks within the 31/31 live run. The production command endpoint and authoritative receipt replay are pending. See [M3 receipt lookup evidence](docs/polarion-store/M3-receipt-lookup-2026-11-19.md).
+
 **2026-11-19 integration update:** the Polarion model-store work is being committed from `feature/p4` and fast-forwarded into `main`. The current implementation and remaining M2/M3–M8 gaps are tracked in [implementation status](docs/polarion-store/implementation-status.md); the older release descriptions below are historical. Remote storage remains read-only: native Sirius canvases, matrices and bounded read authorization checks are available; formal model writes, persistent layout and migration remain incomplete. Validation: Java 603 tests, frontend 64 tests and build, Node 10 tests, dedicated live acceptance 57/57. Do not commit private credentials, generated build artifacts or vendor SDK binaries.
 
 The spec, `p0-spec-sysarch-vsm.md` (Chinese), is the source of truth for everything below. Work proceeds by running tasks **T1–T9 (spec §8) in order**. Each task starts with a paste-ready instruction block and has hard dependencies (T3 needs T2, T4 needs T3, and so on).

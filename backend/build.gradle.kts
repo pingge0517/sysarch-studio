@@ -203,3 +203,13 @@ tasks.register<JavaExec>("polarionLiveReadAcceptance") {
     mainClass.set("com.example.sysarch.storage.polarion.PolarionLiveReadAcceptance")
     workingDir(rootProject.projectDir)
 }
+
+// Explicit isolated-schema PostgreSQL coordination test; no production model or gate activation.
+tasks.register<JavaExec>("commandGateLiveAcceptance") {
+    group = "verification"
+    description = "Exercises durable command arbitration across Java processes in a disposable SysArch PostgreSQL schema."
+    dependsOn(tasks.named("testClasses"))
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("com.example.sysarch.storage.command.CommandGateLiveAcceptance")
+    workingDir(rootProject.projectDir)
+}

@@ -22,4 +22,5 @@
     <include file="db/sysarch/017-element-comment.xml"/>
     <include file="db/sysarch/018-project-binding.xml"/>
     <include file="db/sysarch/019-model-storage.xml"/>
+    <include file="db/sysarch/020-model-command-gate.xml"/>
 </databaseChangeLog>
