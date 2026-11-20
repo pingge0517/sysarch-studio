@@ -44,6 +44,7 @@ public final class ProbeServlet extends HttpServlet {
     private ITrackerService tracker;
     private ITransactionService transactions;
     private boolean enabled;
+    private boolean managedCommitEnabled;
     private Set<String> projects = Set.of();
     private JdbcCommandGate commandGate;
 
@@ -53,6 +54,7 @@ public final class ProbeServlet extends HttpServlet {
             Properties config = new Properties();
             if (input != null) config.load(input);
             this.enabled = "true".equals(config.getProperty("enabled"));
+            this.managedCommitEnabled = "true".equals(config.getProperty("managedCommit"));
             this.projects = Set.of(config.getProperty("projects", "").split(","));
             if ("true".equals(config.getProperty("gateRequired"))) {
                 this.commandGate = new JdbcCommandGate(config.getProperty("gateFile"));
@@ -118,6 +120,7 @@ public final class ProbeServlet extends HttpServlet {
                 if (!this.projects.contains(project)) throw new Rejected(403, "project-not-allowlisted");
                 String run = UUID.fromString(parameter(request, "run")).toString();
                 String action = request.getPathInfo();
+                if ("/managed-commit".equals(action)) return runManagedCommit(request, project, run, actor, traceId);
                 JdbcCommandGate.Ticket ticket = null;
                 if (Set.of("/commit", "/capacity").contains(action) && this.commandGate != null) {
                     // Check object rights in a completed read-only transaction BEFORE touching shared coordination.
@@ -209,12 +212,140 @@ public final class ProbeServlet extends HttpServlet {
             // No raw exception message: authentication providers or transports may include sensitive details.
             List<String> types = new ArrayList<>();
             for (Throwable t = e; t != null && types.size() < 8; t = t.getCause()) types.add(t.getClass().getSimpleName());
-            reply(response, new Result(503, Map.of("error", "transaction-outcome-requires-inspection", "types", types)));
+            reply(response, new Result(503, Map.of("error", "transaction-outcome-requires-inspection", "types", types, "stage", trace.stage)));
         } finally {
             stage("LOGOUT");
             try { this.security.logout(subject); }
             finally { ACTIVE.remove(traceId); CURRENT.remove(); }
         }
+    }
+
+    private Result runManagedCommit(HttpServletRequest request, String project, String run, String actor, String traceId) throws Exception {
+        stage("MANAGED_VALIDATE_REQUEST");
+        if (!this.managedCommitEnabled || this.commandGate == null) throw new Rejected(404, "managed-commit-test-disabled");
+        if (!"application/x-www-form-urlencoded".equals(request.getContentType()) || request.getContentLengthLong() < 1) {
+            throw new Rejected(422, "bounded-form-required");
+        }
+        String model = UUID.fromString(parameter(request, "modelUuid")).toString();
+        String command = UUID.fromString(parameter(request, "command")).toString();
+        String root = parameter(request, "root");
+        this.transactions.execute().callable(() -> {
+            requireModify(managedItem(project, root, run, actor, model, "sysarchModel"));
+            return null;
+        });
+        stage("MANAGED_ACQUIRE_GATE");
+        var ticket = this.commandGate.acquire(project + "/" + run + "/" + root, traceId, command, actor);
+        if (ticket == null) throw new Rejected(409, "model-command-in-progress");
+        Result result;
+        try {
+            result = this.transactions.execute().write().callable(() -> managedCommit(request, project, run, actor, model, command, root));
+        } catch (Exception failure) {
+            if (failure instanceof Rejected) this.commandGate.release(ticket);
+            else this.commandGate.unknown(ticket);
+            throw failure;
+        }
+        this.commandGate.release(ticket);
+        return result;
+    }
+
+    /** One-element canary using the managed model field contract. Only disposable owned fixtures are accepted. */
+    private Result managedCommit(HttpServletRequest request, String project, String run, String actor,
+            String model, String command, String rootId) throws Exception {
+        stage("MANAGED_VALIDATE_PRECONDITIONS");
+        IWorkItem root = managedItem(project, rootId, run, actor, model, "sysarchModel");
+        IWorkItem element = managedItem(project, parameter(request, "element"), run, actor, model, "sysarchElement");
+        requireModify(root);
+        requireModify(element);
+        var context = this.tracker.getTrackerProject(project);
+        if (!context.can().createWorkItemOfType("sysarchCommit")) throw new Rejected(403, "cannot-create-managed-receipt");
+        String elementUuid = UUID.fromString(parameter(request, "elementUuid")).toString();
+        if (!elementUuid.equals(element.getCustomField("sysarchElementUuid"))) throw new Rejected(409, "managed-element-identity-changed");
+        Object version = root.getCustomField("sysarchHeadVersion");
+        if (!(version instanceof Number number) || number.longValue() != 1
+                || !parameter(request, "rootRevision").equals(root.getLastRevision())
+                || !parameter(request, "elementRevision").equals(element.getLastRevision())
+                || !parameter(request, "expectedCommit").equals(root.getCustomField("sysarchHeadCommitId"))
+                || !parameter(request, "expectedManifestHash").equals(root.getCustomField("sysarchHeadManifestHash"))) {
+            throw new Rejected(409, "managed-precondition-changed");
+        }
+        String requestHash = parameter(request, "requestHash");
+        if (!requestHash.matches("[a-f0-9]{64}")) throw new Rejected(422, "invalid-request-hash");
+        byte[] snapshot = java.util.Base64.getUrlDecoder().decode(parameter(request, "snapshot"));
+        String payload = parameter(request, "payload");
+        if (snapshot.length > 4096 || payload.getBytes(StandardCharsets.UTF_8).length > 2048) throw new Rejected(413, "fixture-payload-too-large");
+
+        String commitId = UUID.randomUUID().toString();
+        stage("MANAGED_SAVE_PAYLOAD");
+        element.setCustomField("sysarchPayload", Text.plain(payload));
+        element.save();
+        Map<String, Object> owner = new LinkedHashMap<>();
+        owner.put("project", project);
+        owner.put("workItem", rootId);
+        owner.put("revision", null);
+        stage("MANAGED_SAVE_SNAPSHOT");
+        var snapshotRef = saveManagedAttachment(root, "snapshot-" + commitId + ".json", snapshot, owner);
+        Map<String, Object> binding = new LinkedHashMap<>(owner);
+        binding.put("workItem", element.getId());
+        byte[] manifest = json(Map.of("schemaVersion", "1.0", "modelUuid", model, "version", 2, "commitId", commitId,
+            "snapshot", snapshotRef, "elements", List.of(Map.of("uuid", elementUuid, "item", binding)), "requirements", List.of())).getBytes(StandardCharsets.UTF_8);
+        stage("MANAGED_SAVE_MANIFEST");
+        var manifestRef = saveManagedAttachment(root, "manifest-" + commitId + ".json", manifest, owner);
+        String manifestHash = (String) manifestRef.get("sha256");
+        stage("MANAGED_SAVE_RECEIPT_RECORD");
+        IWorkItem record = context.createWorkItem("sysarchCommit");
+        record.setTitle("sysarch-m2-" + run + "-sysarchCommit");
+        record.setCustomField("sysarchManaged", true);
+        record.setCustomField("sysarchSchemaVersion", "1.0");
+        record.setCustomField("sysarchModelUuid", model);
+        record.setCustomField("sysarchCommandId", command);
+        record.setCustomField("sysarchCommitId", commitId);
+        record.setCustomField("sysarchRequestHash", requestHash);
+        record.setCustomField("sysarchManifestHash", manifestHash);
+        record.save();
+        byte[] receipt = json(Map.of("schemaVersion", "1.0", "modelUuid", model, "commandId", command, "actor", actor,
+            "requestHash", requestHash, "expectedVersion", 1, "version", 2, "commitId", commitId, "manifestHash", manifestHash)).getBytes(StandardCharsets.UTF_8);
+        stage("MANAGED_SAVE_RECEIPT_ATTACHMENT");
+        saveManagedAttachment(record, "sysarch-command-receipt.json", receipt, Map.of());
+
+        stage("MANAGED_SAVE_HEAD");
+        setManagedInteger(root, "sysarchHeadVersion", 2);
+        root.setCustomField("sysarchHeadCommitId", commitId);
+        root.setCustomField("sysarchHeadManifestAttachment", manifestRef.get("attachmentId"));
+        root.setCustomField("sysarchHeadManifestHash", manifestHash);
+        setManagedInteger(root, "sysarchHeadManifestBytes", manifest.length);
+        root.save();
+        if ("rollback".equals(request.getParameter("fault"))) throw new Rejected(409, "managed-test-rollback");
+        stage("MANAGED_FINISH_TRANSACTION");
+        return new Result(201, Map.of("actor", actor, "workItem", record.getId(), "commitId", commitId));
+    }
+
+    private static void setManagedInteger(IWorkItem item, String field, int value) {
+        Object current = item.getCustomField(field);
+        if (current instanceof Integer) item.setCustomField(field, value);
+        else if (current instanceof Long) item.setCustomField(field, (long) value);
+        else throw new Rejected(409, "managed-integer-field-type-changed");
+    }
+
+    private IWorkItem managedItem(String project, String id, String run, String actor, String model, String type) {
+        if (!id.matches("[A-Za-z0-9_-]{1,80}")) throw new Rejected(422, "invalid-item-id");
+        var context = this.tracker.getTrackerProject(project);
+        if (context.isUnresolvable() || !context.can().read()) throw new Rejected(403, "project-not-readable");
+        IWorkItem item = this.tracker.getWorkItem(project, id);
+        if (item.isUnresolvable() || !item.can().read()) throw new Rejected(403, "item-not-readable");
+        if (!("sysarch-m2-" + run + "-" + type).equals(item.getTitle()) || item.getAuthor() == null
+                || !actor.equals(item.getAuthor().getId()) || !type.equals(item.getType().getId())
+                || !Boolean.TRUE.equals(item.getCustomField("sysarchManaged"))
+                || !"1.0".equals(item.getCustomField("sysarchSchemaVersion")) || !model.equals(item.getCustomField("sysarchModelUuid"))) {
+            throw new Rejected(409, "not-an-owned-managed-fixture");
+        }
+        return item;
+    }
+
+    private static Map<String, Object> saveManagedAttachment(IWorkItem item, String name, byte[] bytes, Map<String, Object> owner) throws Exception {
+        var attachment = item.createAttachment(name, name, new java.io.ByteArrayInputStream(bytes));
+        attachment.save();
+        String hash = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
+        return Map.of("owner", owner, "attachmentId", attachment.getId(), "sha256", hash, "bytes", bytes.length);
     }
 
     private Result setup(String project, String run, String actor, String modelUuid) throws Exception {
@@ -426,6 +557,7 @@ public final class ProbeServlet extends HttpServlet {
     }
 
     private static String json(Object value) {
+        if (value == null) return "null";
         if (value instanceof Map<?, ?> map) return "{" + map.entrySet().stream()
                 .map(e -> json(e.getKey().toString()) + ":" + json(e.getValue())).collect(java.util.stream.Collectors.joining(",")) + "}";
         if (value instanceof List<?> list) return "[" + list.stream().map(ProbeServlet::json).collect(java.util.stream.Collectors.joining(",")) + "]";

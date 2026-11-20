@@ -66,6 +66,18 @@ class PolarionSnapshotLoaderTest {
         assertFailure(Failure.DENIED, f); assertFalse(f.calls.contains("bytes:snapshot.json"));
         assertFalse(f.calls.contains("requirement:" + key(f.external)));
     }
+
+    @Test
+    void commandPreparationGetsTheAuthorizedAtRestSnapshotWithoutFetchingRequirementBodies() throws Exception {
+        Fixture f = new Fixture(true);
+        var stored = this.loader.loadStored(f.location, f);
+        assertArrayEquals(f.snapshotBytes, this.codec.encode(stored.model()));
+        assertEquals(f.manifest.requirements(), stored.manifest().requirements());
+        assertTrue(f.calls.contains("auth:" + key(f.external)));
+        assertFalse(f.calls.contains("requirement:" + key(f.external)));
+        f.denied.add(key(f.external));
+        assertEquals(Failure.DENIED, assertThrows(ReadFailure.class, () -> this.loader.loadStored(f.location, f)).failure());
+    }
     @Test
     void crossProjectRequirementsNeedExplicitServerPolicyBeforeSemanticRead() throws Exception {
         Fixture f=new Fixture(true);

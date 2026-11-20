@@ -37,6 +37,8 @@ public final class PolarionSnapshotLoader {
     }
 
     public record Loaded(PolarionSnapshotManifest.Head head, PolarionSnapshotManifest manifest, ModelCodec.Decoded model, String subject) { }
+    public record Stored(PolarionSnapshotManifest.Head head, PolarionSnapshotManifest manifest, StoredModel model, String subject) { }
+    private record SnapshotRead(Stored stored, byte[] bytes) { }
 
     public PolarionSnapshotLoader(ModelCodec codec) { this(codec,String::equals); }
     public PolarionSnapshotLoader(ModelCodec codec,java.util.function.BiPredicate<String,String> requirementProjects) {
@@ -44,6 +46,33 @@ public final class PolarionSnapshotLoader {
     }
 
     public Loaded load(PolarionSnapshotManifest.Location location, PolarionModelReadSession session) {
+        SnapshotRead read = readSnapshot(location, session);
+        Stored stored = read.stored();
+        ModelCodec.Decoded decoded;
+        try { decoded = this.codec.decode(read.bytes(), stored.manifest().snapshot().sha256()); }
+        catch (IllegalArgumentException e) { throw new ReadFailure(Failure.SCHEMA); }
+        Map<UUID, EObject> objects = new HashMap<>();
+        for (var document : decoded.documents()) {
+            for (var it = document.resource().getAllContents(); it.hasNext();) {
+                EObject object = it.next(); objects.put(decoded.identities().id(object), object);
+            }
+        }
+        for (var reference : stored.manifest().requirements()) {
+            var text = session.requirement(reference.item());
+            if (text == null) reject(Failure.DENIED);
+            Requirement requirement = (Requirement) objects.get(reference.uuid());
+            requirement.setName(text.title()); requirement.setText(text.text()); requirement.setReqId(text.reqId());
+        }
+        if (!stored.subject().equals(session.verifiedSubject())) reject(Failure.IDENTITY);
+        return new Loaded(stored.head(), stored.manifest(), decoded, stored.subject());
+    }
+
+    /** Authorized at-rest values for command preparation, before reading or overlaying requirement bodies. */
+    public Stored loadStored(PolarionSnapshotManifest.Location location, PolarionModelReadSession session) {
+        return readSnapshot(location, session).stored();
+    }
+
+    private SnapshotRead readSnapshot(PolarionSnapshotManifest.Location location, PolarionModelReadSession session) {
         if (session == null || session.verifiedSubject() == null || session.verifiedSubject().isBlank()) reject(Failure.DENIED);
         String subject = session.verifiedSubject();
         if (!location.server().equals(session.configuredServer())) reject(Failure.WRONG_SERVER);
@@ -77,10 +106,8 @@ public final class PolarionSnapshotLoader {
         // Whole-model and external dependency authorization precede reading any semantic snapshot bytes.
         byte[] snapshotBytes = checkedBytes(manifest.snapshot(), session, ModelCodec.MAX_BYTES);
         StoredModel snapshot;
-        ModelCodec.Decoded decoded;
         try {
             snapshot = this.codec.read(snapshotBytes);
-            decoded = this.codec.decode(snapshotBytes, manifest.snapshot().sha256());
         } catch (IllegalArgumentException e) { throw new ReadFailure(Failure.SCHEMA); }
         if (!manifest.modelUuid().equals(snapshot.modelUuid())) reject(Failure.IDENTITY);
         Map<UUID, StoredModel.Node> nodes = new HashMap<>();
@@ -100,20 +127,8 @@ public final class PolarionSnapshotLoader {
                 reject(Failure.EXTERNAL_REQUIREMENT_BODY);
             }
         }
-        Map<UUID, EObject> objects = new HashMap<>();
-        for (var document : decoded.documents()) {
-            for (var it = document.resource().getAllContents(); it.hasNext();) {
-                EObject object = it.next(); objects.put(decoded.identities().id(object), object);
-            }
-        }
-        for (var reference : manifest.requirements()) {
-            var text = session.requirement(reference.item());
-            if (text == null) reject(Failure.DENIED);
-            Requirement requirement = (Requirement) objects.get(reference.uuid());
-            requirement.setName(text.title()); requirement.setText(text.text()); requirement.setReqId(text.reqId());
-        }
         if (!subject.equals(session.verifiedSubject())) reject(Failure.IDENTITY);
-        return new Loaded(head, manifest, decoded, subject);
+        return new SnapshotRead(new Stored(head, manifest, snapshot, subject), snapshotBytes);
     }
 
     private static byte[] checkedBytes(PolarionSnapshotManifest.Attachment ref, PolarionModelReadSession session, int maximum) {

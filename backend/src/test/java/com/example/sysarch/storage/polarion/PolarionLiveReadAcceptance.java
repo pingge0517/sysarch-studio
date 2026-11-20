@@ -2,11 +2,15 @@ package com.example.sysarch.storage.polarion;
 
 import com.example.sysarch.model.SysarchFactory;
 import com.example.sysarch.storage.*;
+import com.example.sysarch.storage.command.CommandCandidate;
+import com.example.sysarch.storage.command.ModelCommandProtocol;
+import com.example.sysarch.validation.ConstraintValidator;
 import com.example.sysarch.sync.polarion.PolarionToken;
 import com.example.sysarch.storage.polarion.PolarionSnapshotManifest.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
@@ -141,12 +145,18 @@ public final class PolarionLiveReadAcceptance {
         return location;
     }
     private static Location publish(Account account,StoredModel snapshot,List<RequirementReference> requirements) throws Exception {
+        return publish(account,snapshot,requirements,false);
+    }
+    private static Location publish(Account account,StoredModel snapshot,List<RequirementReference> requirements,boolean pinBindings) throws Exception {
         UUID model=snapshot.modelUuid(),commit=UUID.randomUUID();byte[] snapshotBytes=CODEC.encode(snapshot);
         String rootId = account.create("sysarchModel",Map.of("sysarchModelUuid",model.toString()));
         Item root = new Item(account.project,rootId,null); var bindings = new ArrayList<Element>();
-        for (var node : snapshot.nodes()) {
-            String id = account.create("sysarchElement",Map.of("sysarchModelUuid",model.toString(),"sysarchElementUuid",node.uuid().toString(),"sysarchElementKind",node.type()));
-            bindings.add(new Element(node.uuid(),new Item(account.project,id,null)));
+        try(var session=pinBindings ? account.session() : null) {
+            for (var node : snapshot.nodes()) {
+                String id = account.create("sysarchElement",Map.of("sysarchModelUuid",model.toString(),"sysarchElementUuid",node.uuid().toString(),"sysarchElementKind",node.type()));
+                Item item = new Item(account.project,id,null);
+                bindings.add(new Element(node.uuid(),session == null ? item : session.pinCurrentRevision(item)));
+            }
         }
         String snapshotId = account.upload(rootId,"snapshot.json",snapshotBytes);
         var manifest = new PolarionSnapshotManifest(ModelCodec.SCHEMA,model,1,commit,new Attachment(root,snapshotId,ModelCodec.sha256(snapshotBytes),snapshotBytes.length),bindings,requirements);
@@ -156,6 +166,204 @@ public final class PolarionLiveReadAcceptance {
             "sysarchHeadVersion",1,"sysarchHeadCommitId",commit.toString(),"sysarchHeadManifestAttachment",manifestId,
             "sysarchHeadManifestHash",ModelCodec.sha256(manifestBytes),"sysarchHeadManifestBytes",manifestBytes.length))),204);
         return new Location(SERVER,root,model);
+    }
+    private static void commandPreparation(Account account, Account other, Location unversioned) throws Exception {
+        var resource = new ResourceImpl();
+        var definition = SysarchFactory.eINSTANCE.createPartDefinition();
+        definition.setId("PREP-1");
+        definition.setName("Original preparation name");
+        resource.getContents().add(definition);
+        UUID model = UUID.randomUUID();
+        var snapshot = CODEC.capture(model, List.of(new ModelCodec.SourceDocument(UUID.randomUUID(), resource)), new ModelIdentityRegistry());
+        var location = publish(account, snapshot, List.of(), true);
+        UUID target = snapshot.nodes().getFirst().uuid();
+        var protocol = new ModelCommandProtocol();
+        try (var session = account.session(); var constraints = new ConstraintValidator()) {
+            var loader = new PolarionSnapshotLoader(CODEC);
+            var preparation = new PolarionCommandPreparation(loader, new CommandCandidate(CODEC, constraints));
+            byte[] body = rename(target, 1, "Prepared name");
+            var command = protocol.bind(model, session.verifiedSubject(), body);
+            var plan = preparation.prepare(location, command, session);
+            require(plan.changes().size() == 1, "Unexpected prepared change count");
+            var change = plan.changes().getFirst();
+            require(target.equals(change.elementUuid()) && change.expectedItem().revision() != null, "Prepared element has no exact identity or revision");
+            require(JSON.readTree(change.payload()).path("attributes").path("name").get(0).asText().equals("Prepared name"), "Candidate name missing");
+            require(plan.expectedRoot().equals(session.pinCurrentRevision(location.root())) && plan.expectedHead().equals(session.head(location.root())), "Preparing wrote to the model root");
+            require(change.expectedItem().equals(session.pinCurrentRevision(change.expectedItem().current())), "Preparing wrote to the element");
+            require(snapshot.equals(loader.loadStored(location, session).model()), "Preparing modified persisted semantics");
+            record(account.project, "command-preparation-real-revisions-and-no-write", true);
+
+            var stale = protocol.bind(model, session.verifiedSubject(), rename(target, 0, "Prepared name"));
+            org.junit.jupiter.api.Assertions.assertThrows(CommandCandidate.VersionConflict.class, () -> preparation.prepare(location, stale, session));
+            var noChange = protocol.bind(model, session.verifiedSubject(), rename(target, 1, "Original preparation name"));
+            var unchanged = org.junit.jupiter.api.Assertions.assertThrows(PolarionCommandPreparation.Rejected.class, () -> preparation.prepare(location, noChange, session));
+            require(unchanged.failure() == PolarionCommandPreparation.Failure.NO_CHANGE, "No-op command was not rejected");
+            record(account.project, "command-preparation-stale-version-and-no-op-denied", true);
+
+            var legacy = protocol.bind(unversioned.modelUuid(), session.verifiedSubject(), body);
+            var unpinned = org.junit.jupiter.api.Assertions.assertThrows(PolarionCommandPreparation.Rejected.class, () -> preparation.prepare(unversioned, legacy, session));
+            require(unpinned.failure() == PolarionCommandPreparation.Failure.UNVERSIONED_BINDING, "Unversioned bindings were not rejected");
+            record(account.project, "command-preparation-unversioned-model-remains-read-only", true);
+
+            try (var foreign = other.session()) {
+                var foreignCommand = protocol.bind(model, foreign.verifiedSubject(), body);
+                var denied = org.junit.jupiter.api.Assertions.assertThrows(PolarionSnapshotLoader.ReadFailure.class, () -> preparation.prepare(location, foreignCommand, foreign));
+                require(denied.failure() == PolarionSnapshotLoader.Failure.DENIED, "Foreign account prepared a command");
+                record(other.project, "command-preparation-foreign-pat-denied", true);
+            }
+
+            Item item = change.expectedItem();
+            account.json("PATCH", account.base() + "/" + item.workItem(), Map.of("data", wire("workitems", item.project() + "/" + item.workItem(),
+                Map.of("title", "sysarch-m2-" + RUN + "-external-title-change"))), 204);
+            var drift = org.junit.jupiter.api.Assertions.assertThrows(PolarionCommandPreparation.Rejected.class, () -> preparation.prepare(location, command, session));
+            require(drift.failure() == PolarionCommandPreparation.Failure.EXTERNAL_CHANGE, "External element revision was not detected");
+            require(plan.expectedHead().equals(session.head(location.root())), "Drift fixture changed model head");
+            record(account.project, "command-preparation-external-element-drift-denied", true);
+        }
+    }
+    private static byte[] rename(UUID target, long version, String name) throws Exception {
+        return JSON.writeValueAsBytes(Map.of("commandId", UUID.randomUUID(), "expectedVersion", version, "schemaVersion", "1.0", "operations", List.of(
+            Map.of("kind", "RenameElement", "elementUuid", target, "name", name))));
+    }
+
+    private static void managedSdkCommit(Account account, Account other) throws Exception {
+        var resource = new ResourceImpl();
+        var definition = SysarchFactory.eINSTANCE.createPartDefinition();
+        definition.setId("SDK-COMMIT-1");
+        definition.setName("Before the SDK transaction");
+        resource.getContents().add(definition);
+        UUID model = UUID.randomUUID();
+        var original = CODEC.capture(model, List.of(new ModelCodec.SourceDocument(UUID.randomUUID(), resource)), new ModelIdentityRegistry());
+        Location location = publish(account, original, List.of(), true);
+        try (var session = account.session(); var constraints = new ConstraintValidator()) {
+            var loader = new PolarionSnapshotLoader(CODEC);
+            var preparation = new PolarionCommandPreparation(loader, new CommandCandidate(CODEC, constraints));
+            var protocol = new ModelCommandProtocol();
+            UUID target = original.nodes().getFirst().uuid();
+            var rollback = protocol.bind(model, session.verifiedSubject(), rename(target, 1, "After the SDK transaction"));
+            var rollbackPlan = preparation.prepare(location, rollback, session);
+            String rootAttachments = account.base() + "/" + location.root().workItem() + "/attachments?fields%5Bworkitem_attachments%5D=fileName";
+            JsonNode previousAttachments = account.json("GET", rootAttachments, null, 200).path("data");
+            var denied = postManaged(other, rollbackPlan, false);
+            boolean deniedByOwnership = denied.statusCode() == 409 && JSON.readTree(denied.body()).path("error").asText().equals("not-an-owned-managed-fixture");
+            require(denied.statusCode() == 403 || deniedByOwnership, "Foreign PAT unexpectedly reached managed transaction: " + managedStatus(denied));
+            require(rollbackPlan.expectedRoot().equals(session.pinCurrentRevision(location.root())), "Foreign request changed the model root");
+            record(other.project, "managed-sdk-foreign-pat-denied", true);
+
+            var failed = postManaged(account, rollbackPlan, true);
+            require(failed.statusCode() == 409 && JSON.readTree(failed.body()).path("error").asText().equals("managed-test-rollback"),
+                "Managed transaction did not reach rollback injection: " + managedStatus(failed));
+            require(rollbackPlan.expectedRoot().equals(session.pinCurrentRevision(location.root()))
+                && rollbackPlan.changes().getFirst().expectedItem().equals(session.pinCurrentRevision(rollbackPlan.changes().getFirst().expectedItem().current()))
+                && original.equals(loader.loadStored(location, session).model()), "Rollback changed the model root or element");
+            require(previousAttachments.isArray() && previousAttachments.equals(account.json("GET", rootAttachments, null, 200).path("data")),
+                "Rollback left a model attachment");
+            require(session.findCommandRecord(account.project, model, rollback.body().commandId()).isEmpty(), "Rollback left a visible receipt");
+            record(account.project, "managed-sdk-rollback-preserves-root-element-and-no-receipt", true);
+
+            var command = protocol.bind(model, session.verifiedSubject(), rename(target, 1, "After the SDK transaction"));
+            var plan = preparation.prepare(location, command, session);
+            var committed = postManaged(account, plan, false);
+            if (committed.statusCode() != 201) {
+                var found = session.findCommandRecord(account.project, model, command.body().commandId());
+                if (found.isPresent()) account.track(account.project + "/" + found.get().workItem());
+                throw new IllegalStateException("Managed SDK commit failed: " + managedStatus(committed));
+            }
+            JsonNode result = JSON.readTree(committed.body());
+            String receiptId = account.track(account.project + "/" + result.path("workItem").asText());
+            require(session.verifiedSubject().equals(result.path("actor").asText()), "Transaction actor mismatch");
+            var stored = loader.loadStored(location, session);
+            require(stored.head().version() == 2 && stored.head().commitId().toString().equals(result.path("commitId").asText())
+                && stored.model().equals(plan.snapshot()), "SDK transaction did not publish the candidate snapshot");
+            var change = plan.changes().getFirst();
+            var element = account.json("GET", account.base() + "/" + change.expectedItem().workItem() + "?fields%5Bworkitems%5D=sysarchPayload", null, 200);
+            var payload = element.path("data").path("attributes").path("sysarchPayload");
+            require(payload.path("type").asText().equals("text/plain") && change.payload().equals(payload.path("value").asText()),
+                "SDK transaction did not persist the candidate payload");
+            var rootRevision = session.pinCurrentRevision(location.root()).revision();
+            var receiptItem = session.pinCurrentRevision(new Item(account.project, receiptId, null));
+            require(rootRevision.equals(receiptItem.revision()) && rootRevision.equals(session.pinCurrentRevision(change.expectedItem().current()).revision()),
+                "The root, element, and receipt were not assigned the same revision");
+            var receipt = session.commandReceipt(receiptItem, model, command.body().commandId());
+            require(receipt.version() == 2 && receipt.commitId().equals(stored.head().commitId()) && receipt.requestHash().equals(command.requestHash())
+                && receipt.manifestHash().equals(stored.head().manifest().sha256()), "SDK transaction receipt does not match published model");
+            record(account.project, "managed-sdk-atomic-payload-snapshot-head-receipt-same-revision", true);
+            var replay = postManaged(account, plan, false);
+            require(replay.statusCode() == 409 && session.head(location.root()).version() == 2, "Stale transaction plan was accepted");
+            record(account.project, "managed-sdk-stale-plan-denied", true);
+        }
+    }
+
+    private static void historicalBindingRevisions(Account account, Account other) throws Exception {
+        String targetId = account.createRequirement("checkpoint-element", "Earlier element data");
+        Item target = new Item(account.project,targetId,null);
+        try (var session = account.session()) {
+            Item initial = session.pinCurrentRevision(target);
+            String anchorId = account.createRequirement("checkpoint-anchor", "Repository checkpoint");
+            String checkpoint = session.pinCurrentRevision(new Item(account.project,anchorId,null)).revision();
+            require(new java.math.BigInteger(checkpoint).compareTo(new java.math.BigInteger(initial.revision())) > 0,"Test checkpoint must follow initial object revision");
+            account.json("PATCH",account.base()+"/"+targetId,Map.of("data",wire("workitems",account.project+"/"+targetId,
+                Map.of("title","sysarch-m2-"+RUN+"-rewritten-checkpoint-element"))),204);
+            Item current = session.pinCurrentRevision(target);
+            require(!initial.equals(current) && !checkpoint.equals(current.revision()),"Fixture did not advance to a later revision");
+            require(initial.equals(session.pinRevisionAt(target,checkpoint)),"Checkpoint lookup did not recover the earlier object revision");
+            require(current.equals(session.pinRevisionAt(target,current.revision())),"Checkpoint lookup did not resolve the changed object's revision");
+            record(account.project,"historical-binding-resolves-unchanged-and-changed-revisions",true);
+            try (var foreign=other.session()) {
+                var denied=org.junit.jupiter.api.Assertions.assertThrows(PolarionSnapshotLoader.ReadFailure.class,()->foreign.pinRevisionAt(target,checkpoint));
+                require(denied.failure()==PolarionSnapshotLoader.Failure.DENIED,"Foreign PAT unexpectedly resolved historical revision");
+                record(other.project,"historical-binding-requires-current-access",true);
+                String foreignId=other.createRequirement("checkpoint-foreign", "Other project's data");
+                String foreignRevision=foreign.pinCurrentRevision(new Item(other.project,foreignId,null)).revision();
+                String foreignPath="/sysarch-model/revision?project="+other.project+"&workItem="+foreignId+"&atRevision="+foreignRevision;
+                require(account.call("GET",foreignPath,null,null).statusCode()==403,"SDK bridge allowed a foreign project directly");
+                record(account.project,"historical-binding-sdk-enforces-project-access",true);
+            }
+            account.deleteOwned(targetId);
+            var deleted=org.junit.jupiter.api.Assertions.assertThrows(PolarionSnapshotLoader.ReadFailure.class,()->session.pinRevisionAt(target,checkpoint));
+            require(deleted.failure()==PolarionSnapshotLoader.Failure.DENIED,"Deleted binding was still resolved");
+            record(account.project,"historical-binding-rejects-deleted-current-object",true);
+        }
+    }
+
+    private static String managedStatus(HttpResponse<byte[]> response) {
+        try {
+            JsonNode body = JSON.readTree(response.body());
+            String code = body.path("error").asText();
+            List<String> types = new ArrayList<>();
+            for (JsonNode type : body.path("types")) {
+                if (types.size() < 8 && type.asText().matches("[A-Za-z][A-Za-z0-9]{0,100}")) types.add(type.asText());
+            }
+            String stage = body.path("stage").asText();
+            return response.statusCode() + " " + (code.matches("[a-z0-9-]{1,80}") ? code : "unknown") + " " + types
+                + (stage.matches("MANAGED_[A-Z_]{1,60}") ? " " + stage : "");
+        } catch (Exception ignored) { return Integer.toString(response.statusCode()); }
+    }
+
+    private static HttpResponse<byte[]> postManaged(Account caller, PolarionCommandPreparation.Plan plan, boolean rollback) throws Exception {
+        var fields = new LinkedHashMap<String, String>();
+        var change = plan.changes().getFirst();
+        fields.put("project", plan.location().root().project());
+        fields.put("run", RUN);
+        fields.put("root", plan.location().root().workItem());
+        fields.put("modelUuid", plan.location().modelUuid().toString());
+        fields.put("command", plan.command().body().commandId().toString());
+        fields.put("element", change.expectedItem().workItem());
+        fields.put("elementUuid", change.elementUuid().toString());
+        fields.put("rootRevision", plan.expectedRoot().revision());
+        fields.put("elementRevision", change.expectedItem().revision());
+        fields.put("expectedCommit", plan.expectedHead().commitId().toString());
+        fields.put("expectedManifestHash", plan.expectedHead().manifest().sha256());
+        fields.put("requestHash", plan.command().requestHash());
+        fields.put("snapshot", Base64.getUrlEncoder().encodeToString(CODEC.encode(plan.snapshot())));
+        fields.put("payload", change.payload());
+        if (rollback) fields.put("fault", "rollback");
+        String body = fields.entrySet().stream().map(field -> field.getKey() + "=" + URLEncoder.encode(field.getValue(), StandardCharsets.UTF_8))
+            .collect(java.util.stream.Collectors.joining("&"));
+        var request = HttpRequest.newBuilder(URI.create(SERVER + "/sysarch-m0/managed-commit")).timeout(Duration.ofSeconds(30))
+            .header("Authorization", "Bearer " + caller.token.value()).header("X-Sysarch-Probe", "1")
+            .header("Content-Type", "application/x-www-form-urlencoded").POST(HttpRequest.BodyPublishers.ofString(body)).build();
+        return caller.http.send(request, HttpResponse.BodyHandlers.ofByteArray());
     }
     private static Location reference(Account account,Item target) throws Exception {
         var resource=new ResourceImpl(); var requirement=SysarchFactory.eINSTANCE.createRequirement();
@@ -472,6 +680,9 @@ public final class PolarionLiveReadAcceptance {
                 discover(a,first); discover(b,second);
                 controller(a,first,false); controller(b,second,false); controller(b,first,true);
                 if("true".equals(System.getenv("SYSARCH_M3_RECEIPTS"))) receipts(a,b,first);
+                if("true".equals(System.getenv("SYSARCH_M3_PREPARATION"))) commandPreparation(a,b,first);
+                if("true".equals(System.getenv("SYSARCH_M3_MANAGED_SDK"))) managedSdkCommit(a,b);
+                if("true".equals(System.getenv("SYSARCH_M3_HISTORICAL_BINDINGS"))) historicalBindingRevisions(a,b);
                 if("true".equals(System.getenv("SYSARCH_M2_REQUIREMENTS"))) history(a,b,second);
                 if("true".equals(System.getenv("SYSARCH_M2_VIEWS"))) views(a,b);
                 if("true".equals(System.getenv("SYSARCH_M2_DEPLOYED_UI"))) {

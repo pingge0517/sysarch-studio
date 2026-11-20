@@ -2,9 +2,11 @@ param(
     [string]$PolarionHome = 'C:/Polarion/polarion',
     [string]$JavaHome = 'C:/jdk-21.0.11.10-hotspot',
     [switch]$EnableForTest,
-    [switch]$EnableCoordinator
+    [switch]$EnableCoordinator,
+    [switch]$EnableManagedCommitTest
 )
 $ErrorActionPreference = 'Stop'
+if ($EnableManagedCommitTest -and (-not $EnableForTest -or -not $EnableCoordinator)) { throw 'Managed commit test requires a dedicated test build and shared coordinator' }
 $workspaceRoot = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $outputRoot = Join-Path $workspaceRoot 'build/polarion-store/extension'
 $classesPath = Join-Path $workspaceRoot 'build/polarion-store/probe-classes'
@@ -23,7 +25,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Probe extension compilation failed' }
 $enabled = if ($EnableForTest) { 'true' } else { 'false' }
 $gateSettings = if ($EnableCoordinator) { "gateRequired=true`ngateFile="+(Join-Path $workspaceRoot 'build/private/m0-command-gate.properties').Replace('\','/')+"`n" } else { "gateRequired=false`n" }
 if ($EnableCoordinator -and -not (Test-Path (Join-Path $workspaceRoot 'build/private/m0-command-gate.properties'))) { throw 'Prepare protected coordination credentials first' }
-[IO.File]::WriteAllText((Join-Path $classesPath 'probe.properties'),"enabled=$enabled`nprojects=sysarch_probe_a,sysarch_probe_b`n$gateSettings",[Text.UTF8Encoding]::new($false))
+$managedCommit = if ($EnableManagedCommitTest) { 'true' } else { 'false' }
+[IO.File]::WriteAllText((Join-Path $classesPath 'probe.properties'),"enabled=$enabled`nmanagedCommit=$managedCommit`nprojects=sysarch_probe_a,sysarch_probe_b`n$gateSettings",[Text.UTF8Encoding]::new($false))
 & (Join-Path $JavaHome 'bin/jar.exe') --create --file (Join-Path $bundlePath 'sysarch-m0.jar') -C $classesPath .
 if ($LASTEXITCODE -ne 0) { throw 'Probe extension packaging failed' }
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'extension/plugin.xml') -Destination $bundlePath -Force

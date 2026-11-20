@@ -96,14 +96,28 @@ public final class PolarionRestReadSession implements PolarionModelReadSession, 
     public record ModelSummary(Location location, String title) { }
     /** Obtain a real SDK revision after confirming REST current-read permission; timestamps are never used as revisions. */
     public Item pinCurrentRevision(Item current) {
+        return pinRevision(current,null);
+    }
+    /** Resolve the object's own data revision at a known repository checkpoint. The checkpoint itself requires separate authentication. */
+    public Item pinRevisionAt(Item current,String checkpoint) {
+        if(checkpoint==null || !checkpoint.matches("[1-9][0-9]{0,19}")) throw new ReadFailure(Failure.SCHEMA);
+        return pinRevision(current,checkpoint);
+    }
+    private Item pinRevision(Item current,String checkpoint) {
         if(current.revision()!=null) throw new ReadFailure(Failure.SCHEMA);
         requireCurrentRead(current);
-        byte[] body=get("/sysarch-model/revision?project="+encode(current.project())+"&workItem="+encode(current.workItem()),16*1024,true,false);
+        String path="/sysarch-model/revision?project="+encode(current.project())+"&workItem="+encode(current.workItem());
+        if(checkpoint!=null) path+="&atRevision="+checkpoint;
+        byte[] body=get(path,16*1024,true,false);
         try {
             JsonNode metadata=this.json.readTree(body);
             if(!"sysarch-model-read/1".equals(text(metadata,"protocol")) || !this.subject.equals(text(metadata,"actor"))
                 || !current.project().equals(text(metadata,"project")) || !current.workItem().equals(text(metadata,"workItem"))) throw new ReadFailure(Failure.IDENTITY);
-            return new Item(current.project(),current.workItem(),text(metadata,"revision"));
+            String revision=text(metadata,"revision");
+            if(checkpoint!=null && (!checkpoint.equals(text(metadata,"atRevision")) || !revision.matches("[1-9][0-9]{0,19}")
+                    || new java.math.BigInteger(revision).compareTo(new java.math.BigInteger(checkpoint))>0)) throw new ReadFailure(Failure.INTEGRITY);
+            if(checkpoint==null && metadata.has("atRevision")) throw new ReadFailure(Failure.IDENTITY);
+            return new Item(current.project(),current.workItem(),revision);
         } catch(ReadFailure failure) { throw failure; }
         catch(Exception failure) { throw new ReadFailure(Failure.SCHEMA); }
     }

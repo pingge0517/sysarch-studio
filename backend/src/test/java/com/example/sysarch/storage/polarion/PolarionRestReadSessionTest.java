@@ -83,6 +83,28 @@ class PolarionRestReadSessionTest {
             assertThrows(ReadFailure.class,()->this.session.pinCurrentRevision(this.root));
         }
     }
+
+    @Test
+    void historicalPinUsesTheObjectRevisionAndRejectsAnUnboundOrFutureReply() {
+        String bridge="/polarion/sysarch-model/revision";
+        String prefix="{\"protocol\":\"sysarch-model-read/1\",\"actor\":\"alice\",\"project\":\"alpha\",\"workItem\":\"MODEL-1\",";
+        this.server.stubFor(get(urlPathEqualTo(PATH)).willReturn(okJson(resource("{}"))));
+        this.server.stubFor(get(urlPathEqualTo(bridge)).willReturn(okJson(prefix+"\"revision\":\"100\",\"atRevision\":\"110\"}")));
+        assertEquals("100",this.session.pinRevisionAt(this.root,"110").revision());
+        this.server.verify(getRequestedFor(urlPathEqualTo(bridge)).withQueryParam("atRevision",equalTo("110")));
+        for (String response : new String[]{"\"revision\":\"100\"}", "\"revision\":\"100\",\"atRevision\":\"101\"}",
+                "\"revision\":\"111\",\"atRevision\":\"110\"}"}) {
+            this.server.stubFor(get(urlPathEqualTo(bridge)).willReturn(okJson(prefix+response)));
+            assertThrows(ReadFailure.class,()->this.session.pinRevisionAt(this.root,"110"));
+        }
+    }
+
+    @Test
+    void historicalPinChecksCurrentAccessBeforeCallingTheBridge() {
+        this.server.stubFor(get(urlPathEqualTo(PATH)).willReturn(aResponse().withStatus(403)));
+        assertEquals(Failure.DENIED,assertThrows(ReadFailure.class,()->this.session.pinRevisionAt(this.root,"110")).failure());
+        this.server.verify(0,getRequestedFor(urlPathEqualTo("/polarion/sysarch-model/revision")));
+    }
     @Test
     void inaccessibleCurrentItemCannotBePinnedThroughTheSdkEndpoint() {
         this.server.stubFor(get(urlPathEqualTo(PATH)).willReturn(aResponse().withStatus(403)));
